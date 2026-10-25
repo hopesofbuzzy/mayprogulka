@@ -38,7 +38,7 @@ class Base(DeclarativeBase):
 # Создание таблиц.
 async def create_db():
     # Импортируем модели, чтобы SQLAlchemy узнал о таблицах.
-    import models
+    import database.models
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
