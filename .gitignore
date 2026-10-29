@@ -8,3 +8,47 @@ wheels/
 
 # Virtual environments
 .venv
+
+# --- Frontend
+
+# Node, Vite and frontend tool output
+/frontend/node_modules/
+/frontend/dist/
+/frontend/coverage/
+/frontend/.vite/
+/frontend/.vitest/
+/frontend/.artifacts/
+/frontend/playwright-report/
+/frontend/test-results/
+*.tsbuildinfo
+npm-debug.log*
+
+# Environment credentials
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+
+# Editor and OS-local files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+/AGENTS.md
+/agent-notes/
+/.agent-work/
+
+# Локальные документы, задания и материалы
+/local_docs/
+
+# Local task instructions and temporary files
+/TASK-*.md
+/GITIGNORE_ADDITIONS.txt
+/HUMAN_GIT_PLAN.md
+/README_PACKAGE.md
+*.tmp
+*.temp
+*.log
+*~
