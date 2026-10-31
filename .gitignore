@@ -42,6 +42,7 @@ Thumbs.db
 
 # Локальные документы, задания и материалы
 /local_docs/
+/docs/
 
 # Local task instructions and temporary files
 /TASK-*.md
