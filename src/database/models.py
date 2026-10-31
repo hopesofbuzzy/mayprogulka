@@ -11,12 +11,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
-
-# models.py
-from sqlalchemy import String, Integer, Boolean
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .database import Base
-
 class User(Base):
     __tablename__ = "users"
 
