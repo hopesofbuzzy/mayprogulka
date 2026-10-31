@@ -8,9 +8,14 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "aiosqlite>=0.22.1",
     "alembic>=1.20.0",
+    "bcrypt==4.0.1",
     "fastapi[standard]>=0.143.0",
-    "sqlalchemy>=2.1.5",
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.32",
+    "sqlalchemy[asyncio]>=2.1.5",
 ]
 
 [project.scripts]

@@ -1,0 +1,1361 @@
+openapi: 3.0.3
+info:
+  title: May Progulka API
+  description: |
+    Система регистрации и отслеживания участников традиционной «Майской прогулки».
+    API для сайта и мобильного приложения.
+  version: 1.0.0
+  contact:
+    name: May Progulka Team
+    url: https://mayprogulka.ru/
+
+servers:
+  - url: https://api.mayprogulka.ru/api/v1
+    description: Production
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+tags:
+  - name: auth
+    description: Аутентификация и регистрация пользователей
+  - name: participants
+    description: Регистрация участников и личный кабинет
+  - name: scans
+    description: Сканирование на контрольных пунктах
+  - name: checkpoints
+    description: Контрольные пункты маршрута
+  - name: typist
+    description: Работа наборщика с бумажными анкетами
+  - name: organizer
+    description: Личный кабинет организатора
+  - name: admin
+    description: Администрирование системы
+  - name: routes
+    description: Маршруты мероприятия
+  - name: maps
+    description: Управление маршрутными картами участников (физическими бланками со штрих-кодом)
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ==================== AUTH ====================
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Регистрация нового пользователя
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Пользователь с таким username или email уже существует
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Вход в систему
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверные учетные данные
+
+  # ==================== PARTICIPANTS ====================
+  /participants/register:
+    post:
+      tags: [participants]
+      summary: Регистрация участника(ов) на мероприятие
+      description: |
+        Один пользователь может зарегистрировать несколько участников (например, семью).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParticipantRegisterRequest'
+      responses:
+        '201':
+          description: Участники успешно зарегистрированы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantRegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Маршрут не найден
+
+  /participants/my:
+    get:
+      tags: [participants]
+      summary: Список своих участников
+      description: Возвращает всех участников, зарегистрированных текущим пользователем
+      parameters:
+        - name: route_id
+          in: query
+          schema:
+            type: integer
+          description: Фильтр по маршруту
+      responses:
+        '200':
+          description: Список участников
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantListResponse'
+
+  /participants/{id}/pay:
+    post:
+      tags: [participants]
+      summary: Оплата участия
+      description: |
+        После успешной оплаты формируется PDF-анкета с уникальным номером и штрих-кодом,
+        которая отправляется на почту участника.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        '200':
+          description: Оплата прошла успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '404':
+          description: Участник не найден
+
+  # ==================== SCANS ====================
+  /scans:
+    post:
+      tags: [scans]
+      summary: Сканирование участника на КП (одиночное)
+      description: |
+        Основной эндпоинт для контрольных пунктов. Должен быть максимально быстрым.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+      responses:
+        '200':
+          description: Прохождение успешно записано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '404':
+          description: Участник или КП не найден
+
+  /scans/batch:
+    post:
+      tags: [scans]
+      summary: Пакетное сканирование (массовое чтение)
+      description: |
+        Критически важный эндпоинт для скорости. Принимает массив сканирований
+        и обрабатывает их одной транзакцией.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchScanRequest'
+      responses:
+        '200':
+          description: Пакет обработан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchScanResponse'
+
+  /scans/self:
+    post:
+      tags: [scans]
+      summary: Самостоятельная отметка участника на КП по общему QR-коду
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [checkpoint_id] # ID извлечен из общего QR-кода
+              properties:
+                checkpoint_id:
+                  type: integer
+      responses:
+        '200':
+          description: Прохождение успешно записано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '404':
+          description: Участник или КП не найден
+
+  /scans/upload-file:
+    post:
+      tags: [scans]
+      summary: Загрузка файла со списком штрих-кодов (офлайн-синхронизация)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                checkpoint_id:
+                  type: integer
+                file:
+                  type: string
+                  format: binary
+                  description: Текстовый файл, где каждая строка - штрих-код
+      responses:
+        '200':
+          description: Пакет обработан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchScanResponse'
+
+  # ==================== CHECKPOINTS ====================
+  /checkpoints:
+    get:
+      tags: [checkpoints]
+      summary: Список контрольных пунктов
+      parameters:
+        - name: route_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список КП маршрута
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckpointListResponse'
+
+
+
+  # ==================== TYPIST ====================
+  /typist/paper-form:
+    post:
+      tags: [typist]
+      summary: Ввод данных с бумажной анкеты
+      description: Используется наборщиками для регистрации участников на старте
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaperFormRequest'
+      responses:
+        '201':
+          description: Анкета успешно введена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaperFormResponse'
+
+  /typist/match:
+    post:
+      tags: [typist]
+      summary: Сопоставление номера анкеты со стикером карты
+      description: |
+        Связывает номер бумажной анкеты участника с номером стикера,
+        наклеенного на карту.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+      responses:
+        '200':
+          description: Сопоставление выполнено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchResponse'
+        '404':
+          description: Анкета не найдена
+
+  # ==================== ORGANIZER ====================
+  /organizer/statistics:
+    get:
+      tags: [organizer]
+      summary: Статистика мероприятия
+      description: |
+        Непрерывно обновляемая информация о стартовавших, финишировавших
+        и находящихся на маршруте.
+      parameters:
+        - name: route_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Статистика маршрута
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResponse'
+
+  /organizer/participants:
+    get:
+      tags: [organizer]
+      summary: Список участников с фильтрацией
+      parameters:
+        - name: route_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [registered, started, on_route, finished]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Список участников
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizerParticipantListResponse'
+
+  # ==================== ADMIN ====================
+  /admin/users:
+    get:
+      tags: [admin]
+      summary: Список пользователей системы
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [participant, organizer, typist, admin]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /admin/routes:
+    post:
+      tags: [admin, routes]
+      summary: Создание нового маршрута
+      description: Доступно только администраторам. Позволяет добавить новый маршрут на будущий год.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteCreateRequest'
+      responses:
+        '201':
+          description: Маршрут успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+
+  /admin/cards/batch:
+    post:
+      tags: [admin]
+      summary: Регистрация партии бланков карт (штрих-кодов)
+      description: Позволяет загрузить список новых штрих-кодов, которые будут напечатаны на стикерах для карт участников.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV или TXT файл со списком штрих-кодов (по одному на строку)
+                batch_name:
+                  type: string
+                  description: Название партии (например, "Стикеры_2024_партия_1")
+      responses:
+        '201':
+          description: Партия штрих-кодов успешно зарегистрирована
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  batch_id:
+                    type: integer
+                  total_codes:
+                    type: integer
+                  status:
+                    type: string
+                    enum: [success, partial_error]
+
+  /routes/{id}/map:
+    post:
+      tags: [routes]
+      summary: Загрузка файла карты маршрута
+      description: Позволяет загрузить изображение (JPG/PNG) или GeoJSON файл со схемой маршрута для отображения в мобильном приложении.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [map_file]
+              properties:
+                map_file:
+                  type: string
+                  format: binary
+                  description: Файл карты (изображение или GeoJSON)
+      responses:
+        '200':
+          description: Файл карты успешно загружен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  map_url:
+                    type: string
+                    format: uri
+
+  /admin/routes/{id}:
+    put:
+      tags: [admin, routes]
+      summary: Обновление данных маршрута
+      description: Позволяет изменить название, дистанцию, статус активности или привязать файл карты.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteUpdateRequest'
+      responses:
+        '200':
+          description: Маршрут успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+    delete:
+      tags: [admin, routes]
+      summary: Архивация или удаление маршрута
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Маршрут удален или архивирован
+
+  /admin/users/{id}/role:
+    put:
+      tags: [admin]
+      summary: Изменить роль пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleUpdateRequest'
+      responses:
+        '200':
+          description: Роль успешно изменена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleUpdateResponse'
+
+  # ==================== ADMIN: CHECKPOINTS ====================
+  /admin/checkpoints:
+    post:
+      tags: [admin, checkpoints]
+      summary: Создание нового контрольного пункта
+      description: Добавляет новый КП к указанному маршруту.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckpointCreateRequest'
+      responses:
+        '201':
+          description: КП успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckpointResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Маршрут не найден
+
+    put:
+      tags: [admin, checkpoints]
+      summary: Обновление данных контрольного пункта
+      description: Позволяет изменить название, порядок или статус (старт/финиш) КП.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckpointUpdateRequest'
+      responses:
+        '200':
+          description: КП успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckpointResponse'
+        '404':
+          description: КП не найден
+
+  /admin/checkpoints/{id}:
+    delete:
+      tags: [admin, checkpoints]
+      summary: Удаление контрольного пункта
+      description: Удаляет КП из маршрута
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: КП успешно удален
+        '403':
+          description: Нельзя удалить КП, по которому уже есть отметки участников
+        '404':
+          description: КП не найден
+
+  /admin/checkpoints/batch:
+    post:
+      tags: [admin, checkpoints]
+      summary: Массовое создание КП для маршрута
+      description: |
+        Позволяет загрузить список КП для маршрута одним запросом (например, из CSV или JSON). 
+        Критически важно для быстрой настройки маршрута администратором.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [route_id, checkpoints]
+              properties:
+                route_id:
+                  type: integer
+                checkpoints:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CheckpointCreateRequest'
+      responses:
+        '201':
+          description: КП успешно созданы
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created_count:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        error:
+                          type: string
+
+  # ==================== ROUTES ====================
+  /routes:
+    get:
+      tags: [routes]
+      summary: Список доступных маршрутов
+      security: []
+      responses:
+        '200':
+          description: Список маршрутов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteListResponse'
+
+
+  # ==================== MAPS (Маршрутные карты) ====================
+  /admin/maps:
+    post:
+      tags: [admin, maps]
+      summary: Добавить одну маршрутную карту в систему
+      description: Регистрирует новый физический бланк карты со штрих-кодом в системе до начала мероприятия.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MapCreateRequest'
+      responses:
+        '201':
+          description: Карта успешно зарегистрирована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapResponse'
+        '409':
+          description: Карта с таким штрих-кодом уже существует
+
+  /admin/maps/batch:
+    post:
+      tags: [admin, maps]
+      summary: Массовая загрузка штрих-кодов для карт
+      description: |
+        Позволяет загрузить CSV или TXT файл со списком штрих-кодов, 
+        которые будут напечатаны на стикерах для маршрутных карт.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, route_id]
+              properties:
+                route_id:
+                  type: integer
+                  description: Маршрут, для которого предназначены эти карты
+                file:
+                  type: string
+                  format: binary
+                  description: Файл со списком штрих-кодов (по одному на строку)
+      responses:
+        '201':
+          description: Партия карт успешно зарегистрирована
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_added:
+                    type: integer
+                  duplicates_skipped:
+                    type: integer
+
+  /admin/maps/{barcode}:
+    get:
+      tags: [admin, maps]
+      summary: Получить статус конкретной маршрутной карты
+      parameters:
+        - name: barcode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Информация о карте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapResponse'
+        '404':
+          description: Карта с таким штрих-кодом не найдена в системе
+
+# ==================== COMPONENTS ====================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Ошибка валидации данных
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ---------- AUTH ----------
+    UserRegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          example: ivanov
+        email:
+          type: string
+          format: email
+          example: ivanov@mail.ru
+        phone:
+          type: string
+          example: "+79001234567"
+        password:
+          type: string
+          format: password
+          minLength: 6
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [participant, organizer, typist, admin]
+        token:
+          type: string
+          description: JWT токен для аутентификации
+
+    # ---------- PARTICIPANTS ----------
+    ParticipantRegisterRequest:
+      type: object
+      required: [route_id, participants]
+      properties:
+        route_id:
+          type: integer
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticipantData'
+
+    ParticipantData:
+      type: object
+      required: [surname, name, date_of_birth, gender]
+      properties:
+        surname:
+          type: string
+        name:
+          type: string
+        middle_name:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+
+    ParticipantRegisterResponse:
+      type: object
+      properties:
+        registration_id:
+          type: integer
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              form_number:
+                type: string
+              surname:
+                type: string
+              name:
+                type: string
+              payment_status:
+                type: string
+                enum: [unpaid, paid]
+
+    ParticipantListResponse:
+      type: object
+      properties:
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              form_number:
+                type: string
+              surname:
+                type: string
+              name:
+                type: string
+              route_name:
+                type: string
+              payment_status:
+                type: string
+              has_started:
+                type: boolean
+              has_finished:
+                type: boolean
+              map_barcode:
+                type: string
+                nullable: true
+
+    PaymentRequest:
+      type: object
+      properties:
+        payment_method:
+          type: string
+          enum: [card, sbp]
+          default: card
+
+    PaymentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, pending, failed]
+        payment_id:
+          type: string
+        form_pdf_url:
+          type: string
+          format: uri
+
+    # ---------- SCANS ----------
+    ScanRequest:
+      type: object
+      required: [barcode, checkpoint_id]
+      properties:
+        barcode:
+          type: string
+          description: Штрих-код стикера карты
+          example: STK-001234
+        checkpoint_id:
+          type: integer
+
+    ScanResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        participant_name:
+          type: string
+        checkpoint_name:
+          type: string
+        scanned_at:
+          type: string
+          format: date-time
+
+    BatchScanRequest:
+      type: object
+      required: [checkpoint_id, scans]
+      properties:
+        batch_id:
+          type: integer
+          description: Уникальный ID пакета сканирований, генерируется клиентом
+        checkpoint_id:
+          type: integer
+        scans:
+          type: array
+          items:
+            type: object
+            required: [barcode, timestamp]
+            properties:
+              barcode:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+
+    BatchScanResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        processed:
+          type: integer
+          description: Количество успешно обработанных сканирований
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              barcode:
+                type: string
+              error:
+                type: string
+
+    # ---------- CHECKPOINTS ----------
+    CheckpointListResponse:
+      type: object
+      properties:
+        checkpoints:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              order:
+                type: integer
+              is_finish:
+                type: boolean
+              is_start:
+                type: boolean
+              description:
+                type: string
+                nullable: true
+
+    CheckpointCreateRequest:
+      type: object
+      required: [route_id, name, order]
+      properties:
+        route_id:
+          type: integer
+          description: ID маршрута, к которому привязывается КП
+        name:
+          type: string
+          description: Название контрольного пункта (например, "Старт", "КП-1 Лесопарк", "Финиш")
+          example: "КП-2 Мост"
+        order:
+          type: integer
+          description: Порядковый номер КП на маршруте (для сортировки и проверки логики прохождения)
+          example: 2
+        is_start:
+          type: boolean
+          default: false
+          description: Является ли этот пункт стартовым (меняет статус участника на 'started')
+        is_finish:
+          type: boolean
+          default: false
+          description: Является ли этот пункт финишным (меняет статус участника на 'finished')
+        description:
+          type: string
+          nullable: true
+          description: Дополнительное описание или инструкции для волонтера на этом КП
+
+    CheckpointUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        order:
+          type: integer
+        is_start:
+          type: boolean
+        is_finish:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+
+    CheckpointResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        route_id:
+          type: integer
+        name:
+          type: string
+        order:
+          type: integer
+        is_start:
+          type: boolean
+        is_finish:
+          type: boolean
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    # ---------- TYPIST ----------
+    PaperFormRequest:
+      type: object
+      required: [route_id, surname, name, date_of_birth, gender]
+      properties:
+        route_id:
+          type: integer
+        surname:
+          type: string
+        name:
+          type: string
+        middle_name:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+
+    PaperFormResponse:
+      type: object
+      properties:
+        participant_id:
+          type: integer
+        form_number:
+          type: string
+
+    MatchRequest:
+      type: object
+      required: [form_number, map_barcode]
+      properties:
+        form_number:
+          type: string
+          description: Номер бумажной анкеты
+        map_barcode:
+          type: string
+          description: Номер стикера на карте
+
+    MatchResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        participant_id:
+          type: integer
+        form_number:
+          type: string
+        map_barcode:
+          type: string
+
+    # ---------- ORGANIZER ----------
+    StatisticsResponse:
+      type: object
+      properties:
+        route_id:
+          type: integer
+        route_name:
+          type: string
+        total_registered:
+          type: integer
+        total_started:
+          type: integer
+        total_finished:
+          type: integer
+        on_route:
+          type: integer
+          description: started - finished
+        checkpoints:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              passed:
+                type: integer
+
+    OrganizerParticipantListResponse:
+      type: object
+      properties:
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              map_barcode:
+                type: string
+              last_checkpoint:
+                type: string
+              started_at:
+                type: string
+                format: date-time
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    # ---------- ADMIN ----------
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              username:
+                type: string
+              email:
+                type: string
+              role:
+                type: string
+              participants_count:
+                type: integer
+              registered_at:
+                type: string
+                format: date-time
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    RoleUpdateRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [participant, organizer, typist, admin]
+
+    RoleUpdateResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        role:
+          type: string
+
+    # ---------- ROUTES ----------
+    RouteListResponse:
+      type: object
+      properties:
+        routes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              year:
+                type: integer
+              name:
+                type: string
+              distance:
+                type: number
+                format: float
+              is_active:
+                type: boolean
+
+    # ---------- ERRORS ----------
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          description: Код ошибки
+        message:
+          type: string
+          description: Описание ошибки для пользователя
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    # ---------- ROUTES ADMIN ----------
+    RouteCreateRequest:
+      type: object
+      required: [year, name, distance]
+      properties:
+        year:
+          type: integer
+          example: 2024
+        name:
+          type: string
+          example: "Большая прогулка (30 км)"
+        distance:
+          type: number
+          format: float
+          example: 30.5
+        description:
+          type: string
+        is_active:
+          type: boolean
+          default: true
+
+    RouteUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        distance:
+          type: number
+          format: float
+        description:
+          type: string
+        is_active:
+          type: boolean
+        map_url:
+          type: string
+          format: uri
+          description: Ссылка на загруженную карту маршрута
+
+    RouteResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        year:
+          type: integer
+        name:
+          type: string
+        distance:
+          type: number
+          format: float
+        description:
+          type: string
+        is_active:
+          type: boolean
+        map_url:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    # ---------- MAPS ----------
+    MapCreateRequest:
+      type: object
+      required: [barcode, route_id]
+      properties:
+        barcode:
+          type: string
+          description: Уникальный штрих-код, который будет наклеен на карту
+          example: "STK-001234"
+        route_id:
+          type: integer
+          description: ID маршрута, для которого предназначена эта карта
+
+    MapResponse:
+      type: object
+      properties:
+        barcode:
+          type: string
+        route_id:
+          type: integer
+        route_name:
+          type: string
+        status:
+          type: string
+          enum: [available, assigned, on_route, finished]
+          description: |
+            available - карта напечатана и лежит на складе (не сопоставлена)
+            assigned - сопоставлена с анкетой наборщиком, но еще не отсканирована на старте
+            on_route - участник прошел старт и находится на маршруте
+            finished - участник финишировал
+        participant_id:
+          type: integer
+          nullable: true
+          description: Заполняется только после сопоставления с анкетой (/typist/match)
+        form_number:
+          type: string
+          nullable: true
+          description: Номер анкеты, с которой сопоставлена эта карта
