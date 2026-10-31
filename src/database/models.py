@@ -1,4 +1,3 @@
-
 from datetime import date
 
 from sqlalchemy import (
@@ -81,6 +80,57 @@ class Route(Base):
     # Один маршрут может иметь множество участников.
     participants: Mapped[list["Participant"]] = relationship(
         back_populates="route",
+    )
+
+    # Один маршрут может иметь множество контрольных пунктов.
+    checkpoints: Mapped[list["Checkpoint"]] = relationship(
+        back_populates="route",
+        cascade="all, delete-orphan",
+    )
+
+
+class Checkpoint(Base):
+    """Контрольный пункт, принадлежащий маршруту."""
+
+    __tablename__ = "checkpoints"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    # Внешний ключ на маршрут.
+    route_id: Mapped[int] = mapped_column(
+        ForeignKey("routes.id"),
+        nullable=False,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
+    address: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
+    # Координаты храним строкой (TEXT в схеме), напр. "55.75,37.61".
+    coordinates: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
+    # Маршрут, которому принадлежит контрольный пункт.
+    route: Mapped["Route"] = relationship(
+        back_populates="checkpoints",
+    )
+
+    # Отметки о прохождении этого пункта участниками.
+    passes: Mapped[list["CheckpointPass"]] = relationship(
+        back_populates="checkpoint",
+        cascade="all, delete-orphan",
     )
 
 
@@ -175,6 +225,53 @@ class Participant(Base):
         cascade="all, delete-orphan",
     )
 
+    # Отметки о прохождении контрольных пунктов.
+    checkpoint_passes: Mapped[list["CheckpointPass"]] = relationship(
+        back_populates="participant",
+        cascade="all, delete-orphan",
+    )
+
+
+class CheckpointPass(Base):
+    """Отметка о прохождении участником контрольного пункта (Schema: Checkpoint_Pass)."""
+
+    __tablename__ = "checkpoint_passes"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    # В схеме БД физические имена колонок — "checkpoint" и "participant".
+    checkpoint_id: Mapped[int] = mapped_column(
+        "checkpoint",
+        ForeignKey("checkpoints.id"),
+        nullable=False,
+    )
+
+    participant_id: Mapped[int] = mapped_column(
+        "participant",
+        ForeignKey("participants.id"),
+        nullable=False,
+    )
+
+    # Момент прохождения пункта; в схеме тип TEXT, поэтому храним ISO-строку.
+    datetime: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
+    # Контрольный пункт, который был пройден.
+    checkpoint: Mapped["Checkpoint"] = relationship(
+        back_populates="passes",
+    )
+
+    # Участник, которому принадлежит отметка.
+    participant: Mapped["Participant"] = relationship(
+        back_populates="checkpoint_passes",
+    )
+
 
 class Map(Base):
     """Карта, связанная с участником."""
@@ -190,6 +287,12 @@ class Map(Base):
     # Внешний ключ на участника.
     participant_id: Mapped[int] = mapped_column(
         ForeignKey("participants.id"),
+        nullable=False,
+    )
+
+    # Баркод карты (INTEGER в схеме).
+    barcode: Mapped[int] = mapped_column(
+        Integer,
         nullable=False,
     )
 
