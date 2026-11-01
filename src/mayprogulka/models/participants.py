@@ -10,6 +10,8 @@ class ParticipantData(BaseModel):
     route_id: int
     date_of_birth: date
     gender: str = Field(..., pattern="^(male|female)$")
+    email: str
+    phone_number: str
 
 
 class ParticipantRegisterRequest(BaseModel):

@@ -58,6 +58,11 @@ class Route(Base):
         nullable=False,
     )
 
+    description: Mapped[str] = mapped_column(
+        String,
+        nullable=True,
+    )
+
     # Один маршрут может иметь множество участников.
     participants: Mapped[list["Participant"]] = relationship(
         back_populates="route",
@@ -67,6 +72,17 @@ class Route(Base):
     checkpoints: Mapped[list["Checkpoint"]] = relationship(
         back_populates="route",
         cascade="all, delete-orphan",
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True
+    )
+
+    map_url: Mapped[str] = mapped_column(
+        String,
+        nullable=True,
     )
 
 

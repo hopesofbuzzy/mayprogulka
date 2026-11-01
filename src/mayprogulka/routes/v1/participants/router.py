@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 import uuid
 
 from database.database import get_db
@@ -43,13 +44,8 @@ async def register_participants(
             raise HTTPException(status_code=404, detail="Маршрут не найден")
         # 2. Добавляем участника
         participant = Participant(
-            user_id=current_user.id,
-            route_id=participant_data.route_id,
-            surname=participant_data.surname,
-            name=participant_data.name,
-            middle_name=participant_data.middle_name,
-            date_of_birth=participant_data.date_of_birth,
-            gender=participant_data.gender,
+            **participant_data.model_dump(),  # Все поля из запроса
+            user_id=current_user.id,          # Переопределяем/добавляем
             form_id=generate_form_id(),
             payment_status="unpaid",
         )
@@ -83,7 +79,7 @@ async def register_participants(
 @router.get("/my", response_model=ParticipantListResponse)
 async def get_my_participants(
     route_id: int | None = None,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Получить список своих участников."""
@@ -92,6 +88,7 @@ async def get_my_participants(
     query = (
         select(Participant, Route.name.label("route_name"))
         .join(Route, Participant.route_id == Route.id)
+        .options(selectinload(Participant.maps))
         .where(Participant.user_id == current_user.id)
     )
     
