@@ -2,17 +2,14 @@ from fastapi import FastAPI, APIRouter
 from mayprogulka.routes.v1.auth.router import router as auth_router
 from mayprogulka.routes.v1.participants.router import router as participants_router
 from contextlib import asynccontextmanager
-from database.database import engine, Base
-from database.models import User, Participant, Route, Map, Checkpoint  # импортируй ВСЕ модели!
+from database.database import create_db, create_default_admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # При старте создаем все таблицы
-    async with engine.begin() as conn:
-        print("Создание таблиц!")
-        await conn.run_sync(Base.metadata.create_all)
+    await create_db()
+    await create_default_admin()
     yield
-    # При завершении (если нужно) — очистка
 
 app = FastAPI(title="May Progulka API", lifespan=lifespan)
 
