@@ -16,6 +16,7 @@ export const appRoutes: RouteObject[] = [{
       { path: 'account', lazy: async () => ({ Component: (await import('../pages/AccountPage')).AccountPage }) },
       { path: 'account/participants/new', lazy: async () => ({ Component: (await import('../pages/ParticipantRegistrationPage')).ParticipantRegistrationPage }) },
       { path: 'account/participants/:id', lazy: async () => ({ Component: (await import('../pages/ParticipantDetailPage')).ParticipantDetailPage }) },
+      { path: 'account/participants/:id/pay', lazy: async () => ({ Component: (await import('../pages/ParticipantPaymentPage')).ParticipantPaymentPage }) },
     ] },
     { path: '*', Component: NotFoundPage },
   ],

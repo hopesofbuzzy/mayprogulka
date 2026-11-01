@@ -48,7 +48,7 @@ export function PublicLayout() {
       previousPath.current = pathname;
     }
     const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
-    document.title = `${title} — Майская прогулка`;
+    document.title = `${/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Тестовая оплата' : title} — Майская прогулка`;
   }, [pathname]);
   return (
     <>

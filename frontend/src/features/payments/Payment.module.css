@@ -1,0 +1,16 @@
+.banner { padding: 16px 20px; border-radius: 12px; background: #d8e6a3; color: var(--forest-deep); font-weight: 700; line-height: 1.5; }
+.panel { max-width: 850px; margin-top: 28px; }
+.identity { display: grid; gap: 8px; margin-block: 24px; overflow-wrap: anywhere; }
+.identity h2 { font-size: 26px; }
+.methods { display: flex; flex-wrap: wrap; gap: 18px 28px; margin-top: 24px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 12px; }
+.methods legend { padding-inline: 6px; font-weight: 700; }
+.methods label { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.methods input { accent-color: var(--forest); width: 18px; height: 18px; }
+.methods input:focus-visible { outline: 3px solid var(--forest); outline-offset: 3px; }
+.explanation { margin-top: 26px; line-height: 1.7; }
+.explanation h3 { margin-bottom: 10px; font-size: 18px; }
+.explanation p + p { margin-top: 12px; }
+.result { margin-top: 26px; line-height: 1.7; overflow-wrap: anywhere; }
+.result p + p { margin-top: 12px; }
+.pdf { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+@media (max-width: 500px) { .methods { flex-direction: column; gap: 8px; } .identity h2 { font-size: 23px; } }

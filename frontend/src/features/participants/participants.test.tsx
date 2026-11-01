@@ -397,7 +397,7 @@ describe('login return and model boundaries', () => {
     await user.click(screen.getByRole('button', { name: 'Войти' }));
     await waitFor(() => expect(router.state.location.pathname).toBe(path));
   });
-  it.each(['https://evil.example', '//evil.example', '/account/participants/../staff', '/account/participants/abc', '/account/participants/1/pay', '/account/participants/101%5c', '/account/participants/new?x=%0a', '/account/participants/new?x=%250d', '/account/participants/new?x=%25250a'])('rejects dangerous return %s', value => { expect(safeReturnTo(value)).toBe('/account'); });
+  it.each(['https://evil.example', '//evil.example', '/account/participants/../staff', '/account/participants/abc', '/account/participants/1/pay/again', '/account/participants/101%5c', '/account/participants/new?x=%0a', '/account/participants/new?x=%250d', '/account/participants/new?x=%25250a'])('rejects dangerous return %s', value => { expect(safeReturnTo(value)).toBe('/account'); });
   it('preserves numeric internal participant return URLs and benign query/hash', () => { expect(safeReturnTo('/account/participants/101?section=first%20part#details')).toBe('/account/participants/101?section=first%20part#details'); });
   it.each([['2000-02-29', true], ['1900-02-29', false], ['2025-04-31', false], ['0100-01-01', true], ['2500-01-01', true], ['2025-2-01', false]])('validates calendar %s without age assumptions', (value, valid) => { expect(validDate(value as string)).toBe(valid); });
   it('maps unknown 422 paths without crashing or exposing raw values', () => { expect(indexedErrors({ detail: [{ loc: ['body', 'participants', 999, 'email'], msg: 'raw secret' }, { loc: [] }] }, ['one'])).toEqual({}); });

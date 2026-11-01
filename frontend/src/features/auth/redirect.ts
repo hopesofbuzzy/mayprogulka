@@ -13,8 +13,8 @@ export function safeReturnTo(value: unknown): string {
     }
     if (unsafe(decoded)) return '/account';
     const url = new URL(value, 'https://internal.invalid');
-    const participantPath = /^\/account\/participants\/(new|\d+)$/.exec(url.pathname);
-    const supportedParticipant = participantPath && (participantPath[1] === 'new' || Number.isSafeInteger(Number(participantPath[1])));
+    const participantPath = /^\/account\/participants\/(new|\d+(?:\/pay)?)$/.exec(url.pathname);
+    const supportedParticipant = participantPath && (participantPath[1] === 'new' || Number.isSafeInteger(Number(participantPath[1]!.split('/')[0])));
     if (url.origin !== 'https://internal.invalid' || (!allowedPaths.has(url.pathname) && !supportedParticipant)) return '/account';
     return `${url.pathname}${url.search}${url.hash}`;
   } catch { return '/account'; }
