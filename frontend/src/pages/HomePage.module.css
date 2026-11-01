@@ -1,9 +1,10 @@
 .hero { background: var(--forest); color: #fff; margin-bottom: 10px; }
-.inner { min-height: 598px; position: relative; padding-top: 59px; padding-bottom: 61px; }
-.copy { position: relative; z-index: 1; width: 550px; max-width: 54%; }
+/* Keep the reference's 550:496 column ratio as the available width shrinks. */
+.inner { min-height: 598px; display: grid; grid-template-columns: minmax(0, 550fr) minmax(0, 496fr); gap: 14px; padding-top: 59px; }
+.copy { min-width: 0; padding-bottom: 61px; }
 .eyebrow { display: flex; align-items: center; gap: 9px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; color: #e0ead7; font-weight: 700; }
 .eyebrow::before { content: ''; width: 22px; height: 2px; background: var(--sun); }
-.copy h1 { margin-top: 25px; font-size: 68px; line-height: 72px; letter-spacing: -2px; font-weight: 900; }
+.copy h1 { margin-top: 25px; font-size: clamp(42px, 6vw, 68px); line-height: 1.05882353; letter-spacing: -2px; font-weight: 900; }
 .copy h1 > span { color: var(--mint); }
 .description { max-width: 510px; margin-top: 18px; font-size: 14px; line-height: 25px; color: #e0e8df; }
 .actions { display: flex; align-items: center; gap: 18px; margin-top: 27px; }
@@ -11,26 +12,19 @@
 .actions button span { margin-left: 10px; }
 .note { display: flex; align-items: center; gap: 8px; margin-top: 34px; color: #dce7d9; font-size: 11px; line-height: 1.7; }
 .note > span { border-radius: 50%; display: inline-grid; place-items: center; background: #52876c; width: 17px; height: 17px; flex-shrink: 0; }
-.scene { position: absolute; right: 0; bottom: 0; width: 496px; max-width: 47%; }
+.scene { position: relative; align-self: end; min-width: 0; width: 100%; max-width: 496px; }
 .scene > svg { width: 100%; display: block; }
 .sceneBadge { position: absolute; right: 13px; bottom: 67px; min-height: 56px; display: flex; align-items: center; gap: 9px; padding: 10px 16px; border-radius: 16px; background: #fffef6; color: var(--ink); box-shadow: 0 4px 12px #235b420b; }
 .sceneBadge span { display: grid; gap: 3px; }
 .sceneBadge strong { font-size: 13px; }
 .sceneBadge small { font-size: 10px; color: var(--muted); }
-@media (min-width: 801px) and (max-width: 1100px) {
-  .copy h1 { font-size: clamp(42px, 5vw, 60px); line-height: 1.125; }
-  .copy { max-width: 55%; }
-  .inner { min-height: 570px; }
-  .description { max-width: 95%; }
-}
-@media (max-width: 800px) {
-  .inner { padding-top: 36px; padding-bottom: 0; min-height: 0; display: flex; flex-direction: column; }
-  .copy { max-width: none; width: 100%; }
-  .copy h1 { font-size: clamp(39px, 6.9vw, 58px); line-height: 1.125; letter-spacing: -1.4px; margin-top: 24px; }
+@media (max-width: 899px) {
+  .inner { min-height: 0; display: block; padding-block: 36px 44px; }
+  .copy { max-width: 550px; padding-bottom: 0; }
+  .copy h1 { font-size: clamp(36px, 10vw, 56px); line-height: 1.125; letter-spacing: -1.4px; margin-top: 24px; }
   .description { margin-top: 22px; max-width: 560px; }
   .actions { gap: 16px; margin-top: 26px; flex-wrap: wrap; }
   .note { margin-top: 26px; max-width: 400px; }
-  .scene { position: relative; width: 496px; max-width: 100%; align-self: center; margin-top: 32px; }
-  .sceneBadge { right: 10px; bottom: 13%; padding-inline: 12px; }
+  .scene { display: none; }
 }
-@media (max-width: 374px) { .copy h1 { font-size: 37px; } .actions { gap: 12px; } .actions button { font-size: 12px; } }
+@media (max-width: 374px) { .actions { gap: 12px; } .actions button { font-size: 12px; } }

@@ -1,0 +1,7 @@
+.eyebrow { margin-bottom: 14px; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+.panel { margin-top: 32px; padding: 32px; max-width: 740px; border: 1px solid var(--border); border-radius: 16px; background: #fffdf8; }
+.icon { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 20px; border-radius: 50%; background: #e2edda; color: var(--forest); font-size: 22px; }
+.panel h2 { font-size: 26px; color: var(--forest-deep); }
+.panel p { margin-block: 14px 24px; max-width: 570px; line-height: 1.7; }
+.note { max-width: 700px; margin-top: 24px; font-size: 13px; line-height: 1.7; color: var(--muted); }
+@media (max-width: 600px) { .panel { padding: 24px; } }

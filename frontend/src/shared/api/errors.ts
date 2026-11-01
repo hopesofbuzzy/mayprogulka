@@ -1,7 +1,14 @@
 export class ApiError extends Error {
-  constructor(public readonly status: number) {
+  constructor(public readonly status: number, public readonly details: unknown = undefined) {
     super(`HTTP ${status}`);
     this.name = 'ApiError';
+  }
+}
+
+export class StaleSessionError extends Error {
+  constructor() {
+    super('Session changed while the request was in flight');
+    this.name = 'StaleSessionError';
   }
 }
 

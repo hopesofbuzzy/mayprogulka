@@ -49,7 +49,7 @@ describe('public routing and keyboard navigation', () => {
     const { router, user } = mount();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Город становитсяближе, когдаидёшь пешком.');
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /Личный кабинет/ })).toBeDisabled();
+    expect(screen.getByRole('link', { name: 'Личный кабинет' })).toHaveAttribute('href', '/login');
     expect(screen.getByRole('button', { name: /Как участвовать/ })).toBeDisabled();
     await user.click(screen.getByRole('link', { name: /Выбрать маршрут/ }));
     expect(await screen.findByRole('heading', { name: 'Маршруты' })).toBeInTheDocument();
@@ -64,17 +64,69 @@ describe('public routing and keyboard navigation', () => {
     const { user } = mount();
     await user.tab();
     expect(screen.getByRole('link', { name: 'Перейти к содержимому' })).toHaveFocus();
-    await user.tab(); // brand
-    await user.tab(); // home
-    await user.tab(); // routes; unavailable sections do not take focus
-    await user.tab();
-    expect(screen.getByRole('link', { name: /Выбрать маршрут/ })).toHaveFocus();
+    const cta = screen.getByRole('link', { name: /Выбрать маршрут/ });
+    // CSS media queries are verified in the browser; jsdom also tabs through the menu toggle.
+    for (let index = 0; index < 6 && document.activeElement !== cta; index++) await user.tab();
+    expect(cta).toHaveFocus();
   });
   it('renders an honest 404 and returns home', async () => {
     const { user } = mount('/does-not-exist');
     expect(screen.getByRole('heading', { name: 'Страница не найдена' })).toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: /На главную/ }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Город становится');
+  });
+});
+
+describe('compact navigation disclosure', () => {
+  it('connects the toggle to navigation and opens/closes with keyboard controls', async () => {
+    const { user } = mount();
+    const toggle = screen.getByRole('button', { name: 'Открыть меню' });
+    const nav = screen.getByRole('navigation', { name: 'Основная навигация' });
+    expect(toggle).toHaveAttribute('type', 'button');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveAttribute('aria-controls', nav.id);
+    toggle.focus();
+    await user.keyboard('{Enter}');
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveAccessibleName('Закрыть меню');
+    await user.keyboard(' ');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveAccessibleName('Открыть меню');
+  });
+  it('closes with Escape from a navigation link and returns focus to the toggle', async () => {
+    const { user } = mount();
+    const toggle = screen.getByRole('button', { name: 'Открыть меню' });
+    await user.click(toggle);
+    await user.tab();
+    expect(screen.getByRole('link', { name: 'Главная' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveFocus();
+  });
+  it('navigates to routes by keyboard, closes after navigation and focuses content', async () => {
+    respond();
+    const { user, router } = mount();
+    await user.click(screen.getByRole('button', { name: 'Открыть меню' }));
+    await user.tab();
+    await user.tab();
+    expect(screen.getByRole('link', { name: 'Маршруты' })).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(await screen.findByText(fixtures[0]!.name)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Открыть меню' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('main')).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Открыть меню' }));
+    await act(() => router.navigate(-1));
+    expect(screen.getByRole('button', { name: 'Открыть меню' })).toHaveAttribute('aria-expanded', 'false');
+  });
+  it('closes even when the current page link is selected; unavailable sections have no links', async () => {
+    const { user } = mount();
+    await user.click(screen.getByRole('button', { name: 'Открыть меню' }));
+    const nav = screen.getByRole('navigation');
+    expect(within(nav).getAllByRole('link')).toHaveLength(2);
+    expect(within(nav).getByText('Вопросы')).toHaveAttribute('aria-disabled', 'true');
+    expect(within(nav).getByText('Организаторам')).toHaveAttribute('aria-disabled', 'true');
+    await user.click(within(nav).getByRole('link', { name: 'Главная' }));
+    expect(screen.getByRole('button', { name: 'Открыть меню' })).toHaveAttribute('aria-expanded', 'false');
   });
 });
 
