@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from mayprogulka.routes.v1.auth.router import router as auth_router
 from mayprogulka.routes.v1.participants.router import router as participants_router
 from contextlib import asynccontextmanager
@@ -16,14 +16,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="May Progulka API", lifespan=lifespan)
 
+api_router = APIRouter(prefix="/api/v1")
 # Регистрация роутов FastAPI Users
-app.include_router(
-    auth_router,
-    prefix="/auth",
-    tags=["auth"],
-)
-app.include_router(
-    participants_router,
-    prefix="/participants",
-    tags=["participants"],
-)
+api_router.include_router(auth_router)
+api_router.include_router(participants_router)
+
+app.include_router(api_router)

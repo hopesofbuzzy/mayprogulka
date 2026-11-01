@@ -14,7 +14,7 @@ from mayprogulka.models.participants import (
     PaymentRequest,
     PaymentResponse,
 )
-from mayprogulka.routes.v1.auth.service import get_current_user
+from mayprogulka.routes.v1.auth.service import get_current_user, require_admin
 
 router = APIRouter(prefix="/participants", tags=["participants"])
 
@@ -83,7 +83,7 @@ async def register_participants(
 @router.get("/my", response_model=ParticipantListResponse)
 async def get_my_participants(
     route_id: int | None = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     """Получить список своих участников."""

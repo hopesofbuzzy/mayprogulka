@@ -74,3 +74,24 @@ async def get_current_user(
         )
         
     return user
+
+def require_role(required_role: str):
+    """
+    Зависимость для проверки конкретной роли.
+    Использование: Depends(require_role("admin"))
+    """
+    async def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Доступ запрещен. Требуется роль: {required_role}"
+            )
+        return current_user
+    return role_checker
+
+
+# Готовые зависимости для каждой роли
+require_participant = require_role("participant")
+require_organizer = require_role("organizer")
+require_typist = require_role("typist")
+require_admin = require_role("admin")

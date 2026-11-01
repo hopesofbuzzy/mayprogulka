@@ -22,6 +22,12 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Roles:
+    # 1. participant
+    # 2. typist
+    # 3. organizer
+    # 4. admin
     role: Mapped[str] = mapped_column(String, default="participant")
 
     participants: Mapped[list["Participant"]] = relationship(back_populates="user")
