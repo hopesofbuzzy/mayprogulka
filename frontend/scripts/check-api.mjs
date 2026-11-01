@@ -12,5 +12,6 @@ assert.equal(paths.length, 20);
 assert.equal(paths.flatMap(([, item]) => Object.keys(item).filter((key) => methods.has(key))).length, 22);
 assert(paths.every(([path]) => path.startsWith('/api/v1/') && !path.includes('/api/v1/api/v1')));
 const generated = COMMENT_HEADER + astToString(await openapiTS(contractUrl));
-assert.equal(await readFile(new URL('../src/shared/api/schema.d.ts', import.meta.url), 'utf8'), generated);
-console.log('OpenAPI 3.1.0 / API 0.1.0: 20 paths, 22 operations; generated types reproduce exactly.');
+const checkedIn = await readFile(new URL('../src/shared/api/schema.d.ts', import.meta.url), 'utf8');
+assert(checkedIn.replace(/\r\n/g, '\n') === generated.replace(/\r\n/g, '\n'), 'Generated types differ; run npm run api:generate.');
+console.log('OpenAPI 3.1.0 / API 0.1.0: 20 paths, 22 operations; types reproduce with CRLF/LF normalized.');
