@@ -1,0 +1,50 @@
+.eyebrow { margin-bottom: 14px; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+.heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-block: 30px 18px; }
+.toolbar h2 { margin-right: auto; font-size: 24px; }
+.list { list-style: none; padding: 0; margin: 24px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.card, .state, .detail, .row, .confirmation { min-width: 0; background: #fffdf8; border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-wrap: anywhere; }
+.card h2 { font-size: 24px; line-height: 1.25; }
+.route { color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; margin-block: 24px; }
+.facts div { min-width: 0; }
+.facts dt { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+.facts dd { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.5; white-space: pre-wrap; }
+.full { grid-column: 1 / -1; }
+.textLink { color: var(--forest); font-size: 14px; font-weight: 700; text-underline-offset: 4px; }
+.secondary { min-height: 44px; border: 1px solid #bac8b9; border-radius: 10px; padding: 10px 16px; background: transparent; color: var(--forest); font-size: 13px; font-weight: 700; cursor: pointer; }
+.secondary:hover { background: #edf1e6; }
+.secondary:disabled, .submit:disabled { opacity: .65; cursor: not-allowed; }
+.state, .detail, .confirmation { margin-top: 28px; }
+.state h2, .detail h2, .confirmation h2 { font-size: 25px; line-height: 1.3; }
+.state p, .detail > p, .confirmation p { margin-top: 12px; line-height: 1.7; }
+.state > button, .state > a { margin-top: 20px; }
+.note, .progress { font-size: 13px; line-height: 1.7; color: var(--muted); margin-top: 18px; max-width: 720px; }
+.back { display: inline-block; margin-bottom: 24px; font-size: 13px; text-underline-offset: 4px; }
+.form { max-width: 850px; margin-top: 28px; }
+.rows { display: grid; gap: 24px; margin-top: 24px; }
+.row { margin: 0; }
+.row legend { padding-inline: 8px; font-size: 20px; font-weight: 700; color: var(--forest-deep); }
+.rowHeader { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; }
+.field { min-width: 0; }
+.field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.field input, .field select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid #b8c4b8; border-radius: 9px; padding: 10px 12px; background: #fffefb; color: var(--ink); font: inherit; font-size: 16px; }
+.field input:focus-visible, .field select:focus-visible { outline: 3px solid var(--forest); outline-offset: 2px; }
+.field [aria-invalid='true'] { border-color: #a52d18; }
+.fieldError { margin-top: 7px; color: #9b2d19; font-size: 12px; line-height: 1.6; }
+.fieldHint { margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.alert { padding: 18px 20px; margin-block: 22px; border: 1px solid #e6baa3; border-radius: 12px; background: #fcf0e6; color: #70371f; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.alert:focus { outline: 2px solid var(--coral); outline-offset: 3px; }
+.alert p + p { margin-top: 12px; }
+.alert button { margin-top: 16px; }
+.acknowledgement { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; }
+.acknowledgement input { margin-top: 6px; flex-shrink: 0; width: 18px; height: 18px; }
+.actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 26px; }
+.submit { min-height: 46px; border: 0; border-radius: 12px; padding: 12px 20px; color: #fff; background: var(--forest); font-size: 14px; font-weight: 700; cursor: pointer; }
+.submit:hover { background: var(--forest-deep); }
+.resultList { padding-left: 22px; line-height: 1.7; }
+.resultList li { padding-block: 12px; }
+.resultList span { display: block; }
+@media (max-width: 700px) { .list, .fields { grid-template-columns: minmax(0, 1fr); } .card, .state, .detail, .row, .confirmation { padding: 22px; } .heading { gap: 20px; } .facts { gap: 18px 16px; } }
+@media (max-width: 390px) { .facts { grid-template-columns: minmax(0, 1fr); } }

@@ -47,7 +47,7 @@ export function PublicLayout() {
       window.scrollTo(0, 0);
       previousPath.current = pathname;
     }
-    const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет' } as Record<string, string>)[pathname] ?? 'Страница не найдена';
+    const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
     document.title = `${title} — Майская прогулка`;
   }, [pathname]);
   return (

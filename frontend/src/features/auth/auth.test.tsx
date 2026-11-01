@@ -14,7 +14,14 @@ const routers: ReturnType<typeof createMemoryRouter>[] = [];
 const tokenReply = (user = 11) => ({ access_token: `test-only-${user}`, user_id: user, role: 'participant' });
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-beforeEach(() => { sessionStore.logout(); transport.mockReset(); vi.stubGlobal('fetch', transport); });
+beforeEach(() => {
+  sessionStore.logout(); transport.mockReset();
+  vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, window.location.origin);
+    if (url.pathname === '/api/v1/participants/my') return Promise.resolve(json({ participants: [] }));
+    return transport(input, init);
+  }) satisfies typeof fetch);
+});
 afterEach(() => {
   cleanup();
   sessionStore.logout();
@@ -45,7 +52,7 @@ async function fillSignup(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('account forms', () => {
-  it('registers with exactly the contract DTO, logs in on 201 and does not request participants or auth/me', async () => {
+  it('registers with exactly the contract DTO, logs in on 201 and opens the account without auth/me', async () => {
     transport.mockResolvedValue(json(tokenReply(), 201));
     const { user } = mount('/signup');
     await fillSignup(user);
@@ -58,8 +65,9 @@ describe('account forms', () => {
     expect(request.headers.has('Authorization')).toBe(false);
     expect(transport).toHaveBeenCalledTimes(1);
     expect(sessionStore.getSnapshot().session?.userId).toBe(11);
-    expect(screen.getByText(/Раздел управления участниками появится отдельным этапом/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Добавить участника|Оплатить/ })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Вы пока не зарегистрировали участников' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Добавить участника/ })[0]).toHaveAttribute('href', '/account/participants/new');
+    expect(screen.queryByRole('button', { name: /Оплатить/ })).not.toBeInTheDocument();
   });
   it('validates required fields, email, password length and confirmation without a request', async () => {
     const { user } = mount('/signup');

@@ -14,6 +14,8 @@ export const appRoutes: RouteObject[] = [{
     { path: 'signup', lazy: async () => ({ Component: (await import('../pages/AuthPage')).SignupPage }) },
     { Component: RequireAuth, children: [
       { path: 'account', lazy: async () => ({ Component: (await import('../pages/AccountPage')).AccountPage }) },
+      { path: 'account/participants/new', lazy: async () => ({ Component: (await import('../pages/ParticipantRegistrationPage')).ParticipantRegistrationPage }) },
+      { path: 'account/participants/:id', lazy: async () => ({ Component: (await import('../pages/ParticipantDetailPage')).ParticipantDetailPage }) },
     ] },
     { path: '*', Component: NotFoundPage },
   ],
