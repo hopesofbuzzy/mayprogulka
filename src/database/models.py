@@ -206,6 +206,12 @@ class Participant(Base):
         cascade="all, delete-orphan",
     )
 
+    payment_status: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default="unpaid"
+    )
+
 
 class CheckpointPass(Base):
     """Отметка о прохождении участником контрольного пункта (Schema: Checkpoint_Pass)."""

@@ -810,10 +810,8 @@ components:
     # ---------- PARTICIPANTS ----------
     ParticipantRegisterRequest:
       type: object
-      required: [route_id, participants]
+      required: [participants]
       properties:
-        route_id:
-          type: integer
         participants:
           type: array
           items:
@@ -821,12 +819,14 @@ components:
 
     ParticipantData:
       type: object
-      required: [surname, name, date_of_birth, gender]
+      required: [surname, route_id, name, date_of_birth, gender]
       properties:
         surname:
           type: string
         name:
           type: string
+        route_id:
+          type: integer
         middle_name:
           type: string
         date_of_birth:
@@ -848,7 +848,7 @@ components:
             properties:
               id:
                 type: integer
-              form_number:
+              form_id:
                 type: string
               surname:
                 type: string
@@ -868,7 +868,7 @@ components:
             properties:
               id:
                 type: integer
-              form_number:
+              form_id:
                 type: string
               surname:
                 type: string
@@ -883,7 +883,7 @@ components:
               has_finished:
                 type: boolean
               map_barcode:
-                type: string
+                type: integer
                 nullable: true
 
     PaymentRequest:
@@ -1090,14 +1090,14 @@ components:
       properties:
         participant_id:
           type: integer
-        form_number:
+        form_id:
           type: string
 
     MatchRequest:
       type: object
-      required: [form_number, map_barcode]
+      required: [form_id, map_barcode]
       properties:
-        form_number:
+        form_id:
           type: string
           description: Номер бумажной анкеты
         map_barcode:
@@ -1112,7 +1112,7 @@ components:
           enum: [ok]
         participant_id:
           type: integer
-        form_number:
+        form_id:
           type: string
         map_barcode:
           type: string
@@ -1355,7 +1355,7 @@ components:
           type: integer
           nullable: true
           description: Заполняется только после сопоставления с анкетой (/typist/match)
-        form_number:
+        form_id:
           type: string
           nullable: true
           description: Номер анкеты, с которой сопоставлена эта карта
