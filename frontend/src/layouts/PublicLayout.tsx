@@ -37,7 +37,8 @@ function PublicNav() {
 }
 
 export function PublicLayout() {
-  const { isAuthenticated, expired } = useAuth();
+  const { isAuthenticated, expired, session } = useAuth();
+  const typist = session?.role === 'typist';
   const { pathname } = useLocation();
   const previousPath = useRef(pathname);
   const main = useRef<HTMLElement>(null);
@@ -48,21 +49,22 @@ export function PublicLayout() {
       previousPath.current = pathname;
     }
     const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
-    document.title = `${/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Тестовая оплата' : title} — Майская прогулка`;
+    const staffTitle = ({ '/staff/typist': 'Рабочее место наборщика', '/staff/typist/new': 'Бумажная анкета', '/staff/typist/match': 'Сопоставление с картой', '/staff/typist/unlinked': 'Непривязанные карты' } as Record<string, string>)[pathname];
+    document.title = `${staffTitle ?? (/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Тестовая оплата' : title)} — Майская прогулка`;
   }, [pathname]);
   return (
     <>
       <a className={styles.skip} href="#main">Перейти к содержимому</a>
       <div className={styles.topStrip} aria-hidden="true" />
       <header className={styles.header}>
-        <div className={`container ${styles.headerInner}`}>
+        <div className={`container ${styles.headerInner}`} data-staff={typist}>
           <Link to="/" className={styles.brand} aria-label="Майская прогулка — главная">
             <Logo />
             <span><strong>Екатеринбург</strong><small>с 1984 года</small></span>
           </Link>
           <PublicNav key={pathname} />
           <div className={styles.accountActions}>
-            <Link className={styles.account} to={isAuthenticated ? '/account' : '/login'} aria-label="Личный кабинет"><span className={styles.accountPrefix}>Личный&nbsp;</span>кабинет <span aria-hidden="true">↗</span></Link>
+            <Link className={`${styles.account} ${typist ? styles.staffAccount : ''}`} to={typist ? '/staff/typist' : isAuthenticated ? '/account' : '/login'} aria-label={typist ? 'Рабочее место' : 'Личный кабинет'}>{typist ? <span>Рабочее место</span> : <><span className={styles.accountPrefix}>Личный&nbsp;</span>кабинет</>} <span aria-hidden="true">↗</span></Link>
             {isAuthenticated && <LogoutButton className={styles.desktopLogout} />}
           </div>
         </div>

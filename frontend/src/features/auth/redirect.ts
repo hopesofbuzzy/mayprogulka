@@ -1,4 +1,5 @@
-const allowedPaths = new Set(['/', '/routes', '/account']);
+const staffPaths = new Set(['/staff/typist', '/staff/typist/new', '/staff/typist/match', '/staff/typist/unlinked']);
+const allowedPaths = new Set(['/', '/routes', '/account', ...staffPaths]);
 
 export function safeReturnTo(value: unknown): string {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || [...value].some(char => char.charCodeAt(0) <= 32)) return '/account';
@@ -13,6 +14,7 @@ export function safeReturnTo(value: unknown): string {
     }
     if (unsafe(decoded)) return '/account';
     const url = new URL(value, 'https://internal.invalid');
+    if (staffPaths.has(url.pathname) && value !== url.pathname) return '/account';
     const participantPath = /^\/account\/participants\/(new|\d+(?:\/pay)?)$/.exec(url.pathname);
     const supportedParticipant = participantPath && (participantPath[1] === 'new' || Number.isSafeInteger(Number(participantPath[1]!.split('/')[0])));
     if (url.origin !== 'https://internal.invalid' || (!allowedPaths.has(url.pathname) && !supportedParticipant)) return '/account';
@@ -20,6 +22,7 @@ export function safeReturnTo(value: unknown): string {
   } catch { return '/account'; }
 }
 
-export function returnToFromState(state: unknown) {
-  return safeReturnTo(state && typeof state === 'object' && 'returnTo' in state ? state.returnTo : undefined);
+export function returnToFromState(state: unknown, role?: string) {
+  if (state && typeof state === 'object' && 'returnTo' in state) return safeReturnTo(state.returnTo);
+  return role === 'typist' ? '/staff/typist' : '/account';
 }

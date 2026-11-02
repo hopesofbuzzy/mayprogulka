@@ -13,6 +13,8 @@
 .accountActions { display: flex; align-items: center; gap: 10px; justify-self: end; }
 .account { display: inline-flex; align-items: center; text-decoration: none; border: 1px solid #ccd4ca; border-radius: 10px; background: transparent; color: var(--forest); min-height: 40px; padding-inline: 13px; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .account > span[aria-hidden] { margin-left: 10px; }
+.staffAccount > span:first-child { line-height: 1.2; }
+@media (max-width: 900px) { .staffAccount { font-size: 11px; padding-inline: 9px; } .staffAccount > span:first-child { max-width: 64px; white-space: normal; text-align: center; } .headerInner[data-staff='true'] { column-gap: 16px; } }
 .desktopLogout { min-height: 40px; padding: 0 4px; border: 0; background: transparent; color: var(--forest); font-size: 12px; font-weight: 700; cursor: pointer; }
 .mobileLogout { display: none; }
 .sessionNotice { padding: 12px 20px; background: var(--mint); color: var(--ink); font-size: 13px; line-height: 1.6; text-align: center; }

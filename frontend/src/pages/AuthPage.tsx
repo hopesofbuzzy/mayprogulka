@@ -12,9 +12,9 @@ const emptyFields: AuthFields = { username: '', email: '', password: '', confirm
 const labels: Record<FieldName, string> = { username: 'Имя пользователя', email: 'Email', password: 'Пароль', confirmation: 'Повторите пароль' };
 
 function AuthPage({ mode }: { mode: AuthMode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, session } = useAuth();
   const location = useLocation();
-  const returnTo = returnToFromState(location.state);
+  const returnTo = returnToFromState(location.state, session?.role);
   const [values, setValues] = useState<AuthFields>(emptyFields);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [message, setMessage] = useState('');

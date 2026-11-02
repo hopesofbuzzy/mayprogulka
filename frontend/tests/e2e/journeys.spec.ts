@@ -96,6 +96,7 @@ test('payment: keyboard method selection, one POST, authoritative GET and null P
   await login(page, api, '/account/participants/42');
   await page.getByRole('link', { name: 'Тестовая оплата', exact: true }).click();
   const radio = page.getByRole('radio', { name: 'СБП (тест)', exact: true });
+  await expect(radio).toBeEnabled();
   await radio.focus(); await page.keyboard.press('Space');
   await expect(radio).toBeChecked();
   expect(await radio.evaluate(element => getComputedStyle(element).outlineStyle)).not.toBe('none');
@@ -122,6 +123,7 @@ test('payment: keyboard method selection, one POST, authoritative GET and null P
 for (const mode of ['408', 'network'] as const) test(`uncertain payment ${mode}: GET and back never retry POST`, async ({ page, api }, info) => {
   api.paymentMode = mode;
   await login(page, api, payPage);
+  await expect(page.getByRole('button', { name: 'Выполнить тестовую оплату', exact: true })).toBeEnabled();
   const gets = api.count('GET', myPath);
   await page.getByRole('button', { name: 'Выполнить тестовую оплату', exact: true }).click();
   await expect(page.getByText(/Результат тестовой операции неизвестен/)).toBeVisible();

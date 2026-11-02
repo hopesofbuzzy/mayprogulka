@@ -19,6 +19,14 @@ export class MockApi {
   readonly calls: Call[] = [];
   readonly password = randomUUID(); // Generated per test; never logged or persisted.
   identity: 'A' | 'B' = 'A';
+  role = 'participant';
+  paperMode: Mode = 'success';
+  matchMode: Mode = 'success';
+  unlinkedMode: 'success' | '403' | '500' = 'success';
+  maps: components['schemas']['UnlinkedMapResponse'][] = [{ id: 1, barcode: '000001', participant_id: null }, { id: 2, barcode: '000002' }];
+  private staffGate: ReturnType<typeof deferred<Reply>> | null = null;
+  private staffSeen = deferred<void>();
+  private staffCompleted = deferred<void>();
   routeMode: 'success' | '500' | 'html' = 'success';
   registrationMode: Mode = 'success';
   paymentMode: Mode = 'success';
@@ -33,6 +41,10 @@ export class MockApi {
   deferPayment() {
     this.paymentGate = deferred<Reply>();
     return { seen: this.paymentSeen.promise, release: this.paymentGate.release, completed: this.completed.promise };
+  }
+  deferStaff() {
+    this.staffGate = deferred<Reply>();
+    return { seen: this.staffSeen.promise, release: this.staffGate.release, completed: this.staffCompleted.promise };
   }
   async install(context: BrowserContext, origin: string) {
     context.on('page', page => page.on('pageerror', () => this.errors.push('Uncaught browser JavaScript error')));
@@ -69,7 +81,7 @@ export class MockApi {
       expect(body.password === this.password, 'Only the generated synthetic password is allowed').toBe(true);
       expect(body.username === 'synthetic-test-account', 'Only the synthetic UI account is allowed').toBe(true);
       if (signup) expect(body.email === 'account@example.test').toBe(true);
-      return reply({ access_token: this.tokens[this.identity], user_id: this.identity === 'A' ? 7 : 9, role: 'participant' }, signup ? 201 : 200);
+      return reply({ access_token: this.tokens[this.identity], user_id: this.identity === 'A' ? 7 : 9, role: this.role }, signup ? 201 : 200);
     }
     if (method === 'GET' && path === '/api/v1/participants/my') {
       expect(authenticated, 'Private GET must use only the current synthetic credentials').toBe(true);
@@ -108,6 +120,37 @@ export class MockApi {
       if (this.paymentMode === '408') return reply({}, 408);
       this.mine = this.mine.map(item => item.id === 42 ? { ...item, payment_status: 'paid' } : item);
       return reply({ status: 'synthetic-operation-status', payment_id: 'synthetic-operation-id', form_pdf_url: this.pdfUrl });
+    }
+    if (method === 'GET' && path === '/api/v1/typist/unlinked') {
+      expect(authenticated && this.role === 'typist', 'Staff GET requires exact typist synthetic session').toBe(true);
+      expect(url.search).toBe('?limit=100');
+      return this.unlinkedMode !== 'success' ? reply({}, Number(this.unlinkedMode)) : reply({ maps: this.maps });
+    }
+    if (method === 'POST' && (path === '/api/v1/typist/paper-form' || path === '/api/v1/typist/match')) {
+      expect(authenticated && this.role === 'typist', 'Staff mutation requires exact typist synthetic session').toBe(true);
+      const paper = path.endsWith('/paper-form');
+      const body = request.postDataJSON() as Record<string, unknown>;
+      if (paper) {
+        expect(Object.keys(body).sort()).toEqual(['date_of_birth', 'email', 'gender', 'middle_name', 'name', 'phone_number', 'route_id', 'surname']);
+        expect(body.route_id).toBe(15); expect(body.email === 'paper@example.test').toBe(true); expect(body.middle_name).toBeNull();
+      } else {
+        expect(Object.keys(body).sort()).toEqual(['barcode', 'form_id']);
+        expect(body.barcode === '000001', 'Synthetic barcode must retain its zeros exactly').toBe(true);
+        expect(typeof body.form_id === 'string' && body.form_id.startsWith('000'), 'Synthetic form ID remains a string with leading zeros').toBe(true);
+      }
+      this.staffSeen.release();
+      if (this.staffGate) {
+        const delayed = await this.staffGate.promise;
+        try { await reply(delayed.body, delayed.status); } finally { this.staffCompleted.release(); }
+        return;
+      }
+      const mode = paper ? this.paperMode : this.matchMode;
+      if (mode === 'network') return route.abort('failed');
+      if (mode === '408') return reply({}, 408);
+      if (mode === '422') return reply({ detail: [{ loc: ['body', paper ? 'email' : 'barcode'], msg: 'untrusted staff detail' }] }, 422);
+      if (paper) return reply({ participant_id: 101, form_id: '000P01', payment_status: 'paid' } satisfies components['schemas']['PaperFormResponse'], 201);
+      this.maps = this.maps.filter(map => map.barcode !== body.barcode);
+      return reply({ status: 'synthetic-match-status', barcode: '000001', participant_id: 101, participant_name: 'Тестов Бумажный', message: 'Синтетический ответ сервера' } satisfies components['schemas']['MatchResponse']);
     }
     // No fallback/continue/fetch: even a mistaken mutating request cannot reach FastAPI.
     this.violations.push('Unexpected API method/path blocked');
