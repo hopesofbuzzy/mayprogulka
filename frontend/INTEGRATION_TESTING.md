@@ -155,6 +155,8 @@ Probe дополнительно использует UNREACHABLE для отс�
 
 ## 8. Локальная приёмка frontend
 
+TASK-06 добавляет `tests/e2e/typist.spec.ts` (17 сценариев × 4 viewport) с точной mock-ролью typist, тремя типизированными staff-путями и тем же блокирующим network guard. Живой typist smoke **не входит** в probe или E2E: POST paper-form/match запрещены без отдельного явного разрешения владельца тестовой БД. GET unlinked с staff-токеном требует согласования; выданных credentials здесь нет. Не добавляйте токен в CLI/env example/артефакты и не проверяйте organizer/admin как расширение typist-прав без серверной матрицы RBAC. Staff API имеют зрелость C, не real-API verified. Локальный запуск только staff: `npm.cmd run test:e2e -- tests/e2e/typist.spec.ts`.
+
 ```powershell
 npm.cmd ci
 npm.cmd run api:check
