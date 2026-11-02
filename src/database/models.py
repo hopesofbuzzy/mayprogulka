@@ -7,7 +7,9 @@ from sqlalchemy import (
     Boolean,
     Date,
     ForeignKey,
+    DateTime
 )
+from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
@@ -113,6 +115,21 @@ class Checkpoint(Base):
         nullable=False,
     )
 
+    is_start: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False
+    )
+
+    is_finish: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False
+    )
+
+    order: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
     # Координаты храним строкой (TEXT в схеме), напр. "55.75,37.61".
     coordinates: Mapped[str] = mapped_column(
         String,
@@ -154,8 +171,8 @@ class Participant(Base):
         nullable=False,
     )
 
-    form_id: Mapped[int] = mapped_column(
-        Integer,
+    form_id: Mapped[str] = mapped_column(
+        String,
         nullable=False,
     )
 
@@ -256,13 +273,14 @@ class CheckpointPass(Base):
     participant_id: Mapped[int] = mapped_column(
         "participant",
         ForeignKey("participants.id"),
-        nullable=False,
+        nullable=False
     )
 
     # Момент прохождения пункта; в схеме тип TEXT, поэтому храним ISO-строку.
-    datetime: Mapped[str] = mapped_column(
-        String,
-        nullable=False,
+    passed_at: Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=datetime.utcnow, 
+        nullable=False
     )
 
     # Контрольный пункт, который был пройден.
@@ -290,13 +308,14 @@ class Map(Base):
     # Внешний ключ на участника.
     participant_id: Mapped[int] = mapped_column(
         ForeignKey("participants.id"),
-        nullable=False,
+        nullable=True,
     )
 
     # Баркод карты (INTEGER в схеме).
-    barcode: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
+    barcode: Mapped[str] = mapped_column(
+        String,
+        nullable=True,
+        unique=True
     )
 
     # Участник, которому принадлежит карта.

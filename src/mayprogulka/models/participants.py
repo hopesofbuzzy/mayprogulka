@@ -43,7 +43,7 @@ class ParticipantListItem(BaseModel):
     payment_status: str
     has_started: bool
     has_finished: bool
-    map_barcode: Optional[int] = None
+    map_barcode: Optional[str] = None
 
     class Config:
         from_attributes = True
