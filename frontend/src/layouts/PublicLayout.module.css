@@ -17,6 +17,8 @@
 @media (max-width: 900px) { .staffAccount { font-size: 11px; padding-inline: 9px; } .staffAccount > span:first-child { max-width: 64px; white-space: normal; text-align: center; } .headerInner[data-staff='true'] { column-gap: 16px; } }
 .desktopLogout { min-height: 40px; padding: 0 4px; border: 0; background: transparent; color: var(--forest); font-size: 12px; font-weight: 700; cursor: pointer; }
 .mobileLogout { display: none; }
+.nav .mobileAdmin { display: none; }
+@media (max-width: 767px) { .nav .mobileAdmin { display: block; white-space: normal; } }
 .sessionNotice { padding: 12px 20px; background: var(--mint); color: var(--ink); font-size: 13px; line-height: 1.6; text-align: center; }
 .sessionNotice a { text-underline-offset: 3px; }
 .skip { position: absolute; z-index: 10; top: 4px; left: 16px; padding: 10px; background: var(--paper); transform: translateY(-160%); }

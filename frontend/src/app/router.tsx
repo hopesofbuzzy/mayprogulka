@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router';
 import { AppLayout } from './AppLayout';
 import { RequireAuth } from '../features/auth/RequireAuth';
 import { RequireTypist } from '../features/typist/RequireTypist';
+import { RequireAdmin } from '../features/adminRoutes/RequireAdmin';
 import { HomePage } from '../pages/HomePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
@@ -17,6 +18,7 @@ export const appRoutes: RouteObject[] = [{
     { path: 'login', lazy: async () => ({ Component: (await import('../pages/AuthPage')).LoginPage }) },
     { path: 'signup', lazy: async () => ({ Component: (await import('../pages/AuthPage')).SignupPage }) },
     { Component: RequireAuth, children: [
+      { Component: RequireAdmin, children: [{ path: 'staff/routes', lazy: async () => ({ Component: (await import('../pages/AdminRoutesPage')).AdminRoutesPage }) }] },
       { path: 'account', lazy: async () => ({ Component: (await import('../pages/AccountPage')).AccountPage }) },
       { path: 'account/participants/new', lazy: async () => ({ Component: (await import('../pages/ParticipantRegistrationPage')).ParticipantRegistrationPage }) },
       { path: 'account/participants/:id', lazy: async () => ({ Component: (await import('../pages/ParticipantDetailPage')).ParticipantDetailPage }) },

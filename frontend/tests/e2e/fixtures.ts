@@ -30,6 +30,11 @@ export class MockApi {
   routeMode: 'success' | '500' | 'html' | 'empty' | 'invalid' = 'success';
   publicRoutes: components['schemas']['RouteResponse'][] = structuredClone(routes);
   checkpointMode: 'success' | 'empty' | '500' | '403' | 'network' | 'invalid' = 'success';
+  adminMode: 'success' | '422' | '408' | '409' | '403' | 'network' = 'success';
+  adminReadFailure = false;
+  private adminGate: ReturnType<typeof deferred<Reply>> | null = null;
+  private adminSeen = deferred<void>();
+  private adminCompleted = deferred<void>();
   registrationMode: Mode = 'success';
   paymentMode: Mode = 'success';
   pdfUrl: string | null = null;
@@ -40,6 +45,10 @@ export class MockApi {
   private completed = deferred<void>();
 
   count(method: string, path: string) { return this.calls.filter(call => call.method === method && call.path === path).length; }
+  deferAdmin() {
+    this.adminGate = deferred<Reply>();
+    return { seen: this.adminSeen.promise, release: this.adminGate.release, completed: this.adminCompleted.promise };
+  }
   deferPayment() {
     this.paymentGate = deferred<Reply>();
     return { seen: this.paymentSeen.promise, release: this.paymentGate.release, completed: this.completed.promise };
@@ -92,6 +101,41 @@ export class MockApi {
         { id: 2, route_id: id, name: 'Тестовый лесной КП', address: 'Синтетический адрес КП', coordinates: 'opaque: format not agreed', order: 2, is_start: false, is_finish: false },
       ];
       return reply({ checkpoints: this.checkpointMode === 'empty' ? [] : checkpoints });
+    }
+    if ((method === 'POST' && path === '/api/v1/admin/routes') || (['PUT', 'DELETE'].includes(method) && /^\/api\/v1\/admin\/routes\/\d+$/.test(path))) {
+      expect(authenticated && this.role === 'admin', 'Admin mutations require exact current admin synthetic credentials').toBe(true);
+      expect(url.search).toBe('');
+      const id = method === 'POST' ? 101 : Number(path.split('/').at(-1));
+      if (method !== 'POST') expect(this.publicRoutes.some(item => item.id === id), 'Mutation ID must come from the public fixture list').toBe(true);
+      call.routeId = id;
+      const body = method === 'DELETE' ? {} : request.postDataJSON() as Record<string, unknown>;
+      if (method === 'POST') {
+        expect(Object.keys(body).sort()).toEqual(['distance', 'is_active', 'name', 'year', ...(Object.hasOwn(body, 'description') ? ['description'] : [])].sort());
+        expect(Number.isSafeInteger(body.year)).toBe(true); expect(typeof body.name).toBe('string');
+        expect(typeof body.distance === 'number' && Number.isFinite(body.distance)).toBe(true); expect(typeof body.is_active).toBe('boolean');
+      } else if (method === 'PUT') {
+        expect(Object.keys(body).length).toBeGreaterThan(0);
+        expect(Object.keys(body).every(field => ['name', 'distance', 'description', 'is_active'].includes(field))).toBe(true);
+        if (Object.hasOwn(body, 'name')) expect(typeof body.name).toBe('string');
+        if (Object.hasOwn(body, 'distance')) expect(typeof body.distance === 'number' && Number.isFinite(body.distance)).toBe(true);
+        if (Object.hasOwn(body, 'is_active')) expect(typeof body.is_active).toBe('boolean');
+      } else expect(request.postData()).toBeNull();
+      if (Object.hasOwn(body, 'description')) expect(body.description === null || typeof body.description === 'string').toBe(true);
+      this.adminSeen.release();
+      if (this.adminGate) {
+        const delayed = await this.adminGate.promise;
+        try { await (delayed.status === 204 ? route.fulfill({ status: 204, body: '' }) : reply(delayed.body, delayed.status)); }
+        finally { this.adminCompleted.release(); }
+        return;
+      }
+      if (this.adminMode === 'network') return route.abort('failed');
+      if (this.adminMode === '422') return reply({ detail: [{ loc: ['body', 'name'], msg: 'untrusted admin detail', input: 'not for rendering' }] }, 422);
+      if (this.adminMode !== 'success') return reply({}, Number(this.adminMode));
+      if (this.adminReadFailure) this.routeMode = '500';
+      if (method === 'DELETE') { this.publicRoutes = this.publicRoutes.filter(item => item.id !== id); return route.fulfill({ status: 204, body: '' }); }
+      const result = method === 'POST' ? { ...body, id } as components['schemas']['RouteResponse'] : { ...this.publicRoutes.find(item => item.id === id)!, ...body };
+      if (method === 'POST') this.publicRoutes.push(result); else this.publicRoutes = this.publicRoutes.map(item => item.id === id ? result : item);
+      return reply(result, method === 'POST' ? 201 : 200);
     }
     if (method === 'POST' && ['/api/v1/auth/login', '/api/v1/auth/register'].includes(path)) {
       expect(Boolean(token), 'Auth request must not carry credentials').toBe(false);
@@ -212,6 +256,9 @@ export async function familyForm(page: Page, api: MockApi) {
 export async function fillFamily(page: Page) {
   await page.getByRole('option', { name: /Тестовая лесная тропа/ }).waitFor({ state: 'attached' });
   await page.getByRole('button', { name: 'Добавить ещё участника' }).click();
+  // addRow moves focus in requestAnimationFrame; wait before filling row 1 so that
+  // the scheduled row-2 focus cannot interrupt the first fill on a slower frame.
+  await expect(page.getByRole('group', { name: 'Участник 2', exact: true }).getByLabel('Фамилия', { exact: true })).toBeFocused();
   for (const index of [1, 2]) {
     const row = page.getByRole('group', { name: `Участник ${index}`, exact: true });
     for (const [label, value] of [['Фамилия', index === 1 ? 'Тестов' : 'Тестова'], ['Имя', index === 1 ? 'Первый' : 'Вторая'], ['Дата рождения', '1995-05-20'], ['Email', 'family@example.test'], ['Телефон', 'местный 123']]) await row.getByLabel(label!, { exact: true }).fill(value!);

@@ -1,4 +1,4 @@
-const staffPaths = new Set(['/staff/typist', '/staff/typist/new', '/staff/typist/match', '/staff/typist/unlinked']);
+const staffPaths = new Set(['/staff/routes', '/staff/typist', '/staff/typist/new', '/staff/typist/match', '/staff/typist/unlinked']);
 const allowedPaths = new Set(['/', '/routes', '/account', ...staffPaths]);
 
 export function safeReturnTo(value: unknown): string {
@@ -24,5 +24,5 @@ export function safeReturnTo(value: unknown): string {
 
 export function returnToFromState(state: unknown, role?: string) {
   if (state && typeof state === 'object' && 'returnTo' in state) return safeReturnTo(state.returnTo);
-  return role === 'typist' ? '/staff/typist' : '/account';
+  return role === 'admin' ? '/staff/routes' : role === 'typist' ? '/staff/typist' : '/account';
 }

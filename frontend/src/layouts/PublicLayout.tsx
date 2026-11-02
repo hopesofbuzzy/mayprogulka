@@ -6,7 +6,7 @@ import { LogoutButton } from '../features/auth/LogoutButton';
 import styles from './PublicLayout.module.css';
 
 function PublicNav() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, session } = useAuth();
   const [open, setOpen] = useState(false);
   const navId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
@@ -31,6 +31,7 @@ function PublicNav() {
         <NavLink to="/how-to">Как участвовать</NavLink>
         <NavLink to="/faq">Вопросы</NavLink>
         <span aria-disabled="true" title="Раздел ещё не реализован">Организаторам</span>
+        {session?.role === 'admin' && <NavLink className={styles.mobileAdmin} to="/staff/routes">Управление маршрутами</NavLink>}
         {isAuthenticated && <LogoutButton className={styles.mobileLogout} />}
       </nav>
     </div>
@@ -40,6 +41,8 @@ function PublicNav() {
 export function PublicLayout() {
   const { isAuthenticated, expired, session } = useAuth();
   const typist = session?.role === 'typist';
+  const admin = session?.role === 'admin';
+  const staff = typist || admin;
   const { pathname } = useLocation();
   const previousPath = useRef(pathname);
   const main = useRef<HTMLElement>(null);
@@ -50,7 +53,7 @@ export function PublicLayout() {
       previousPath.current = pathname;
     }
     const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/how-to': 'Как участвовать', '/faq': 'Вопросы и ответы', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (/^\/routes\/[^/]+\/?$/.test(pathname) ? 'Детали маршрута' : pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
-    const staffTitle = ({ '/staff/typist': 'Рабочее место наборщика', '/staff/typist/new': 'Бумажная анкета', '/staff/typist/match': 'Сопоставление с картой', '/staff/typist/unlinked': 'Непривязанные карты' } as Record<string, string>)[pathname];
+    const staffTitle = ({ '/staff/routes': 'Управление маршрутами', '/staff/typist': 'Рабочее место наборщика', '/staff/typist/new': 'Бумажная анкета', '/staff/typist/match': 'Сопоставление с картой', '/staff/typist/unlinked': 'Непривязанные карты' } as Record<string, string>)[pathname];
     document.title = `${staffTitle ?? (/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Тестовая оплата' : title)} — Майская прогулка`;
   }, [pathname]);
   return (
@@ -58,14 +61,14 @@ export function PublicLayout() {
       <a className={styles.skip} href="#main">Перейти к содержимому</a>
       <div className={styles.topStrip} aria-hidden="true" />
       <header className={styles.header}>
-        <div className={`container ${styles.headerInner}`} data-staff={typist}>
+        <div className={`container ${styles.headerInner}`} data-staff={staff}>
           <Link to="/" className={styles.brand} aria-label="Майская прогулка — главная">
             <Logo />
             <span><strong>Екатеринбург</strong><small>с 1984 года</small></span>
           </Link>
           <PublicNav key={pathname} />
           <div className={styles.accountActions}>
-            <Link className={`${styles.account} ${typist ? styles.staffAccount : ''}`} to={typist ? '/staff/typist' : isAuthenticated ? '/account' : '/login'} aria-label={typist ? 'Рабочее место' : 'Личный кабинет'}>{typist ? <span>Рабочее место</span> : <><span className={styles.accountPrefix}>Личный&nbsp;</span>кабинет</>} <span aria-hidden="true">↗</span></Link>
+            <Link className={`${styles.account} ${staff ? styles.staffAccount : ''}`} to={admin ? '/staff/routes' : typist ? '/staff/typist' : isAuthenticated ? '/account' : '/login'} aria-label={admin ? 'Управление маршрутами' : typist ? 'Рабочее место' : 'Личный кабинет'}>{staff ? <span>{admin ? 'Маршруты' : 'Рабочее место'}</span> : <><span className={styles.accountPrefix}>Личный&nbsp;</span>кабинет</>} <span aria-hidden="true">↗</span></Link>
             {isAuthenticated && <LogoutButton className={styles.desktopLogout} />}
           </div>
         </div>
