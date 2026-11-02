@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   return defineTestConfig({
     plugins: [react()],
     server: {
-      proxy: {
+      proxy: mode === 'e2e' ? {} : {
         '/api': {
           target: env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
           changeOrigin: true,
@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     test: {
+      include: ['src/**/*.test.{ts,tsx}'],
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       restoreMocks: true,
