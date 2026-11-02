@@ -80,7 +80,40 @@ npm.cmd run build
 
 Отчёт и снимки: `../local_docs/TASK-03-REPORT.md`, `../local_docs/task-03-artifacts/`. В обычном приложении нет моков. Успешные сценарии unit/browser проверяются на изолированном транспорте; реальные записи разрешено создавать только на отдельно согласованной тестовой базе.
 
-В этой итерации дополнительно выполнена разовая браузерная проверка в Chromium через имеющийся Playwright; он не добавлен в зависимости проекта. Снимки и результаты находятся в игнорируемой `.artifacts/`. Полноценный переносимый набор браузерной регрессии пока не настроен. Результаты и ограничения: `../docs/frontend/TASK-01-REPORT.md`.
+Исторические разовые browser-проверки TASK-01..04 сохранены в локальных артефактах. В TASK-05 добавлен переносимый Playwright Test; текущий запуск описан ниже, без зависимости от внешнего runtime или пользовательского абсолютного пути.
+
+## Переносимые проверки TASK-05
+
+Это **mock browser E2E**, полностью изолированный от живого FastAPI. После чистого клона, из `frontend/`:
+
+```powershell
+npm.cmd ci
+npx.cmd playwright install chromium
+npm.cmd run test:e2e
+```
+
+Playwright Test **1.64.1** закреплён как dev-only зависимость и в lock-файле, Chromium устанавливается отдельно. Применяются только синтетические данные и созданные в памяти mock-credentials; настоящие аккаунты/БД не нужны. На POSIX используйте `npm`/`npx`. `npm run test:e2e:headed -- --project=mobile` открывает видимый Chromium при ручной отладке.
+
+Тесты запускают собственный Vite на **127.0.0.1:4179** с `--strictPort`, не переиспользуют чужой процесс. Если порт занят — освободите его или согласованно измените URL и порт в `playwright.config.ts`; автоматического перехода на случайный сервер нет. Только в `mode=e2e` dev proxy отключён. Test-context перехватывает API: любой неожиданный метод/путь или внешний origin блокируется и проваливает обычный сценарий, без fallback к backend. В runtime-приложение mocks не добавлены.
+
+11 сценариев выполняются в четырёх viewport: 1280×720, 390×844, 360×800, 768×1024 — **44 запуска**. Проверяются публичная сеть/ошибки/404, signup/login/logout, семейная регистрация, индексные 422 и 408, осознанный повтор регистрации, тестовая оплата с GET, неизвестный исход, пустая PDF policy, смена аккаунта при поздних 200/401, back/forward/reload, переполнение и pageerror. Отдельный сценарий проверяет сам запрет неожиданного GET/POST и внешней сети. E2E не импортирует вторую сессию и не меняет production allowlist.
+
+Результаты и минимальные скриншоты автоматически сохраняются в `../local_docs/task-05-artifacts/`; trace/video/HAR отключены для исключения credentials из артефактов. Скриншоты содержат только синтетические записи. `npm test` остаётся Vitest-набором из `src/`, E2E и Node probe-тесты не смешиваются с его счётчиком. E2E TypeScript проверяется отдельным `tsconfig.e2e.json` в общей команде typecheck.
+
+Для **отдельного read-only** probe нужен явно заданный согласованный тестовый origin:
+
+```powershell
+$env:LIVE_API_ORIGIN = 'http://127.0.0.1:8000'
+npm.cmd run integration:preflight
+Remove-Item Env:LIVE_API_ORIGIN
+npm.cmd run test:preflight
+```
+
+Без origin — `NOT_RUN`, exit 2, без сети. Недоступный backend — `UNREACHABLE`, ненулевой exit. Probe делает только GET `/openapi.json` и GET `/api/v1/routes` без Bearer/cookies, повторов или следования редиректам; проверяет HTTP/JSON, семь P0 и расхождения с tracked contract, ничего не перезаписывает. HTML вместо JSON не считается успехом. Не входит в test/build/E2E. Тесты probe используют контролируемый fetch без сети/БД.
+
+Воспроизводимый live-runbook, таблица окружения, матрица кодов/полей, вопросы API и **отдельный запрещённый по умолчанию раздел реальных изменяющих smoke**: [INTEGRATION_TESTING.md](./INTEGRATION_TESTING.md). Без явного разрешения владельца тестовой БД не создавайте аккаунты, участников, оплаты или карты. GET schema/routes не подтверждает все POST; `GET /auth/me` не даёт DTO профиля. Итог mock E2E и real FastAPI указываются независимо.
+
+Текущие результаты TASK-05 и семь отдельных P0: `../local_docs/TASK-05-REPORT.md`, `../local_docs/TASK-05-API-MATRIX.md`. Результат при недоступном FastAPI — **integration-ready, live pending**, без повышения до real-API verified.
 
 ## Тестовая оплата TASK-04
 
@@ -115,6 +148,8 @@ HTTP 408, timeout/AbortError, обрыв, 5xx и некорректный отв
 - `src/shared/assets` — векторные логотип и сцена.
 - `src/test`, `*.test.ts` — автоматические проверки.
 - `scripts/check-api.mjs` — проверка воспроизводимости контракта.
+- `tests/e2e`, `playwright.config.ts` — переносимые mock browser E2E с собственным test-server.
+- `scripts/live-api-preflight.mjs` — отдельный read-only probe; `INTEGRATION_TESTING.md` — инструкция live smoke.
 
 Roboto поставляется локально через `@fontsource/roboto` (SIL OFL 1.1, см. `THIRD_PARTY_LICENSES.txt`). Это близкая выбранная гарнитура; исходный скриншот не доказывает название оригинального шрифта. Внешних хостов шрифтов и изображений нет.
 
@@ -128,4 +163,4 @@ Roboto поставляется локально через `@fontsource/roboto`
 
 В TASK-02 используется обновлённая мастер-спецификация **v4.3** из `../local_docs/MayProgulka_Agent_Package_Task01_2026-11-03/docs/frontend/FRONTEND_MASTER_SPEC_v4.3.md`; прежняя ссылка v4.2 в AGENTS устарела по указанию пользователя. `local_docs` остаётся игнорируемой. Рабочая копия OpenAPI не изменялась. Игнорируемые инструкции и референсы не попадут автоматически в новый clone; их нужно передать отдельно.
 
-При настройке использованы официальные справочники: [Vite](https://vite.dev/guide/), [React Router Data Mode](https://reactrouter.com/start/data/installation), [openapi-fetch](https://openapi-ts.dev/openapi-fetch/), [отмена Query](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation), [Vitest](https://vitest.dev/guide/).
+При настройке использованы официальные справочники: [Vite](https://vite.dev/guide/), [React Router Data Mode](https://reactrouter.com/start/data/installation), [openapi-fetch](https://openapi-ts.dev/openapi-fetch/), [отмена Query](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation), [Vitest](https://vitest.dev/guide/), [Playwright webServer](https://playwright.dev/docs/test-webserver), [Playwright network isolation](https://playwright.dev/docs/network) и [test fixtures](https://playwright.dev/docs/test-fixtures).
