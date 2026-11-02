@@ -155,6 +155,10 @@ Probe дополнительно использует UNREACHABLE для отс�
 
 ## 8. Локальная приёмка frontend
 
+TASK-07 добавляет `tests/e2e/public-routes.spec.ts`: девять сценариев на четырёх viewport. Fixture разрешает точный публичный GET `/api/v1/checkpoints` с единственным `route_id` существующего маршрута; отсутствие Bearer проверяется и после UI login. Все неизвестные API по-прежнему блокируются. Проверяются каталог/детали, прямой URL/reload/back/forward, некорректные ID, раздельные ошибки GET и ручной повтор, пустые КП, безопасная схема в новой вкладке, статические guides/FAQ и клавиатурное меню. Полный набор содержит 148 запусков: прежние 112 и новые 36. Для итогов конкретного прогона см. `../local_docs/TASK-07-REPORT.md`; копия JSON и публичные снимки — `../local_docs/task-07-artifacts/`.
+
+Новый публичный GET имеет статус C / mock verified, а не real-API verified. Живая проверка checkpoints допускается только при предоставленном тестовом сервере; отсутствие сервера — `NOT_RUN`. Read-only preflight остаётся прежним: только схема и routes, без добавления записей или незаявленного live smoke.
+
 TASK-06 добавляет `tests/e2e/typist.spec.ts` (17 сценариев × 4 viewport) с точной mock-ролью typist, тремя типизированными staff-путями и тем же блокирующим network guard. Живой typist smoke **не входит** в probe или E2E: POST paper-form/match запрещены без отдельного явного разрешения владельца тестовой БД. GET unlinked с staff-токеном требует согласования; выданных credentials здесь нет. Не добавляйте токен в CLI/env example/артефакты и не проверяйте organizer/admin как расширение typist-прав без серверной матрицы RBAC. Staff API имеют зрелость C, не real-API verified. Локальный запуск только staff: `npm.cmd run test:e2e -- tests/e2e/typist.spec.ts`.
 
 ```powershell
