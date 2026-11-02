@@ -155,6 +155,10 @@ Probe дополнительно использует UNREACHABLE для отс�
 
 ## 8. Локальная приёмка frontend
 
+TASK-08: `tests/e2e/admin-routes.spec.ts`, 19 сценариев × 4 viewport (76 запусков) плюс прежние 148. Разрешены ровно POST `/api/v1/admin/routes`, PUT/DELETE `/api/v1/admin/routes/{id}` для точной синтетической роли admin. Fixture проверяет Bearer текущей сессии, поля DTO, отсутствие year/map_url у PUT и тела у DELETE; неизвестные API и внешние origin остаются ошибкой. Проверяются create/edit/delete, 403, 422, 409, 408/сеть, поздние 200/401 всех трёх методов после смены аккаунта, direct/reload/back/forward, Escape/focus и подтверждение DELETE клавиатурой. Mock-проверки не запускают FastAPI и не доказывают серверный RBAC. Отчёт/полный JSON/снимки копируются в `../local_docs/task-08-artifacts/` согласно `../local_docs/TASK-08-REPORT.md`.
+
+Live admin smoke **NOT_RUN**: до него нужны предоставленные тестовый сервер/БД, admin-аккаунт, матрица отрицательных прав и отдельное явное разрешение владельца на каждую запись. Прежний read-only preflight не изменён. Он не выполняет admin CRUD. Список открытых вопросов — `../local_docs/TASK-08-BACKEND-QUESTIONS.md`.
+
 TASK-07 добавляет `tests/e2e/public-routes.spec.ts`: девять сценариев на четырёх viewport. Fixture разрешает точный публичный GET `/api/v1/checkpoints` с единственным `route_id` существующего маршрута; отсутствие Bearer проверяется и после UI login. Все неизвестные API по-прежнему блокируются. Проверяются каталог/детали, прямой URL/reload/back/forward, некорректные ID, раздельные ошибки GET и ручной повтор, пустые КП, безопасная схема в новой вкладке, статические guides/FAQ и клавиатурное меню. Полный набор содержит 148 запусков: прежние 112 и новые 36. Для итогов конкретного прогона см. `../local_docs/TASK-07-REPORT.md`; копия JSON и публичные снимки — `../local_docs/task-07-artifacts/`.
 
 Новый публичный GET имеет статус C / mock verified, а не real-API verified. Живая проверка checkpoints допускается только при предоставленном тестовом сервере; отсутствие сервера — `NOT_RUN`. Read-only preflight остаётся прежним: только схема и routes, без добавления записей или незаявленного live smoke.
