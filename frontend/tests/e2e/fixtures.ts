@@ -5,7 +5,7 @@ import type { components } from '../../src/shared/api/schema';
 import { participants, otherParticipants, registration, routes } from './data';
 
 type Reply = { status: number; body: unknown };
-type Call = { method: string; path: string; authenticated: boolean; routeIds?: number[]; participantId?: number; paymentMethod?: string };
+type Call = { method: string; path: string; authenticated: boolean; routeIds?: number[]; routeId?: number; participantId?: number; paymentMethod?: string };
 type Mode = 'success' | '422' | '408' | 'network';
 function deferred<T>() {
   let release!: (value: T) => void;
@@ -27,7 +27,9 @@ export class MockApi {
   private staffGate: ReturnType<typeof deferred<Reply>> | null = null;
   private staffSeen = deferred<void>();
   private staffCompleted = deferred<void>();
-  routeMode: 'success' | '500' | 'html' = 'success';
+  routeMode: 'success' | '500' | 'html' | 'empty' | 'invalid' = 'success';
+  publicRoutes: components['schemas']['RouteResponse'][] = structuredClone(routes);
+  checkpointMode: 'success' | 'empty' | '500' | '403' | 'network' | 'invalid' = 'success';
   registrationMode: Mode = 'success';
   paymentMode: Mode = 'success';
   pdfUrl: string | null = null;
@@ -70,8 +72,26 @@ export class MockApi {
     const reply = (body: unknown, status = 200) => route.fulfill({ status, json: body });
     if (method === 'GET' && path === '/api/v1/routes') {
       expect(Boolean(token), 'Public routes must not carry credentials').toBe(false);
+      expect(url.search).toBe('');
       if (this.routeMode === 'html') return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><html>Unexpected SPA fallback</html>' });
-      return this.routeMode === '500' ? reply({}, 500) : reply({ routes });
+      if (this.routeMode === 'invalid') return reply({ routes: [{ name: { unexpected: true } }] });
+      return this.routeMode === '500' ? reply({}, 500) : reply({ routes: this.routeMode === 'empty' ? [] : this.publicRoutes });
+    }
+    if (method === 'GET' && path === '/api/v1/checkpoints') {
+      expect(Boolean(token), 'Public checkpoints must not carry credentials').toBe(false);
+      const id = Number(url.searchParams.get('route_id'));
+      expect(url.search).toBe(`?route_id=${id}`);
+      expect(Number.isSafeInteger(id) && this.publicRoutes.some(item => item.id === id), 'Checkpoints require an existing route ID').toBe(true);
+      call.routeId = id;
+      if (this.checkpointMode === 'network') return route.abort('failed');
+      if (this.checkpointMode === '500' || this.checkpointMode === '403') return reply({}, Number(this.checkpointMode));
+      if (this.checkpointMode === 'invalid') return reply({ checkpoints: [{ name: { unexpected: true } }] });
+      const checkpoints: components['schemas']['CheckpointResponse'][] = [
+        { id: 3, route_id: id, name: 'Тестовый финиш', address: 'Синтетический адрес финиша', coordinates: 'opaque: format not agreed', order: 3, is_start: false, is_finish: true },
+        { id: 1, route_id: id, name: 'Тестовый старт', address: 'Синтетический адрес старта', coordinates: 'opaque: format not agreed', order: 1, is_start: true, is_finish: false },
+        { id: 2, route_id: id, name: 'Тестовый лесной КП', address: 'Синтетический адрес КП', coordinates: 'opaque: format not agreed', order: 2, is_start: false, is_finish: false },
+      ];
+      return reply({ checkpoints: this.checkpointMode === 'empty' ? [] : checkpoints });
     }
     if (method === 'POST' && ['/api/v1/auth/login', '/api/v1/auth/register'].includes(path)) {
       expect(Boolean(token), 'Auth request must not carry credentials').toBe(false);

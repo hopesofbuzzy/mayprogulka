@@ -12,7 +12,7 @@ export function HomePage() {
           <p className={styles.description}>Один день, тысячи шагов и маршруты для любого характера. Прогулка по любимому городу, лесным тропам и новым местам — вместе или самостоятельно.</p>
           <div className={styles.actions}>
             <Link className="primaryButton" to="/routes">Выбрать маршрут <span aria-hidden="true">↗</span></Link>
-            <button disabled title="Инструкция появится в следующей итерации">Как участвовать <span aria-hidden="true">↓</span></button>
+            <Link className={styles.guideLink} to="/how-to">Как участвовать <span aria-hidden="true">↓</span></Link>
           </div>
           <p className={styles.note}><span aria-hidden="true">✓</span> Это не гонка. Побеждает каждый, кто дошёл до финиша.</p>
         </div>

@@ -1,0 +1,41 @@
+.page { overflow-wrap: anywhere; }
+.back { display: inline-block; margin-bottom: 28px; font-size: 14px; font-weight: 700; text-underline-offset: 4px; padding-block: 6px; }
+.eyebrow { margin-bottom: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: var(--muted); }
+.panel { min-width: 0; background: #fffdf8; border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
+.panel h2, .steps h2 { font-size: 24px; line-height: 1.25; color: var(--forest-deep); }
+.panel p, .steps p, .faq p { line-height: 1.7; margin-top: 14px; }
+.panel button { margin-top: 20px; }
+.panel :global(.primaryButton) { margin-top: 20px; }
+.muted { color: var(--muted); font-size: 14px; line-height: 1.7; margin-top: 14px; max-width: 720px; }
+.routeHeader { max-width: 850px; }
+.routeFacts { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: 24px; font-size: 14px; }
+.routeFacts strong { color: var(--forest); font-size: 32px; }
+.badge { padding: 7px 12px; background: var(--mint); color: var(--forest-deep); border-radius: 24px; }
+.description { margin-top: 24px; white-space: pre-wrap; line-height: 1.75; }
+.routeGrid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); align-items: start; gap: 24px; margin-top: 32px; }
+.checkpoints { list-style: none; margin: 24px 0 0; padding: 0; }
+.checkpoints li { padding: 22px 0; border-top: 1px solid var(--border); }
+.checkpoints li:last-child { padding-bottom: 0; }
+.pointHeading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
+.pointHeading h3 { margin: 0; font-size: 20px; }
+.order { font-size: 12px; color: var(--muted); }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tags span { background: var(--mint); color: var(--forest-deep); padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+.textLink { display: block; width: fit-content; margin-top: 18px; padding-block: 5px; font-weight: 700; font-size: 14px; text-underline-offset: 4px; }
+.panel hr { border: 0; border-top: 1px solid var(--border); margin-block: 28px; }
+.reading { max-width: 800px; }
+.steps { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 16px; counter-reset: step; }
+.steps li { counter-increment: step; position: relative; padding: 28px 28px 28px 78px; background: #fffdf8; border: 1px solid var(--border); border-radius: 16px; }
+.steps li::before { content: counter(step, decimal-leading-zero); position: absolute; left: 24px; top: 30px; color: var(--forest); font-size: 18px; font-weight: 800; }
+.notice { margin-top: 24px; padding: 24px; background: var(--mint); border-radius: 16px; line-height: 1.7; }
+.notice h2 { font-size: 22px; }
+.notice p { margin-top: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; margin-top: 28px; }
+.actions > a:not(:global(.primaryButton)) { font-size: 14px; font-weight: 700; text-underline-offset: 4px; padding-block: 10px; }
+.faq { display: grid; gap: 14px; margin-top: 32px; }
+.faq details { border: 1px solid var(--border); border-radius: 14px; background: #fffdf8; padding: 0 24px; }
+.faq summary { cursor: pointer; padding-block: 22px; line-height: 1.5; font-weight: 700; color: var(--forest-deep); }
+.faq details > p { margin-top: 0; padding-bottom: 24px; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+@media (max-width: 767px) { .routeGrid { grid-template-columns: minmax(0, 1fr); } .panel { padding: 24px; } }
+@media (max-width: 600px) { .steps li { padding: 24px 20px 24px 58px; } .steps li::before { left: 18px; top: 27px; font-size: 16px; } .steps h2 { font-size: 21px; } .faq details { padding-inline: 20px; } }

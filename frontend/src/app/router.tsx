@@ -11,6 +11,9 @@ export const appRoutes: RouteObject[] = [{
   children: [
     { index: true, Component: HomePage },
     { path: 'routes', lazy: async () => ({ Component: (await import('../pages/RoutesPage')).RoutesPage }) },
+    { path: 'routes/:routeId', lazy: async () => ({ Component: (await import('../pages/RouteDetailPage')).RouteDetailPage }) },
+    { path: 'how-to', lazy: async () => ({ Component: (await import('../pages/HowToPage')).HowToPage }) },
+    { path: 'faq', lazy: async () => ({ Component: (await import('../pages/FaqPage')).FaqPage }) },
     { path: 'login', lazy: async () => ({ Component: (await import('../pages/AuthPage')).LoginPage }) },
     { path: 'signup', lazy: async () => ({ Component: (await import('../pages/AuthPage')).SignupPage }) },
     { Component: RequireAuth, children: [

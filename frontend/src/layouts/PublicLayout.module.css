@@ -22,6 +22,7 @@
 .skip { position: absolute; z-index: 10; top: 4px; left: 16px; padding: 10px; background: var(--paper); transform: translateY(-160%); }
 .skip:focus { transform: translateY(0); }
 @media (max-width: 1100px) { .nav { gap: 22px; } }
+@media (min-width: 768px) and (max-width: 1000px) { .nav { gap: 12px; font-size: 12px; } .headerInner { column-gap: 16px; } }
 @media (min-width: 768px) and (max-width: 900px) { .accountPrefix { display: none; } }
 @media (max-width: 767px) {
   .topStrip { height: 16px; }

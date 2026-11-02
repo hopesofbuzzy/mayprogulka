@@ -8,8 +8,9 @@
 .copy h1 > span { color: var(--mint); }
 .description { max-width: 510px; margin-top: 18px; font-size: 14px; line-height: 25px; color: #e0e8df; }
 .actions { display: flex; align-items: center; gap: 18px; margin-top: 27px; }
-.actions button { background: transparent; border: 0; padding: 12px 0; color: #dce7d9; font-size: 13px; font-weight: 700; }
-.actions button span { margin-left: 10px; }
+.guideLink { padding: 12px 0; color: #dce7d9; font-size: 13px; font-weight: 700; text-decoration: none; }
+.guideLink:hover { text-decoration: underline; text-underline-offset: 4px; }
+.guideLink span { margin-left: 10px; }
 .note { display: flex; align-items: center; gap: 8px; margin-top: 34px; color: #dce7d9; font-size: 11px; line-height: 1.7; }
 .note > span { border-radius: 50%; display: inline-grid; place-items: center; background: #52876c; width: 17px; height: 17px; flex-shrink: 0; }
 .scene { position: relative; align-self: end; min-width: 0; width: 100%; max-width: 496px; }
@@ -27,4 +28,4 @@
   .note { margin-top: 26px; max-width: 400px; }
   .scene { display: none; }
 }
-@media (max-width: 374px) { .actions { gap: 12px; } .actions button { font-size: 12px; } }
+@media (max-width: 374px) { .actions { gap: 12px; } .guideLink { font-size: 12px; } }

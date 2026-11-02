@@ -28,7 +28,8 @@ function PublicNav() {
       <nav id={navId} aria-label="Основная навигация" className={styles.nav} data-open={open} onClick={() => setOpen(false)}>
         <NavLink to="/" end>Главная</NavLink>
         <NavLink to="/routes">Маршруты</NavLink>
-        <span aria-disabled="true" title="Раздел ещё не реализован">Вопросы</span>
+        <NavLink to="/how-to">Как участвовать</NavLink>
+        <NavLink to="/faq">Вопросы</NavLink>
         <span aria-disabled="true" title="Раздел ещё не реализован">Организаторам</span>
         {isAuthenticated && <LogoutButton className={styles.mobileLogout} />}
       </nav>
@@ -48,7 +49,7 @@ export function PublicLayout() {
       window.scrollTo(0, 0);
       previousPath.current = pathname;
     }
-    const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
+    const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/how-to': 'Как участвовать', '/faq': 'Вопросы и ответы', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (/^\/routes\/[^/]+\/?$/.test(pathname) ? 'Детали маршрута' : pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
     const staffTitle = ({ '/staff/typist': 'Рабочее место наборщика', '/staff/typist/new': 'Бумажная анкета', '/staff/typist/match': 'Сопоставление с картой', '/staff/typist/unlinked': 'Непривязанные карты' } as Record<string, string>)[pathname];
     document.title = `${staffTitle ?? (/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Тестовая оплата' : title)} — Майская прогулка`;
   }, [pathname]);

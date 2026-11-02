@@ -50,7 +50,8 @@ describe('public routing and keyboard navigation', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Город становитсяближе, когдаидёшь пешком.');
     expect(fetchMock).not.toHaveBeenCalled();
     expect(screen.getByRole('link', { name: 'Личный кабинет' })).toHaveAttribute('href', '/login');
-    expect(screen.getByRole('button', { name: /Как участвовать/ })).toBeDisabled();
+    expect(screen.getAllByRole('link', { name: /Как участвовать/ })).toHaveLength(2);
+    for (const link of screen.getAllByRole('link', { name: /Как участвовать/ })) expect(link).toHaveAttribute('href', '/how-to');
     await user.click(screen.getByRole('link', { name: /Выбрать маршрут/ }));
     expect(await screen.findByRole('heading', { name: 'Маршруты' })).toBeInTheDocument();
     expect(await screen.findByText(fixtures[0]!.name)).toBeInTheDocument();
@@ -66,7 +67,7 @@ describe('public routing and keyboard navigation', () => {
     expect(screen.getByRole('link', { name: 'Перейти к содержимому' })).toHaveFocus();
     const cta = screen.getByRole('link', { name: /Выбрать маршрут/ });
     // CSS media queries are verified in the browser; jsdom also tabs through the menu toggle.
-    for (let index = 0; index < 6 && document.activeElement !== cta; index++) await user.tab();
+    for (let index = 0; index < 8 && document.activeElement !== cta; index++) await user.tab();
     expect(cta).toHaveFocus();
   });
   it('renders an honest 404 and returns home', async () => {
@@ -122,8 +123,9 @@ describe('compact navigation disclosure', () => {
     const { user } = mount();
     await user.click(screen.getByRole('button', { name: 'Открыть меню' }));
     const nav = screen.getByRole('navigation');
-    expect(within(nav).getAllByRole('link')).toHaveLength(2);
-    expect(within(nav).getByText('Вопросы')).toHaveAttribute('aria-disabled', 'true');
+    expect(within(nav).getAllByRole('link')).toHaveLength(4);
+    expect(within(nav).getByRole('link', { name: 'Вопросы' })).toHaveAttribute('href', '/faq');
+    expect(within(nav).getByRole('link', { name: 'Как участвовать' })).toHaveAttribute('href', '/how-to');
     expect(within(nav).getByText('Организаторам')).toHaveAttribute('aria-disabled', 'true');
     await user.click(within(nav).getByRole('link', { name: 'Главная' }));
     expect(screen.getByRole('button', { name: 'Открыть меню' })).toHaveAttribute('aria-expanded', 'false');
