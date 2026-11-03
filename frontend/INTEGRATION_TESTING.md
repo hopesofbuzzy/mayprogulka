@@ -1,208 +1,118 @@
-# Проверки frontend и подготовка FastAPI integration smoke
+# Frontend: изолированные проверки и будущий read-only FastAPI preflight
 
-TASK-05. Уровни доказательств различаются: **mock browser E2E** проверяет браузер с изолированными ответами; **read-only preflight** проверяет доступность/контракт двух GET; **live smoke** проверяет конкретные операции настоящего согласованного тестового сервера. Наличие схемы не подтверждает записи в БД, оплату, права или PDF.
+TASK-11. **Real FastAPI: NOT_RUN. Реальных запросов к FastAPI и записей в БД в этой итерации нет.** Продуктовый копирайт не повышает готовность сервера. Browser/mock PASS, read-only schema/routes PASS и конкретный live write smoke — разные уровни доказательств.
 
-## 1. Воспроизводимый mock browser E2E
+## 1. Обычное приложение и размещение
 
-Из `frontend/`, Node 26.x и npm:
+Обычный dev: браузер → относительный /api/v1 → существующий Vite /api proxy → API_PROXY_TARGET (из локального env либо существующий default127.0.0.1:8000). Запросы используют один openapi-fetch client с credentials:omit; public GET routes/checkpoints без Bearer, private requests с memory-only текущими credentials/epoch. Нет API→fixtures fallback, fake login или localStorage режима.
+
+Production: браузер → сервер размещения → /api/v1/* в FastAPI; assets в статические файлы; UI URL в SPA index.html. Dev proxy в production не существует. Vite preview явно имеет proxy:{} и также не пересылает API; ошибочный HTML вместо JSON приводит к ошибке UI. Настройка реального reverse proxy/HTTPS/CORS/cache/SPA fallback — ответственность окружения, в TASK-11 не менялась.
+
+Инварианты не менялись: точные DTO/пути OpenAPI, роли admin/typist, 401/epoch/private cleanup, strings barcode/form_id, safe map/PDF URL, пустой PDF allowlist, no blind retry и no optimistic irreversible state. Раздел «Оплата участия» меняет только серверную отметку без списания денег; paid не является финансовым подтверждением. Batch default-OFF, требует одновременно MODE=e2e и VITE_ENABLE_CHECKPOINT_BATCH=true.
+
+## 2. Локальная приёмка без FastAPI
+
+Из frontend, Node26.x/npm:
 
 ```powershell
 npm.cmd ci
 npx.cmd playwright install chromium
+npm.cmd run api:check
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run test
+npm.cmd run test:preflight
+node --test scripts/runtime-readiness.test.mjs
 npm.cmd run test:e2e
+npx.cmd playwright test --config playwright.batch-off.config.ts
+npx.cmd playwright test --config playwright.normal.config.ts
 ```
 
-В POSIX используйте `npm`/`npx` без `.cmd`. `@playwright/test` закреплён в devDependencies и lock-файле; Chromium устанавливается отдельно. Пути пользователя или внешнего runtime не нужны. Команда запускает собственный Vite **127.0.0.1:4179**, `--strictPort --mode e2e`, `reuseExistingServer:false`. Занятый порт — ошибка: освободите 4179 либо согласованно измените его в обоих полях конфигурации. Не подключайте тесты к случайному dev server и не завершайте чужой процесс автоматически.
+В POSIX — npm/npx без .cmd. При уже установленных зависимостях повторный ci/install для обычной проверки не нужен. Lock/dependencies TASK-11 не меняет.
 
-Четыре проекта Chromium: `desktop` 1280×720, `mobile` 390×844, `compact` 360×800, `tablet` 768×1024. При необходимости:
+Основная Playwright-конфигурация поднимает собственный Vite127.0.0.1:4179 --strictPort --mode e2e, reuseExistingServer:false, 2workers/retries0. Проекты1280×720/390×844/360×800/768×1024. Занятый порт — ошибка; не завершайте чужие процессы и не подключайтесь к случайному dev server.
 
-```powershell
-npm.cmd run test:e2e -- --project=desktop
-npm.cmd run test:e2e:headed -- --project=mobile
-```
+Auto fixture разрешает только конкретные известные HTTP methods/paths и валидирует DTO/текущий синтетический Bearer; неизвестная API/внешняя сеть блокируется и проваливает тест, без fallback/route.fetch. e2e proxy пуст, service workers заблокированы. Batch разрешается только этому процессу. Fixture назначает ID/count только как контролируемый «сервер», frontend не вычисляет успешные строки из errors[].
 
-Обычные сценарии используют auto fixture из `tests/e2e/fixtures.ts`: разрешены лишь конкретные методы/пути текущего P0. Неизвестные API-запросы и внешние origin **abort + провал теста**, без `route.fetch`/fallback к FastAPI. В `mode=e2e` Vite proxy дополнительно отключён. Service workers заблокированы. `network-isolation.spec.ts` отдельно посылает намеренно запрещённые GET/POST/внешний запрос и проверяет сам механизм блокировки. Эти запросы не достигают backend.
+Production-off: заранее собранный dist через Vite preview4179; batch скрыт, singleton UI доступен. Normal-runtime: настоящий development mode4181 с намеренно выставленным batch=true; API transport abort перехватывается в браузере **до proxy**, доказывая error без фиктивного каталога. Остальные данные этого теста тоже только intercepted synthetic responses. Ни один сценарий не связывается с FastAPI.
 
-Синтетические участники имеют отдельные числовые id/route_id и строковые номера с ведущими нулями. Mock-пароли и токены создаются только в памяти конкретного теста, не сохраняются в storage/fixtures/report. Тесты никогда не используют `LIVE_API_ORIGIN`, живые учётные данные или тестовую БД.
+runtime-readiness.test.mjs: конфигурационные проверки Vite без server.listen и проверка графа runtime imports, исключающая tests/fixtures/mock scripts/storage/DEV fallback. Тестовый dev-target — лишь значение в памяти, соединения к нему нет. test:preflight — 15 контролируемых fetch tests, не live probe.
 
-Результаты: `../local_docs/task-05-artifacts/e2e-results.json`, снимки в `../local_docs/task-05-artifacts/e2e/`. Каталог создаётся автоматически, покрыт существующим ignore. Репрезентативные снимки — главная и предупреждение 408 на каждом размере; дополнительные снимки только при ошибке. Trace/video/HAR выключены, чтобы не сохранять заголовки и credentials. Не включайте их на живом окружении без отдельной политики обезличивания.
+Артефакты основного набора по прежней конфигурации сначала task-05-artifacts; финальная копия TASK-11 в ../local_docs/task-11-artifacts. Normal outputs сразу там; off outputs по прежнему task-10-artifacts и копируются. Trace/HAR/video off. Не включать их на живом окружении без отдельной политики обезличивания. Не сохранять токены/пароли, реальные ФИО/контакты, raw HTTP bodies, payment IDs/PDF URLs в доказательствах.
 
-Набор проверяет публичную сеть/HTML вместо JSON/404, UI signup/login/logout, два участника на разные маршруты, индексные 422, неопределённую регистрацию и осознанный повтор, одну тестовую оплату с GET и null PDF, неизвестный исход оплаты, действующую пустую PDF allowlist, сессионную изоляцию поздних ответов, back/forward/reload. Production `approvedFormPdfPaths` не меняется. Разрешённая ссылка уже проверяется unit-тестами с явной test-only policy; браузерный набор проверяет production-блокировку.
+## 3. Допуск к будущему read-only probe
 
-Это **mock E2E**, не `PASS_LIVE`. `GET /auth/me` не нужен UI: профиль из его неописанного тела не строится. Reload сбрасывает memory-only сессию по действующей модели.
+Сначала владелец окружения подтверждает:
 
-## 2. Контрольная таблица перед любым live smoke
-
-Заполняется владельцем окружения локально; секреты сюда не копировать.
-
-| Проверка | Что требуется |
+| Условие | Требование |
 |---|---|
-| Контракт | Tracked `../contracts/openapi.current.json`, OpenAPI 3.1.0 / API 0.1.0, 20 путей / 22 операции |
-| Точный API origin | Явно согласованный HTTP(S) origin без path/query/credentials; пример `http://127.0.0.1:8000` не выбирается автоматически |
-| Владелец/назначение | Подтверждено, что это тестовое окружение и кто отвечает за данные |
-| База | Отдельная тестовая БД, нет production/настоящих клиентских данных |
-| Пользователь | Уже выданный тестовый аккаунт с известной ролью; реальные пароль/токен только локально |
-| Запись | Отдельное явное разрешение владельца БД и тестового пользователя на конкретные изменяющие операции |
-| Данные | Синтетические имена, `example.test` контакты; отсутствие персональных данных реальных людей |
-| Frontend origin/port | Выбран локально, например dev 5173; live smoke не использует E2E server 4179 |
-| Dev proxy | `/api` направлен на тот же согласованный backend через `API_PROXY_TARGET`; `/api/v1` уже в contract paths |
-| Preview/production | `npm run preview` не применяет dev proxy. Нужен отдельно проверенный reverse proxy; SPA HTML на API URL — ошибка |
-| Доказательства | Только HTTP code, JSON MIME, названия/типы полей, счётчики и отсутствие/наличие расхождений |
+| Origin | Точный согласованный HTTP(S) test origin без path/query/fragment/credentials |
+| Назначение | Отдельная тестовая БД/окружение; нет production/реальных клиентских данных |
+| Ответственный | Кто разрешает проверку и принимает результаты |
+| Secrets/security | Устранены фиксированные backend secrets, проверена политика публикации schema/docs и защита опасных admin/maps |
+| Контракт | Live /openapi.json сравнивается с tracked 3.1.0/API0.1.0, 20paths/22operations |
+| Полномочия | Read-only допуск не является разрешением login/POST/PUT/DELETE |
+| Доказательства | Только code/MIME/счётчики/имена несовпавших полей, без содержимого записей и credentials |
 
-Если назначение сервера, права или база неизвестны — **BLOCKED** для записи. Агент/тесты не запускают backend, Python, контейнеры, миграции и не меняют конфигурацию сервера.
+**В TASK-11 origin не предоставлен; команды ниже не выполнялись.** Не выбирайте пример8000 за владельца стенда.
 
-## 3. Отдельный read-only preflight
-
-Команда **никогда не вызывается автоматически** из unit/E2E/build и не делает login. Без явно заданного origin ничего не запрашивает, выводит `NOT_RUN`, exit 2.
-
-PowerShell (origin здесь только пример после проверки таблицы):
+PowerShell, только после утверждения фактического origin:
 
 ```powershell
-$env:LIVE_API_ORIGIN = 'http://127.0.0.1:8000'
+$env:LIVE_API_ORIGIN = '<APPROVED_TEST_ORIGIN>'
 npm.cmd run integration:preflight
 $LASTEXITCODE
 Remove-Item Env:LIVE_API_ORIGIN
 ```
 
+Git Bash на Windows:
+
+```bash
+LIVE_API_ORIGIN='<APPROVED_TEST_ORIGIN>' npm.cmd run integration:preflight
+echo $?
+```
+
 POSIX:
 
 ```sh
-LIVE_API_ORIGIN=http://127.0.0.1:8000 npm run integration:preflight
+LIVE_API_ORIGIN='<APPROVED_TEST_ORIGIN>' npm run integration:preflight
+echo $?
 ```
 
-Probe делает **ровно два GET**, без Bearer/cookies и автоповторов, timeout 4s на запрос:
+Подставляется согласованный origin, не буквальный placeholder. Нет Bearer/cookies и login. Probe выполняет **только** GET /openapi.json и GET /api/v1/routes, redirect:error, timeout4s, без retry. Не вызывается автоматически test/build/E2E и не пишет schema/types/БД.
 
-1. `/openapi.json`: HTTP 200 + JSON; сверяет версии, количество путей/операций, набор методов/путей, семь P0, их request/response/parameters/security и объявленные схемы с tracked contract. Не перезаписывает файл. Описательные title/description/examples не сравниваются; структурные отличия выводятся именами, без тела ответа. Порядок массивов остаётся чувствительным: различие порядка required/enum требует ручного разбора, а не автоматической правки схемы.
-2. `/api/v1/routes`: HTTP 200 + JSON `{routes:[...]}`, обязательные поля/типы RouteResponse, nullable/optional description/map_url. Выводится только число маршрутов, не их содержимое.
+Первый GET проверяет версии/пути/методы, семь P0 request/response/parameters/security и schemas; title/description/examples не сравниваются. Второй требует200 JSON {routes:RouteResponse[]} и проверяет обязательные типы/nullable поля. HTML/неверный JSON/DTO/редирект не считаются PASS. Содержимое routes не выводится.
 
-Редиректы всех видов блокируются, `Location` не читается/не следует. 200 text/html, некорректный JSON и неверная структура не являются успехом. Отсутствующая `/openapi.json` — `NOT_RUN` для сравнения, даже если routes работает. Недоступное соединение/timeout — `UNREACHABLE`, ненулевой exit. Совпадение схемы и routes PASS не подтверждает другие HTTP-операции или сохранение в БД.
-
-Тесты самого probe с полностью контролируемым fetch, **без сети/БД**:
-
-```powershell
-npm.cmd run test:preflight
-```
-
-## 4. Неразрушающий smoke с уже выданным тестовым аккаунтом
-
-После preflight и проверки назначения окружения, вручную в локальном браузере:
-
-1. Открыть публичные `/` и `/routes` через обычный dev server; убедиться, что `/api/v1/routes` имеет JSON Content-Type и UI использует данные настоящего тестового сервера.
-2. Выполнить **POST login** через UI уже выданным тестовым аккаунтом. Это не GET/read-only probe, но не создаёт участников. Пароль вводить только в форму; не в командную строку, URL, env example, отчёт или скриншот. Для неизвестных/невыданных credentials — `NOT_RUN`, а не самостоятельная регистрация.
-3. В кабинете проверить GET `/participants/my`: JSON, поля и принадлежность аккаунту. В DevTools смотреть code/MIME/структуру; не копировать Authorization/ответ с PII в отчёт. Bearer не передаётся в URL.
-4. Открыть собственную карточку и страницу тестовой оплаты, **не нажимая POST оплаты**. Проверить идентичность по списку; чужой/несуществующий id не раскрывает данные. Наблюдение страницы не подтверждает работоспособность pay.
-5. Reload намеренно возвращает к login; private cache и ephemeral PDF/result отсутствуют. Локальный logout не отзывает токен на сервере. Сохранять токен или имитировать refresh нельзя.
-
-Негативные проверки выполняются только в согласованном окружении:
-
-- GET `/participants/my` без токена: ожидается auth-отказ, не PII. Зафиксировать фактический код (401/403 требует сверки с договором), JSON MIME и отсутствие приватных полей; не подгонять клиента ради желаемого кода.
-- Один вход с неверным паролем для тестового аккаунта, затем корректный: нет входа/PII на отказе, нет потери полей. Учитывать серверные rate limit/lockout, не перебирать пароли.
-- Истёкший тестовый Bearer, если его безопасно предоставил владелец: только защищённый GET, текущая сессия очищается на 401. Не логировать token.
-- Проверка недостаточных прав — только read-only методы и отдельно одобренные роли. Не применять изменяющие admin/maps, batch, map upload, checkpoints или typist к реальной/неподтверждённой базе.
-- `/auth/me` не имеет описанной схемы тела; может быть отдельной read-only проверкой авторизации, но не является обязательным профилем или источником роли UI. Нельзя придумывать поля ответа.
-
-## 5. Изменяющий smoke — ПО УМОЛЧАНИЮ НЕ ВЫПОЛНЯЕТСЯ
-
-Только после **явного согласования владельца тестовой БД и пользователя** на каждую следующую операцию. Текущий API не даёт удаления созданных участников/возврата тестовой операции; повтор может создать дубли. Этот раздел не исполняется Playwright/CI/preflight. Не вставляйте готовые curl-команды с секретами в shell history.
-
-1. Если отдельно одобрено создание аккаунта: UI POST `/api/v1/auth/register` с синтетическими username/email/password; ожидается 201 TokenResponse. Полученный token только в памяти. Если есть выданный аккаунт, регистрировать новый без необходимости не нужно.
-2. Свежий живой GET `/api/v1/routes`: выбрать **два реально существующих разных активных id**, учитывая утверждённые серверные год/доступность регистрации. Числа 12/15 в mock-фикстурах не являются инструкцией для live.
-3. UI POST `/api/v1/participants/register` с двумя синтетическими анкетами, своим числовым route_id у каждой. Явно согласовать проверку одинаковых семейных email/phone. Ожидается 201 с registration_id и отдельными participant.id/form_id. Ведущие нули номеров сохраняются. Ответ с иной длиной — требует проверки, не «вся семья создана».
-4. GET `/participants/my` сверяет созданные записи и статусы. Текущий list DTO не возвращает route_id, только route_name: числовые route_id доказуемы в исходящем DTO, а подтверждение фактического сохранения разных связей требует проверки владельцем БД/бэкендом. Не добавляйте несуществующий GET/поле ради такой проверки.
-5. Только после отдельного разрешения тестовой оплаты **одного** созданного participant.id: UI выбирает card/sbp; POST `/participants/{participant_id}/pay`, точный `{payment_method}`. Нет суммы/валюты/карточных данных. Ожидается 200 с обязательными строками status/payment_id, URL может отсутствовать.
-6. Новый GET `/participants/my` должен подтвердить payment_status именно этой записи; другой участник не меняется. POST status не приравнивать к GET payment_status. До paid из GET нет утверждения «Оплачено». При 408/timeout/обрыве/5xx — только проверочный GET, без слепого POST-повтора; pending не доказывает отсутствие изменения.
-7. PDF: production allowlist остаётся пустой, пока не согласованы host/path и обычный доступ без Bearer. Непроверенный URL блокируется. Не передавайте token в query, не делайте blob-fetch или повтор pay ради восстановления. Даже если сервер выдаёт PDF, не включайте его URL/подпись/содержимое в доказательства. Повторного GET PDF нет.
-
-Непредусмотренный HTTP/DTO, конфликт прав, настоящие данные или сомнение в окружении — **остановить затронутую запись**, записать обезличенное расхождение, не менять backend/OpenAPI/types вручную.
-
-## 6. Матрица контракта и evidence
-
-| Операция | Ожидается | Основные поля/оговорки |
-|---|---|---|
-| POST `/api/v1/auth/register` | 201 | username/email/password → access_token/user_id/role; token_type может отсутствовать |
-| POST `/api/v1/auth/login` | 200 | username/password → TokenResponse; нельзя гарантировать email-login |
-| GET `/api/v1/auth/me` | 200 при доступе | Схема ответа не описана; только договорённая проверка авторизации, без профиля |
-| POST `/api/v1/participants/register` | 201 | participants[] с индивидуальным route_id → registration_id, id/form_id каждого |
-| GET `/api/v1/participants/my` | 200 | participants[]: id/form_id/ФИО/route_name/payment_status/has_started/has_finished, map_barcode строка/null/отсутствие |
-| POST `/api/v1/participants/{participant_id}/pay` | 200 | Выбранный participant.id + card/sbp → status/payment_id, optional nullable form_pdf_url |
-| GET `/api/v1/routes` | 200 | routes[]: id/name/distance/year/is_active, nullable/optional description/map_url |
-
-Семь P0 операций не означают семь проверенных live операций. Для каждой строки отдельно записать:
-
-| Результат | Значение |
+| Статус | Смысл |
 |---|---|
-| NOT_RUN | Не запускалась; причина явно указана |
-| BLOCKED | Запуск не разрешён/условия не подтверждены |
-| PASS_LIVE | Эта конкретная операция проверена на согласованном живом тестовом сервере |
-| FAIL_LIVE | Получена ошибка поведения/HTTP/JSON при реальном запуске |
-| CONTRACT_MISMATCH | Пути/методы/версии/поля не соответствуют tracked contract |
+| NOT_RUN | Нет explicit origin или проверка не выполнялась; без origin exit2 и без сети |
+| BLOCKED | Некорректный origin/неподтверждённый допуск, без записи |
+| UNREACHABLE | Нет соединения/timeout, ненулевой exit; это не отсутствие функции |
+| CONTRACT_MISMATCH | Разошлись версии/операции/структуры; контракт не переписывать автоматически |
+| PASS_LIVE | Успех именно read-only операции, которую реально проверили |
+| FAIL_LIVE | Конкретная реальная операция дала неверное HTTP/JSON/поведение |
 
-Probe дополнительно использует UNREACHABLE для отсутствия соединения. Минимальная запись evidence: operation, статус результата, фактический HTTP code и JSON MIME, имена/типы несовпавших полей, счётчики, дата, причина NOT_RUN/BLOCKED. Без access_token, пароля, ФИО реального человека, email, payment_id, PDF URL, raw JSON/HAR/скриншота DevTools.
+Probe может логировать PASS для двух чтений; в отчёте укажите, какие именно GET подтверждены, не повышайте остальные22 операции до verified. При отсутствующем schema endpoint сравнение остаётся NOT_RUN; работоспособность routes его не заменяет.
 
-Пример **формата, не результата**: `GET /participants/my | NOT_RUN | нет выданного тестового аккаунта | HTTP — | JSON —`.
+## 4. Будущий live smoke — не выполнять в TASK-11
 
-## 7. Адресные вопросы владельцам API
+После read-only gate команда отдельно предоставляет синтетические admin/participant/typist/organizer accounts и сценарии anonymous/expired, устраняет backend security blockers, проверяет negative RBAC для каждого метода. Особо H: POST admin/maps, POST admin/maps/batch, GET admin/maps/{barcode} и POST routes/{id}/map. Наличие Python router/schema не подтверждает подключение сканов или защиту.
 
-- Идемпотентен ли POST pay, как проверять неизвестный исход/дубликаты без GET операции?
-- Какие строки payment_status и PaymentResponse.status допустимы, синхронно ли обновление GET?
-- Каковы PDF origin/path, доступ без Bearer, обработка через SPA/proxy, редиректы, signed URL и срок жизни? Как повторно получить PDF после потери ссылки?
-- Каковы JWT TTL, refresh, отзыв/logout и будущий договор хранения сессии?
-- Какие фактические серверные RBAC применяются к каждому роли/методу? Отсутствие security в части map/admin операций не даёт разрешения подключать их без проверки.
-- Как сервер определяет год/открытие регистрации, активность и допуск? Поддерживаются ли разные маршруты и одинаковые семейные контакты?
-- Как безопасно подтвердить сохранённые route_id, если list возвращает только route_name?
+Каждый write требует отдельного письменного разрешения владельца тестовой БД, выбранных синтетических данных, плана очистки, диагностики unknown/дублей/partial и принимающего QA. Read-only preflight нельзя расширять скрытыми write smoke. Не создавайте роли/аккаунты, участников, оплату, карты или КП без допуска. Не переносите database код и не объединяйте ветки ради проверки frontend.
 
-В текущем OpenAPI нет повторного GET PDF, refresh/logout API, выдачи/изменения ролей сотрудников, сканирования КП/финиша и организаторской статистики. TASK-05 не добавляет их ни в приложение, ни в live-runbook.
+Открытые вопросы сохраняются в ../local_docs/TASK-06-BACKEND-QUESTIONS.md, TASK-08-BACKEND-QUESTIONS.md, TASK-09-BACKEND-QUESTIONS.md, TASK-10-BACKEND-QUESTIONS.md. Ключевые блокеры: реальные RBAC/secret handling, atomicity/idempotency, частичные PUT/null/false, DELETE history, полный GET, string coordinates/order/flags, batch count/errors/result identity, PDF host/path/auth/delivery и session TTL/revocation.
 
-## 8. Локальная приёмка frontend
+PDF allowlist остаётся пустой; подписанные/внешние URL, токен в query и повтор pay ради файла не допускаются. Успешный pay-response и paid из GET — отметка stub, не реальные деньги; серверная эксплуатация требует отдельной приёмки.
 
-### TASK-10: checkpoint batch, только mock
+## 5. Отчётность
 
-`VITE_ENABLE_CHECKPOINT_BATCH=true` действует только в mode `e2e`. По умолчанию dev/production OFF, production не включать. E2E webServer явно задаёт флаг; `tests/e2e/admin-checkpoint-batch.spec.ts` использует тот же строгий MockApi/network guard. Единственный новый разрешённый контрактный метод — POST `/api/v1/admin/checkpoints/batch`, exact path/без query, Bearer актуального admin, два согласованных уровня route_id, точные поля каждой строки. Fixture назначает синтетические ID и изменяет публичную выборку по смоделированному count. Frontend не выводит ID из count/имён, не сопоставляет errors строкам и не повторяет партию. Ни одного живого запроса.
-
-Обычные команды ниже включают полный набор. Отдельно default-off проверяет production dist через Vite preview:
-
-```powershell
-npm.cmd run build
-npx.cmd playwright test --config playwright.batch-off.config.ts
-```
-
-Снимки/полный JSON/сводка обоих прогонов и unit/quality checks копируются в `../local_docs/task-10-artifacts/`; результаты — `../local_docs/TASK-10-REPORT.md`. Отдельный явно обозначенный интерактивный mock-preview на 4180 запускается командой из README. Он использует один Vite с test-only middleware, без backend proxy и без live fallback, не входит в production bundle; прочие изменяющие операции отклоняются. Не заменяет Playwright и не доказывает реальную интеграцию.
-
-**Real FastAPI batch / negative role tests / read-only probe: NOT_RUN. Live writes: 0.** Прежний read-only preflight не расширен. Gate снятия блокировки будущего live: утверждённый изолированный origin/БД и владелец очистки; admin, participant, typist, organizer, anonymous/expired; отрицательные RBAC-тесты; точное правило route_id обоих уровней; атомарность/partial и примеры errors/count; способ идентификации результата/идемпотентность; план ручной сверки и синтетических данных; отдельное письменное разрешение на POST. Вопросы: `../local_docs/TASK-10-BACKEND-QUESTIONS.md`. Пока этого нет, статус только UI ready / mock verified / LIVE_BLOCKED.
-
-TASK-09: `/staff/routes/:routeId/checkpoints` использует общий публичный GET маршрутов и КП, строго без Bearer; запись доступна только актуальной роли admin. В mock fixture добавлены ровно POST `/api/v1/admin/checkpoints`, PUT/DELETE `/api/v1/admin/checkpoints/{checkpoint_id}`. Проверяются DTO, Bearer текущей сессии, частичный PUT без route_id/null и без тела у DELETE. Batch не разрешён. Неизвестные API и внешняя сеть по-прежнему блокируются, живого fallback нет. Синтетические ID КП уникальны между маршрутами; координаты остаются непреобразованной строкой. Старые assertions не ослаблены.
-
-`tests/e2e/admin-checkpoints.spec.ts`: 19 сценариев × 4 viewport, 76 новых запусков; вместе с прежними 224 — 300. Покрыты прямой URL/login/403, навигация/reload, одиночные CRUD и публичное обновление, клавиатура/focus, 422/409/408/timeout, явное принятие перечитанной основы, безопасное отложенное закрытие unknown DELETE и блокировка того же ID, поздние ответы всех трёх методов при смене аккаунта. В Vitest добавлены 117 проверок (всего 631). Артефакты и точные результаты конкретного прогона: `../local_docs/task-09-artifacts/`, `../local_docs/TASK-09-REPORT.md`.
-
-**Mock admin checkpoint CRUD: PASS. Real FastAPI: NOT_RUN.** Ни read-only probe, ни реальные записи в этой итерации не запускались: согласованный origin, тестовая БД, credentials и разрешение не предоставлены. Перед live CRUD владелец бэкенда должен согласовать формат coordinates, порядок/флаги, DELETE при существующих отметках, полноту публичного GET, null/omitted/false в PUT, конкурентные правки и идемпотентность. Нужны отрицательные серверные проверки всех других ролей. Клиентский guard не доказывает серверный RBAC. Таблица владельцев/блокеров — `../local_docs/TASK-09-BACKEND-QUESTIONS.md`. Не запускайте admin CRUD через прежний read-only preflight и не сохраняйте Bearer/PII в артефактах.
-
-TASK-08: `tests/e2e/admin-routes.spec.ts`, 19 сценариев × 4 viewport (76 запусков) плюс прежние 148. Разрешены ровно POST `/api/v1/admin/routes`, PUT/DELETE `/api/v1/admin/routes/{id}` для точной синтетической роли admin. Fixture проверяет Bearer текущей сессии, поля DTO, отсутствие year/map_url у PUT и тела у DELETE; неизвестные API и внешние origin остаются ошибкой. Проверяются create/edit/delete, 403, 422, 409, 408/сеть, поздние 200/401 всех трёх методов после смены аккаунта, direct/reload/back/forward, Escape/focus и подтверждение DELETE клавиатурой. Mock-проверки не запускают FastAPI и не доказывают серверный RBAC. Отчёт/полный JSON/снимки копируются в `../local_docs/task-08-artifacts/` согласно `../local_docs/TASK-08-REPORT.md`.
-
-Live admin smoke **NOT_RUN**: до него нужны предоставленные тестовый сервер/БД, admin-аккаунт, матрица отрицательных прав и отдельное явное разрешение владельца на каждую запись. Прежний read-only preflight не изменён. Он не выполняет admin CRUD. Список открытых вопросов — `../local_docs/TASK-08-BACKEND-QUESTIONS.md`.
-
-TASK-07 добавляет `tests/e2e/public-routes.spec.ts`: девять сценариев на четырёх viewport. Fixture разрешает точный публичный GET `/api/v1/checkpoints` с единственным `route_id` существующего маршрута; отсутствие Bearer проверяется и после UI login. Все неизвестные API по-прежнему блокируются. Проверяются каталог/детали, прямой URL/reload/back/forward, некорректные ID, раздельные ошибки GET и ручной повтор, пустые КП, безопасная схема в новой вкладке, статические guides/FAQ и клавиатурное меню. Полный набор содержит 148 запусков: прежние 112 и новые 36. Для итогов конкретного прогона см. `../local_docs/TASK-07-REPORT.md`; копия JSON и публичные снимки — `../local_docs/task-07-artifacts/`.
-
-Новый публичный GET имеет статус C / mock verified, а не real-API verified. Живая проверка checkpoints допускается только при предоставленном тестовом сервере; отсутствие сервера — `NOT_RUN`. Read-only preflight остаётся прежним: только схема и routes, без добавления записей или незаявленного live smoke.
-
-TASK-06 добавляет `tests/e2e/typist.spec.ts` (17 сценариев × 4 viewport) с точной mock-ролью typist, тремя типизированными staff-путями и тем же блокирующим network guard. Живой typist smoke **не входит** в probe или E2E: POST paper-form/match запрещены без отдельного явного разрешения владельца тестовой БД. GET unlinked с staff-токеном требует согласования; выданных credentials здесь нет. Не добавляйте токен в CLI/env example/артефакты и не проверяйте organizer/admin как расширение typist-прав без серверной матрицы RBAC. Staff API имеют зрелость C, не real-API verified. Локальный запуск только staff: `npm.cmd run test:e2e -- tests/e2e/typist.spec.ts`.
-
-```powershell
-npm.cmd ci
-npm.cmd run api:check
-npm.cmd run typecheck
-npm.cmd run lint
-npm.cmd test
-npm.cmd run build
-npx.cmd playwright install chromium
-npm.cmd run test:e2e
-npm.cmd run test:preflight
-```
-
-Отдельно preflight только при явно заданном approved origin. Итог всегда двумя независимыми строками:
+Для каждого сценария отдельно: операция, источник данных, что фактически запускалось, code/MIME/счётчики или причина NOT_RUN/BLOCKED. Свежие результаты TASK-11: ../local_docs/TASK-11-REPORT.md, TASK-11-API-READINESS.md, TASK-11-COPY-AUDIT.md и task-11-artifacts/summary.json.
 
 ```text
-mock E2E: PASS / FAIL / NOT_RUN
-real FastAPI: PASS_LIVE / FAIL_LIVE / UNREACHABLE / NOT_RUN
+Frontend/mock checks: PASS / FAIL / NOT_RUN
+Read-only FastAPI: PASS_LIVE / CONTRACT_MISMATCH / UNREACHABLE / NOT_RUN
+Live writes: NOT_RUN / separately authorized result
 ```
 
-Даже read-only PASS для схемы/routes не повышает все P0 или P1 операции до real-API verified. При недоступном API допустимый итог TASK-05: **integration-ready, live pending**.
+TASK-11 не изменяет Python, database, OpenAPI/schema, мастер4.3, session/HTTP/PDF security или Git history. Все изменения агента остаются unstaged/uncommitted.
