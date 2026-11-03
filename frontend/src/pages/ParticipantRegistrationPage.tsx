@@ -161,7 +161,7 @@ function RegistrationForm({ epoch }: { epoch: number }) {
       <button type="button" className={styles.secondary} onClick={() => void routes.refetch()} disabled={pending || routes.isFetching}>Обновить маршруты</button>
       <div className={styles.rows}>{rows.map((row, index) => <fieldset className={styles.row} key={row.key} disabled={pending}>
         <legend>Участник {index + 1}</legend>
-        <div className={styles.rowHeader}><button type="button" className={styles.secondary} disabled={pending || rows.length === 1} onClick={() => removeRow(row.key)} aria-label={`Убрать участника ${index + 1}`}>Убрать</button></div>
+        <div className={styles.rowHeader}><p>Личные данные и маршрут</p><button type="button" className={styles.secondary} disabled={pending || rows.length === 1} onClick={() => removeRow(row.key)} aria-label={`Убрать участника ${index + 1}`}>Убрать</button></div>
         <div className={styles.fields}>{fieldNames.map(name => {
           const fieldId = `${id}-${row.key}-${name}`;
           const issue = errors[row.key]?.[name];

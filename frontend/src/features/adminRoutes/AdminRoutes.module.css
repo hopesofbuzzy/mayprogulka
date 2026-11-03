@@ -6,6 +6,11 @@
 .toolbar h2, .toolbar > p { margin-right: auto; }
 .toolbar > p { margin-bottom: 0; }
 .list { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 16px; }
+.list > .panel > p:first-child { margin-top: 0; font-variant-numeric: tabular-nums; }
+.list > .panel { border-left: 4px solid var(--forest); }
+.list > .panel > .actions { border-top: 1px solid var(--border); padding-top: 18px; }
+.toolbar { padding-block: 12px; border-block: 1px solid var(--border); }
+.dialog .toolbar { border-top: 0; padding-top: 0; }
 .panel { background: #fffdf8; border: 1px solid var(--border); border-radius: 16px; padding: 24px; min-width: 0; }
 .panel h3 { margin-block: 10px 12px; font-size: 23px; }
 .panel p { line-height: 1.65; }

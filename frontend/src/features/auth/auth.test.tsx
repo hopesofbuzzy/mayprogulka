@@ -207,6 +207,9 @@ describe('guard, logout and private cache', () => {
     sessionStore.login(tokenReply(), sessionStore.beginAuthentication());
     const { client } = mount('/account');
     await screen.findByRole('heading', { name: 'Личный кабинет' });
+    // The direct transport call below bypasses userEvent's act boundary. Finish
+    // mounting the lazy route/provider before seeding and expiring its cache.
+    await act(() => Promise.resolve());
     client.setQueryData(['private', 'protected-example'], 'test-data');
     transport.mockResolvedValue(json({}, 401));
     const { api } = await import('../../shared/api/client');

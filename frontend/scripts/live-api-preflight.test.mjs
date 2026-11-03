@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { runPreflight, contractDiff } from './live-api-preflight.mjs';
+import { runPreflight, contractDiff, compareContract } from './live-api-preflight.mjs';
 const contract = JSON.parse(await readFile(new URL('../../contracts/openapi.current.json', import.meta.url), 'utf8'));
 const json = value => new Response(JSON.stringify(value), { headers: { 'Content-Type': 'application/json' } });
 const routes = { routes: [{ id: 12, name: 'Synthetic', year: 2026, distance: 12, is_active: true }] };
@@ -60,7 +60,59 @@ test('reports removed/added operations and schema/security changes without print
   changed.paths['/api/v1/participants/{participant_id}/pay'].post.security = [];
   const diff = contractDiff(contract, changed);
   assert(diff.some(line => line === 'missing GET /api/v1/participants/my'));
-  assert(diff.some(line => line === 'extra GET /api/v1/synthetic'));
+  assert.deepEqual(compareContract(contract, changed).added, ['GET /api/v1/synthetic']);
   assert(diff.some(line => line.includes('schema PaymentResponse')));
   assert(diff.some(line => line.includes('security differs')));
+});
+
+const scans = ['/api/v1/scans', '/api/v1/scans/batch', '/api/v1/scans/upload-file', '/api/v1/scans/self'];
+function additive() {
+  const value = structuredClone(contract);
+  for (const path of scans) value.paths[path] = { post: { responses: { 200: { description: 'Synthetic extra operation' } } } };
+  value.components.schemas.SyntheticExtraScan = { type: 'object' };
+  return value;
+}
+test('22 to 26 is compatible with named extras; no scan request is made', async () => {
+  const actual = additive(), result = compareContract(contract, actual);
+  assert.equal(result.status, 'COMPATIBLE_WITH_EXTRAS'); assert.equal(result.paths, 24); assert.equal(result.operations, 26);
+  assert.deepEqual(result.added, scans.map(path => `POST ${path}`).sort()); assert.deepEqual(result.changed, []); assert.deepEqual(result.missing, []);
+  assert.deepEqual(contractDiff(contract, actual), []);
+  const probe = harness(path => json(path === '/openapi.json' ? actual : routes)); const run = await probe.run();
+  assert.equal(run.exitCode, 0); assert.equal(run.results[0].status, 'COMPATIBLE_WITH_EXTRAS'); assert.equal(run.results[1].status, 'PASS_LIVE');
+  assert.deepEqual(probe.calls.map(call => call.path), ['/openapi.json', '/api/v1/routes']);
+});
+test('all 22 known operations remain required even when backend adds methods', () => {
+  for (const [path, item] of Object.entries(contract.paths)) for (const method of Object.keys(item).filter(key => ['get','post','put','delete'].includes(key))) {
+    const changed = additive(); delete changed.paths[path][method];
+    const result = compareContract(contract, changed); assert.equal(result.status, 'CONTRACT_MISMATCH'); assert(result.missing.includes(`${method.toUpperCase()} ${path}`));
+  }
+});
+for (const field of ['requestBody', 'responses', 'parameters', 'security']) test(`changes to ${field} on any known operation fail, including non-P0`, () => {
+  for (const [path, item] of Object.entries(contract.paths)) for (const method of Object.keys(item).filter(key => ['get','post','put','delete'].includes(key))) {
+    const changed = additive(); changed.paths[path][method][field] = field === 'security' ? [{ SyntheticSecurity: [] }] : { syntheticBreakingChange: true };
+    assert.equal(compareContract(contract, changed).status, 'CONTRACT_MISMATCH', `${method} ${path} ${field}`);
+  }
+});
+test('every one of 36 known schemas is checked, including a DTO property named description', () => {
+  assert.equal(Object.keys(contract.components.schemas).length, 36);
+  for (const name of Object.keys(contract.components.schemas)) {
+    const changed = additive(); changed.components.schemas[name].type = 'synthetic-invalid-type';
+    assert(compareContract(contract, changed).changed.includes(`schema ${name} differs`));
+  }
+  const changed = additive(); changed.components.schemas.RouteResponse.properties.description = { type: 'integer' };
+  assert(compareContract(contract, changed).changed.includes('schema RouteResponse differs'));
+});
+test('inherited security, path parameters, security scheme and versions cannot change unnoticed', () => {
+  for (const mutate of [
+    value => { value.security = [{ HTTPBearer: [] }]; },
+    value => { value.paths['/api/v1/routes'].parameters = [{ name: 'new_required', in: 'query', required: true, schema: { type: 'string' } }]; },
+    value => { value.components.securitySchemes.HTTPBearer.scheme = 'basic'; },
+    value => { value.openapi = '3.0.3'; }, value => { value.info.version = '2.0'; },
+    value => { value.paths['/api/v1/routes'].get = null; },
+  ]) { const changed = additive(); mutate(changed); assert.equal(compareContract(contract, changed).status, 'CONTRACT_MISMATCH'); }
+});
+test('documentation-only schema changes do not hide structural differences or create false failures', () => {
+  const changed = additive(); changed.components.schemas.RouteResponse.description = 'Documentation only';
+  changed.paths['/api/v1/routes'].get.responses['200'].description = 'Documentation only';
+  assert.equal(compareContract(contract, changed).status, 'COMPATIBLE_WITH_EXTRAS');
 });

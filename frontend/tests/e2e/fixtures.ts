@@ -30,6 +30,7 @@ export class MockApi {
   private staffSeen = deferred<void>();
   private staffCompleted = deferred<void>();
   routeMode: 'success' | '500' | 'html' | 'empty' | 'invalid' = 'success';
+  private routesGate: ReturnType<typeof deferred<Reply>> | null = null;
   publicRoutes: components['schemas']['RouteResponse'][] = structuredClone(routes);
   checkpointMode: 'success' | 'empty' | '500' | '403' | 'network' | 'invalid' | 'foreign' = 'success';
   checkpointWriteMode: 'success' | '422' | '403' | '409' | '408' | 'network' | 'timeout' = 'success';
@@ -59,6 +60,10 @@ export class MockApi {
   private completed = deferred<void>();
 
   count(method: string, path: string) { return this.calls.filter(call => call.method === method && call.path === path).length; }
+  deferRoutes() {
+    this.routesGate = deferred<Reply>();
+    return this.routesGate;
+  }
   deferBatch() {
     this.batchGate = deferred<Reply>();
     return { seen: this.batchSeen.promise, release: this.batchGate.release, completed: this.batchCompleted.promise };
@@ -104,6 +109,12 @@ export class MockApi {
     if (method === 'GET' && path === '/api/v1/routes') {
       expect(Boolean(token), 'Public routes must not carry credentials').toBe(false);
       expect(url.search).toBe('');
+      if (this.routesGate) {
+        const gate = this.routesGate;
+        const delayed = await gate.promise;
+        if (this.routesGate === gate) this.routesGate = null;
+        return reply(delayed.body, delayed.status);
+      }
       if (this.routeMode === 'html') return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><html>Unexpected SPA fallback</html>' });
       if (this.routeMode === 'invalid') return reply({ routes: [{ name: { unexpected: true } }] });
       return this.routeMode === '500' ? reply({}, 500) : reply({ routes: this.routeMode === 'empty' ? [] : this.publicRoutes });

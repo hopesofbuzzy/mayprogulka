@@ -72,6 +72,8 @@ Production-off конфигурация обслуживает предвари�
 
 Текущий live-статус: **Real FastAPI: NOT_RUN**. TASK-11 не делает даже read-only вызов без утверждённого origin. `integration:preflight` требует LIVE_API_ORIGIN и выполняет только GET /openapi.json и GET /api/v1/routes без Bearer/cookies/редиректов/retry. Без origin — NOT_RUN, без сети. Команды Windows/Git Bash/POSIX и классификация результатов: [INTEGRATION_TESTING.md](./INTEGRATION_TESTING.md).
 
+TASK-14: preflight сравнивает все 22 известные операции и ожидаемые схемы; дополнительные методы сервера допускаются со статусом `COMPATIBLE_WITH_EXTRAS` и списком added/changed/missing. Это не подключает новые функции: tracked OpenAPI и типы сохраняются, сканирование не реализовано, batch-КП выключен в обычном приложении. Реальный FastAPI по-прежнему **NOT_RUN**.
+
 До write smoke команда предоставляет изолированные origin/БД/учётные записи, устраняет backend security blockers (admin maps и фиксированные секреты), сверяет live schema, проверяет отрицательный RBAC и даёт отдельное письменное разрешение на конкретные записи. Фронтенд не меняет Python/database/OpenAPI и не объединяет ветки.
 
 ## Структура и дизайн

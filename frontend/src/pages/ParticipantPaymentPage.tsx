@@ -4,8 +4,8 @@ import { Link, useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../features/auth/AuthProvider';
 import { useMyParticipants } from '../features/participants/api';
-import { paymentLabel, validParticipantId } from '../features/participants/model';
-import { ParticipantsFailure } from '../features/participants/ParticipantsView';
+import { validParticipantId } from '../features/participants/model';
+import { ParticipantsFailure, PaymentStatus } from '../features/participants/ParticipantsView';
 import { payParticipant, PaymentFailure } from '../features/payments/api';
 import type { PaymentMethod } from '../features/payments/api';
 import { paymentRecordOptions, updatePaymentRecord, verifyPayment } from '../features/payments/state';
@@ -65,6 +65,7 @@ function PaymentPage({ epoch, id }: { epoch: number; id: number | null }) {
     <Link className={common.back} to={id !== null ? `/account/participants/${id}` : '/account'}>← {id !== null ? 'К карточке участника' : 'В личный кабинет'}</Link>
     <h1>Оплата участия</h1>
     <div className={styles.panel}>
+      <p className={common.eyebrow}>Тестовая операция</p>
       <p id="payment-notice" className={styles.banner}>Оплата пока не подключена. Этот шаг меняет статус участника — <strong>деньги не списываются</strong>.</p>
       {id === null ? <div className={common.state}><h2>Некорректный номер участника</h2><p>Выберите участника из своего списка в кабинете.</p></div>
         : !subject && (mine.isPending || mine.isFetching) ? <p role="status" className={common.state}>Загружаем участника…</p>
@@ -72,7 +73,7 @@ function PaymentPage({ epoch, id }: { epoch: number; id: number | null }) {
             : !subject ? <div className={common.state}><h2>Участник не найден среди ваших записей</h2><Link className={common.textLink} to="/account">В личный кабинет</Link></div>
               : <div className={common.detail}>
                 <div className={styles.identity}><h2>{subject.surname} {subject.name}</h2><p>{subject.route_name}</p><p>Номер анкеты: {subject.form_id}</p><p>Номер участника: {subject.id}</p></div>
-                <p>Отметка оплаты: <strong>{mine.isSuccess && participant ? paymentLabel(participant.payment_status) : 'Сейчас не подтверждена'}</strong></p>
+                <p>Отметка оплаты: <strong>{mine.isSuccess && participant ? <PaymentStatus status={participant.payment_status} /> : 'Сейчас не подтверждена'}</strong></p>
                 {participant && !['pending', 'paid'].includes(participant.payment_status) && <p className={common.note}>Полученный статус: {participant.payment_status}</p>}
                 {mine.isError && <ParticipantsFailure error={mine.error} pending={mine.isFetching} retry={() => { if (attempted) void verifyPayment(client, epoch, subject.id); else void mine.refetch(); }} />}
                 {mine.isFetching && <p role="status" className={common.progress}>Обновляем статус участника…</p>}

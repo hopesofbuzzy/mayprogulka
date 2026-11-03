@@ -37,7 +37,7 @@ Auto fixture разрешает только конкретные известн
 
 Production-off: заранее собранный dist через Vite preview4179; batch скрыт, singleton UI доступен. Normal-runtime: настоящий development mode4181 с намеренно выставленным batch=true; API transport abort перехватывается в браузере **до proxy**, доказывая error без фиктивного каталога. Остальные данные этого теста тоже только intercepted synthetic responses. Ни один сценарий не связывается с FastAPI.
 
-runtime-readiness.test.mjs: конфигурационные проверки Vite без server.listen и проверка графа runtime imports, исключающая tests/fixtures/mock scripts/storage/DEV fallback. Тестовый dev-target — лишь значение в памяти, соединения к нему нет. test:preflight — 15 контролируемых fetch tests, не live probe.
+runtime-readiness.test.mjs: конфигурационные проверки Vite без server.listen и проверка графа runtime imports, исключающая tests/fixtures/mock scripts/storage/DEV fallback. Тестовый dev-target — лишь значение в памяти, соединения к нему нет. test:preflight использует контролируемый fetch, без живой сети.
 
 Артефакты основного набора по прежней конфигурации сначала task-05-artifacts; финальная копия TASK-11 в ../local_docs/task-11-artifacts. Normal outputs сразу там; off outputs по прежнему task-10-artifacts и копируются. Trace/HAR/video off. Не включать их на живом окружении без отдельной политики обезличивания. Не сохранять токены/пароли, реальные ФИО/контакты, raw HTTP bodies, payment IDs/PDF URLs в доказательствах.
 
@@ -82,7 +82,9 @@ echo $?
 
 Подставляется согласованный origin, не буквальный placeholder. Нет Bearer/cookies и login. Probe выполняет **только** GET /openapi.json и GET /api/v1/routes, redirect:error, timeout4s, без retry. Не вызывается автоматически test/build/E2E и не пишет schema/types/БД.
 
-Первый GET проверяет версии/пути/методы, семь P0 request/response/parameters/security и schemas; title/description/examples не сравниваются. Второй требует200 JSON {routes:RouteResponse[]} и проверяет обязательные типы/nullable поля. HTML/неверный JSON/DTO/редирект не считаются PASS. Содержимое routes не выводится.
+Первый GET сравнивает версии, наличие всех 22 известных операций, их requestBody/responses/parameters и эффективный security (включая наследование от корня), общие параметры пути и все ожидаемые components, включая 36 schemas. Документирующие title/description/examples не сравниваются; одноимённые поля DTO сохраняются при сравнении. Добавочные операции и components разрешены: например, четыре новых POST scans при неизменных известных контрактах дают COMPATIBLE_WITH_EXTRAS. Они перечисляются в added как extra-in-backend и не становятся функциями приложения. Изменения и удаления перечисляются в changed/missing и дают CONTRACT_MISMATCH. Локальный контракт остаётся 20 путей / 22 операции; generated types автоматически не обновляются.
+
+Второй GET требует200 JSON {routes:RouteResponse[]} и проверяет обязательные типы/nullable поля. HTML/неверный JSON/DTO/редирект не считаются PASS. Содержимое routes не выводится. Семь P0 операций остаются отдельной контрольной группой локального контракта; сравнение внешней схемы больше не ограничивается ими. Сравнение структур консервативное: изменение известной схемы требует ревью, даже если сервер считает его совместимым.
 
 | Статус | Смысл |
 |---|---|
@@ -90,6 +92,7 @@ echo $?
 | BLOCKED | Некорректный origin/неподтверждённый допуск, без записи |
 | UNREACHABLE | Нет соединения/timeout, ненулевой exit; это не отсутствие функции |
 | CONTRACT_MISMATCH | Разошлись версии/операции/структуры; контракт не переписывать автоматически |
+| COMPATIBLE_WITH_EXTRAS | Все известные контракты сохранены; дополнительные серверные операции перечислены, но не реализованы фронтендом. Это успех сравнения схемы, не проверка поведения этих методов |
 | PASS_LIVE | Успех именно read-only операции, которую реально проверили |
 | FAIL_LIVE | Конкретная реальная операция дала неверное HTTP/JSON/поведение |
 

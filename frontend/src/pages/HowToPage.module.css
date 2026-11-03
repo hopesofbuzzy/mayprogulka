@@ -1,0 +1,15 @@
+.reading { max-width: none; }
+.intro { display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 40px; margin-bottom: 40px; }
+.journey { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px; border-radius: 70px 70px 16px 16px; background: #e8eedf; }
+.journey > div { display: grid; justify-items: center; gap: 10px; font-size: 12px; font-weight: 700; }
+.journey > span { color: var(--forest); }
+.steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; list-style: none; counter-reset: participation; margin: 0; padding: 0; }
+.steps li { position: relative; padding: 28px; border: 1px solid var(--border); border-radius: 18px; background: #fffdf8; counter-increment: participation; min-width: 0; }
+.steps li::before { content: '0' counter(participation); position: absolute; top: 34px; right: 28px; color: var(--forest); font-size: 14px; font-weight: 700; }
+.steps li > svg { display: block; margin-bottom: 22px; }
+.steps h2 { font-size: 24px; line-height: 1.25; letter-spacing: -.3px; color: var(--forest-deep); max-width: 380px; }
+.steps p { font-size: 15px; line-height: 1.75; margin-top: 16px; }
+.steps li:nth-child(4) { background: #f3eddf; }
+.steps li:nth-child(6) { background: #e8eedf; }
+@media (max-width: 767px) { .intro { grid-template-columns: minmax(0, 1fr); gap: 28px; } .journey { max-width: 440px; } .steps { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+@media (max-width: 600px) { .steps li { padding: 24px 20px; } .steps h2 { font-size: 23px; } .steps li::before { right: 20px; top: 32px; } .journey { padding: 20px 16px; gap: 8px; } .journey svg { width: 52px; height: 52px; } }

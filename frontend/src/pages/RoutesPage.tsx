@@ -30,10 +30,10 @@ export function RoutesPage() {
                 <div className={styles.cardTop}><span>{route.year} год</span><span className={route.is_active ? styles.active : styles.inactive}>{route.is_active ? 'Активный' : 'Неактивный'}</span></div>
                 <p className={styles.distance}>{new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(route.distance)} <span>км</span></p>
                 <h2>{route.name}</h2>
-                <Link className={styles.detailsLink} to={`/routes/${route.id}`}>Подробнее о маршруте<span className={styles.srOnly}> «{route.name}»</span> <span aria-hidden="true">→</span></Link>
                 {route.description && <p className={styles.description}>{route.description}</p>}
                 {!route.is_active && <p className={styles.unavailable}>Недоступен для регистрации</p>}
-                {mapUrl ? <a className={styles.mapLink} href={mapUrl} target="_blank" rel="noopener noreferrer">Открыть карту <span aria-hidden="true">↗</span><span className={styles.srOnly}> (в новой вкладке)</span></a> : <p className={styles.mapNote}>{route.map_url ? 'Карта предоставлена. Внешний адрес требует проверки организаторами.' : 'Карта пока не предоставлена'}</p>}
+                <div className={styles.cardFooter}><Link className={styles.detailsLink} to={`/routes/${route.id}`}>Подробнее о маршруте<span className={styles.srOnly}> «{route.name}»</span> <span aria-hidden="true">→</span></Link>
+                {mapUrl ? <a className={styles.mapLink} href={mapUrl} target="_blank" rel="noopener noreferrer">Открыть карту <span aria-hidden="true">↗</span><span className={styles.srOnly}> (в новой вкладке)</span></a> : <p className={styles.mapNote}>{route.map_url ? 'Карта предоставлена. Внешний адрес требует проверки организаторами.' : 'Карта пока не предоставлена'}</p>}</div>
               </li>
             );
           })}
