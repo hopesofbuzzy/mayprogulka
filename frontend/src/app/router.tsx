@@ -11,6 +11,7 @@ export const appRoutes: RouteObject[] = [{
   hydrateFallbackElement: <div className="contentPage container" role="status">Загружаем страницу…</div>,
   children: [
     { index: true, Component: HomePage },
+    { path: 'about', lazy: async () => ({ Component: (await import('../pages/AboutPage')).AboutPage }) },
     { path: 'routes', lazy: async () => ({ Component: (await import('../pages/RoutesPage')).RoutesPage }) },
     { path: 'routes/:routeId', lazy: async () => ({ Component: (await import('../pages/RouteDetailPage')).RouteDetailPage }) },
     { path: 'how-to', lazy: async () => ({ Component: (await import('../pages/HowToPage')).HowToPage }) },

@@ -211,7 +211,7 @@ describe('public guides', () => {
     expect(screen.getByText(/Порядок выдачи и оформления на вашем старте уточните/)).toHaveTextContent('уточните у организаторов');
     expect(screen.getByText(/Номер анкеты и штрихкод физической карты не заменяют/)).toHaveTextContent('не заменяют друг друга');
     expect(screen.getByText(/Если ссылки нет, уточните у организаторов/)).toBeInTheDocument();
-    await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: 'Вопросы' }));
+    await user.click(within(screen.getByRole('navigation', { name: 'Основная навигация' })).getByRole('link', { name: 'Вопросы' }));
     expect(await screen.findByRole('heading', { name: 'Вопросы и ответы' })).toBeInTheDocument();
     expect(screen.getByRole('main')).toHaveFocus(); expect(fetchMock).not.toHaveBeenCalled();
   });

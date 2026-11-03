@@ -105,7 +105,7 @@ test('same-origin scheme opens in a new tab; forbidden and absent map links stay
 test('how-to and FAQ support hero links, direct/reload and keyboard navigation in compact menu', async ({ page, api }, info) => {
   await page.goto('/'); await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await noOverflow(page); await representativeScreenshot(page, info, 'public-home');
-  await page.getByRole('main').getByRole('link', { name: /Как участвовать/ }).click();
+  await page.getByRole('region', { name: /Город становится/ }).getByRole('link', { name: /Как участвовать/ }).click();
   await expect(page.getByRole('heading', { name: 'Как участвовать', exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Шаги участия' })).toContainText('деньги не списываются');
   await expect(page.getByRole('main')).toContainText('Порядок выдачи и оформления на вашем старте уточните у организаторов');
@@ -136,7 +136,7 @@ test('authenticated public reads omit Bearer; route text is escaped and does not
   await login(page, api);
   api.publicRoutes[0]!.description = '<img src=x onerror="window.task07Injected=true"><script>throw 1</script>';
   if (page.viewportSize()!.width < 768) await page.getByRole('button', { name: 'Открыть меню' }).click();
-  await page.getByRole('link', { name: 'Маршруты', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Основная навигация' }).getByRole('link', { name: 'Маршруты', exact: true }).click();
   await page.getByRole('link', { name: /Подробнее о маршруте.*Тестовая лесная тропа/ }).click();
   await expect(page.getByRole('list', { name: cpList })).toBeVisible();
   await expect(page.getByRole('main')).toContainText('<img src=x');

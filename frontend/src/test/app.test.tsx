@@ -50,7 +50,7 @@ describe('public routing and keyboard navigation', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Город становитсяближе, когдаидёшь пешком.');
     expect(fetchMock).not.toHaveBeenCalled();
     expect(screen.getByRole('link', { name: 'Личный кабинет' })).toHaveAttribute('href', '/login');
-    expect(screen.getAllByRole('link', { name: /Как участвовать/ })).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: /Как участвовать/ })).toHaveLength(3);
     for (const link of screen.getAllByRole('link', { name: /Как участвовать/ })) expect(link).toHaveAttribute('href', '/how-to');
     await user.click(screen.getByRole('link', { name: /Выбрать маршрут/ }));
     expect(await screen.findByRole('heading', { name: 'Маршруты' })).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe('public routing and keyboard navigation', () => {
     expect(screen.getByRole('link', { name: 'Перейти к содержимому' })).toHaveFocus();
     const cta = screen.getByRole('link', { name: /Выбрать маршрут/ });
     // CSS media queries are verified in the browser; jsdom also tabs through the menu toggle.
-    for (let index = 0; index < 8 && document.activeElement !== cta; index++) await user.tab();
+    for (let index = 0; index < 10 && document.activeElement !== cta; index++) await user.tab();
     expect(cta).toHaveFocus();
   });
   it('renders an honest 404 and returns home', async () => {
@@ -99,7 +99,7 @@ describe('compact navigation disclosure', () => {
     const toggle = screen.getByRole('button', { name: 'Открыть меню' });
     await user.click(toggle);
     await user.tab();
-    expect(screen.getByRole('link', { name: 'Главная' })).toHaveFocus();
+    expect(within(screen.getByRole('navigation', { name: 'Основная навигация' })).getByRole('link', { name: 'Главная' })).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(toggle).toHaveFocus();
@@ -110,7 +110,7 @@ describe('compact navigation disclosure', () => {
     await user.click(screen.getByRole('button', { name: 'Открыть меню' }));
     await user.tab();
     await user.tab();
-    expect(screen.getByRole('link', { name: 'Маршруты' })).toHaveFocus();
+    expect(within(screen.getByRole('navigation', { name: 'Основная навигация' })).getByRole('link', { name: 'Маршруты' })).toHaveFocus();
     await user.keyboard('{Enter}');
     expect(await screen.findByText(fixtures[0]!.name)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть меню' })).toHaveAttribute('aria-expanded', 'false');
@@ -119,14 +119,15 @@ describe('compact navigation disclosure', () => {
     await act(() => router.navigate(-1));
     expect(screen.getByRole('button', { name: 'Открыть меню' })).toHaveAttribute('aria-expanded', 'false');
   });
-  it('closes even when the current page link is selected; unavailable sections have no links', async () => {
+  it('closes even when the current page link is selected; all public sections have real links', async () => {
     const { user } = mount();
     await user.click(screen.getByRole('button', { name: 'Открыть меню' }));
-    const nav = screen.getByRole('navigation');
-    expect(within(nav).getAllByRole('link')).toHaveLength(4);
+    const nav = screen.getByRole('navigation', { name: 'Основная навигация' });
+    expect(within(nav).getAllByRole('link')).toHaveLength(5);
     expect(within(nav).getByRole('link', { name: 'Вопросы' })).toHaveAttribute('href', '/faq');
     expect(within(nav).getByRole('link', { name: 'Как участвовать' })).toHaveAttribute('href', '/how-to');
-    expect(within(nav).getByText('Организаторам')).toHaveAttribute('aria-disabled', 'true');
+    expect(within(nav).getByRole('link', { name: 'О прогулке' })).toHaveAttribute('href', '/about');
+    expect(within(nav).queryByText('Организаторам')).not.toBeInTheDocument();
     await user.click(within(nav).getByRole('link', { name: 'Главная' }));
     expect(screen.getByRole('button', { name: 'Открыть меню' })).toHaveAttribute('aria-expanded', 'false');
   });

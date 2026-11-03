@@ -5,6 +5,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 import { LogoutButton } from '../features/auth/LogoutButton';
 import { checkpointPathId } from '../features/routes/model';
 import styles from './PublicLayout.module.css';
+import { PublicFooter } from './PublicFooter';
 
 function PublicNav() {
   const { isAuthenticated, session } = useAuth();
@@ -31,7 +32,7 @@ function PublicNav() {
         <NavLink to="/routes">Маршруты</NavLink>
         <NavLink to="/how-to">Как участвовать</NavLink>
         <NavLink to="/faq">Вопросы</NavLink>
-        <span aria-disabled="true" title="Раздел пока недоступен">Организаторам</span>
+        <NavLink to="/about">О прогулке</NavLink>
         {session?.role === 'admin' && <NavLink className={styles.mobileAdmin} to="/staff/routes">Управление маршрутами</NavLink>}
         {isAuthenticated && <LogoutButton className={styles.mobileLogout} />}
       </nav>
@@ -45,6 +46,7 @@ export function PublicLayout() {
   const admin = session?.role === 'admin';
   const staff = typist || admin;
   const { pathname } = useLocation();
+  const workspace = /^\/(account|staff)(\/|$)/.test(pathname);
   const previousPath = useRef(pathname);
   const main = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -53,7 +55,7 @@ export function PublicLayout() {
       window.scrollTo(0, 0);
       previousPath.current = pathname;
     }
-    const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/how-to': 'Как участвовать', '/faq': 'Вопросы и ответы', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (/^\/routes\/[^/]+\/?$/.test(pathname) ? 'Детали маршрута' : pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
+    const title = ({ '/': 'Город становится ближе', '/about': 'О Майской прогулке', '/routes': 'Маршруты', '/how-to': 'Как участвовать', '/faq': 'Вопросы и ответы', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (/^\/routes\/[^/]+\/?$/.test(pathname) ? 'Детали маршрута' : pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
     const staffTitle = ({ '/staff/routes': 'Управление маршрутами', '/staff/typist': 'Рабочее место наборщика', '/staff/typist/new': 'Бумажная анкета', '/staff/typist/match': 'Сопоставление с картой', '/staff/typist/unlinked': 'Непривязанные карты' } as Record<string, string>)[pathname];
     document.title = `${checkpointPathId(pathname) !== null ? 'Контрольные пункты маршрута' : staffTitle ?? (/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Оплата участия' : title)} — Майская прогулка`;
   }, [pathname]);
@@ -76,6 +78,7 @@ export function PublicLayout() {
       </header>
       {expired && <p className={styles.sessionNotice} role="status">Сессия завершена. <Link to="/login">Войдите снова</Link>, чтобы открыть личный кабинет.</p>}
       <main id="main" tabIndex={-1} ref={main}><Outlet /></main>
+      {!workspace && <PublicFooter />}
     </>
   );
 }
