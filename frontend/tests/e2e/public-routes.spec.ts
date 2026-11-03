@@ -48,7 +48,7 @@ test('invalid IDs never request API; absent routes and empty list never request 
   }
   expect(api.calls).toHaveLength(0);
   await page.goto('/routes/999'); await expect(page.getByRole('heading', { name: 'Маршрут не найден' })).toBeVisible();
-  api.routeMode = 'empty'; await page.reload(); await expect(page.getByText('Сервис вернул пустой список маршрутов.')).toBeVisible();
+  api.routeMode = 'empty'; await page.reload(); await expect(page.getByText('Маршруты пока не опубликованы.')).toBeVisible();
   expect(api.count('GET', cpPath)).toBe(0);
 });
 
@@ -107,8 +107,8 @@ test('how-to and FAQ support hero links, direct/reload and keyboard navigation i
   await noOverflow(page); await representativeScreenshot(page, info, 'public-home');
   await page.getByRole('main').getByRole('link', { name: /Как участвовать/ }).click();
   await expect(page.getByRole('heading', { name: 'Как участвовать', exact: true })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Шаги участия' })).toContainText('без списания денег');
-  await expect(page.getByRole('main')).toContainText('не задерживает');
+  await expect(page.getByRole('list', { name: 'Шаги участия' })).toContainText('деньги не списываются');
+  await expect(page.getByRole('main')).toContainText('Порядок выдачи и оформления на вашем старте уточните у организаторов');
   await noOverflow(page); await representativeScreenshot(page, info, 'how-to');
   const nav = page.getByRole('navigation', { name: 'Основная навигация' });
   const toggle = page.getByRole('button', { name: /^(Открыть|Закрыть) меню$/ });
@@ -125,7 +125,7 @@ test('how-to and FAQ support hero links, direct/reload and keyboard navigation i
   await expect(page.getByRole('main')).toBeFocused();
   const question = page.getByText('Списываются ли деньги при оплате?', { exact: true });
   await question.focus(); await page.keyboard.press('Enter');
-  await expect(page.locator('details[open]')).toContainText('без списания денег');
+  await expect(page.locator('details[open]')).toContainText('деньги не списываются');
   await noOverflow(page); await representativeScreenshot(page, info, 'faq');
   await page.reload(); await expect(page.getByRole('heading', { name: 'Вопросы и ответы' })).toBeVisible();
   await page.goto('/how-to'); await page.reload(); await expect(page.getByRole('heading', { name: 'Как участвовать', exact: true })).toBeVisible();

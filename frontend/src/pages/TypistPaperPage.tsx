@@ -24,13 +24,13 @@ export function TypistPaperPage() {
   const selected = active.find(route => route.id === Number(state.values.route_id));
   const validate = () => validatePaper(state.values, available ? routes.data! : []);
   if (state.phase === 'confirmed' && state.result) return <><h1>Ответ по бумажной анкете получен</h1><div className={styles.panel}>
-    <dl className={styles.facts}><div><dt>Номер анкеты, назначенный сервером</dt><dd>{state.result.form_id}</dd></div><div><dt>ID участника</dt><dd>{state.result.participant_id}</dd></div><div><dt>Отметка оплаты в системе</dt><dd>{state.result.payment_status}</dd></div></dl>
+    <dl className={styles.facts}><div><dt>Назначенный номер анкеты</dt><dd>{state.result.form_id}</dd></div><div><dt>Номер участника</dt><dd>{state.result.participant_id}</dd></div><div><dt>Отметка оплаты в системе</dt><dd>{state.result.payment_status}</dd></div></dl>
     <p>Отметка оплаты в системе не подтверждает получение денег.</p><p>Запишите номер анкеты. На экране сопоставления введите его вручную вместе со штрихкодом карты.</p>
     {state.duplicateRisk && <p className={common.alert}>Ранее была отправка без подтверждения. Проверьте возможные дубли с ответственным.</p>}
     <div className={common.actions}><Link className="primaryButton" to="/staff/typist/match">Перейти к сопоставлению</Link><button className={common.secondary} type="button" onClick={op.clear}>Следующая бумажная анкета</button></div>
   </div></>;
   return <><h1>Бумажная анкета</h1><p className={styles.intro}>Введите одну ещё не зарегистрированную бумажную анкету. Для онлайн-анкеты используйте сопоставление без создания новой записи.</p>
-    <p className={styles.hint}>Сервер назначает номер анкеты сам. Сохранить заранее напечатанный номер через эту форму нельзя — порядок сверки уточните у ответственного.</p>
+    <p className={styles.hint}>Номер анкеты назначается после сохранения. Заранее напечатанный номер здесь сохранить нельзя — сверьтесь с ответственным.</p>
     <OperationNotice message={state.message} uncertain={state.uncertain} acknowledged={op.acknowledged} acknowledge={op.setAcknowledged} disabled={state.phase === 'pending'} />
     {routes.isPending && <p role="status" className={styles.intro}>Загружаем маршруты…</p>}
     {routes.isError && <p role="alert" className={common.alert}>Не удалось загрузить маршруты. Введённые данные сохранены.</p>}
@@ -50,7 +50,7 @@ export function TypistPaperPage() {
           {issue && <p id={`${fieldId}-error`} className={styles.error}>{issue}</p>}
         </div>;
       })}</div></fieldset>
-      <p className={styles.hint}>{selected && <>{selected.name} · {selected.year} год · {selected.distance} км. </>}Год и активность — данные сервера, а не подтверждение открытой регистрации.</p>
+      <p className={styles.hint}>{selected && <>{selected.name} · {selected.year} год · {selected.distance} км. </>}Год и активность маршрута не подтверждают открытие регистрации.</p>
       <div className={common.actions}><button className={common.submit} type="submit" disabled={state.phase === 'pending' || !available || (state.uncertain && !op.acknowledged)}>Проверить анкету</button></div>
       {state.phase === 'pending' && <p role="status" className={styles.intro}>Ждём подтверждение создания анкеты…</p>}
     </form>}

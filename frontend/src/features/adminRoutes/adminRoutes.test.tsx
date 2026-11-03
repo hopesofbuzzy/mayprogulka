@@ -77,8 +77,8 @@ describe('admin access and shared public list', () => {
   it.each(['/staff/routes?x=1', '/staff/routes#x', '//staff/routes', '/staff/routes/../routes', '/staff%2Froutes', '/staff/routes/new', '/staff\\routes', 'https://example.test/staff/routes', '/x/../staff/routes', '/%2573taff/routes'])('rejects unsafe admin returnTo %s', value => expect(safeReturnTo(value)).toBe('/account'));
   it('accepts only exact new staff path and does not expand arbitrary staff access', () => expect(safeReturnTo('/staff/routes')).toBe('/staff/routes'));
   it('uses public query and explicitly labels activity, optional scheme and list incompleteness', async () => {
-    const { client } = mount(); expect(await screen.findByText('Флаг активности: Да')).toBeInTheDocument();
-    expect(screen.getByText(/Полнота административного реестра не подтверждена/)).toBeInTheDocument();
+    const { client } = mount(); expect(await screen.findByText('Активность: Да')).toBeInTheDocument();
+    expect(screen.getByText(/Скрытые и архивные записи могут отсутствовать/)).toBeInTheDocument();
     expect(client.getQueryData(['routes'])).toEqual(list); expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('link', { name: /Открыть схему/ })).toHaveAttribute('target', '_blank');
   });
@@ -150,7 +150,7 @@ describe('route forms and confirmed operations', () => {
   });
   it('DELETE 204 with record still present demands verification, not guessed archive behavior', async () => {
     mutation = async () => new Response(null, { status: 204 }); const { user } = mount(); await start('delete', user); await user.click(confirmation('delete'));
-    expect(await screen.findByText('Маршрут остаётся в каталоге после 204. Требуется проверка результата ответственным.')).toBeInTheDocument();
+    expect(await screen.findByText('Удаление подтверждено, но маршрут всё ещё виден. Сверьтесь с ответственным; не удаляйте его повторно.')).toBeInTheDocument();
   });
 });
 
@@ -176,7 +176,7 @@ describe('operation failures and uncertainty', () => {
       expect(await screen.findByText('Исход предыдущей операции неизвестен.')).toBeInTheDocument();
       const method = kind === 'create' ? 'POST' : kind === 'edit' ? 'PUT' : 'DELETE'; expect(calls(method)).toHaveLength(1); expect(client.getQueryData(['routes'])).toEqual([route]);
       window.dispatchEvent(new Event('online')); window.dispatchEvent(new Event('focus'));
-      await user.click(screen.getByRole('button', { name: 'Проверить состояние в каталоге' })); await screen.findByText('Каталог запрошен заново. Сам результат записи по нему не доказан.');
+      await user.click(screen.getByRole('button', { name: 'Проверить состояние в каталоге' })); await screen.findByText('Список обновлён, но результат операции нужно сверить с ответственным.');
       expect(calls(method)).toHaveLength(1);
       if (kind === 'delete') expect(screen.queryByRole('button', { name: 'Подтвердить удаление' })).not.toBeInTheDocument();
       else expect(screen.getByRole('button', { name: 'Проверить данные' })).toBeDisabled();
@@ -225,14 +225,14 @@ describe('session, cancellation and escaping', () => {
   it('server-side change is shown for comparison while PUT retains only intended fields', async () => {
     const { user } = mount(); await start('edit', user); await user.click(screen.getByRole('button', { name: 'Вернуться к вводу' }));
     list = [{ ...route, distance: 55 }]; await user.click(screen.getByRole('button', { name: 'Перечитать данные маршрутов' }));
-    await screen.findByText(/Запись в каталоге отличается/); await user.click(screen.getByRole('button', { name: 'Проверить данные' })); await user.click(confirmation('edit'));
+    await screen.findByText(/Маршрут изменился/); await user.click(screen.getByRole('button', { name: 'Проверить данные' })); await user.click(confirmation('edit'));
     await screen.findByRole('heading', { name: 'Изменение подтверждено' }); expect(await calls('PUT')[0]!.json()).toEqual({ name: 'Новое название' });
     expect(list[0]!.distance).toBe(55);
   });
   it('a record disappearing during manual refresh disables its pending edit confirmation', async () => {
     const { user } = mount(); await start('edit', user); list = [];
     await user.click(screen.getByRole('button', { name: 'Перечитать данные маршрутов' }));
-    await screen.findByText(/Выбранная запись сейчас не подтверждена/); expect(confirmation('edit')).toBeDisabled(); expect(calls('PUT')).toHaveLength(0);
+    await screen.findByText(/Маршрут сейчас не найден в списке/); expect(confirmation('edit')).toBeDisabled(); expect(calls('PUT')).toHaveLength(0);
   });
   it.each(['id', 'year', 'name', 'distance', 'is_active'])('POST missing required response %s is uncertain', async field => {
     const malformed: Record<string, unknown> = { ...created }; delete malformed[field]; mutation = async () => json(malformed, 201);
@@ -271,6 +271,6 @@ describe('session, cancellation and escaping', () => {
     const payload = '<img src=x onerror=alert(1)>'; list = [{ ...route, name: payload, description: payload, map_url: 'javascript:alert(1)' }]; const { user } = mount();
     await screen.findByRole('list', { name: 'Маршруты из публичного каталога' }); expect(document.querySelector('img, script')).toBeNull(); expect(screen.queryByRole('link', { name: /Открыть схему/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Изменить/ })); expect(screen.getByLabelText('Название')).toHaveValue(payload); expect(screen.queryByLabelText('map_url')).not.toBeInTheDocument();
-    expect(within(screen.getByRole('dialog')).getByText(/Не изменяется текущим API/)).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog')).getByText(/Год и схему маршрута здесь изменить нельзя/)).toBeInTheDocument();
   });
 });

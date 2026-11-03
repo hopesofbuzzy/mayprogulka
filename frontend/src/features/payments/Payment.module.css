@@ -13,4 +13,7 @@
 .result { margin-top: 26px; line-height: 1.7; overflow-wrap: anywhere; }
 .result p + p { margin-top: 12px; }
 .pdf { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.panel details { margin-top: 14px; }
+.panel summary { cursor: pointer; font-weight: 700; }
+.panel summary:focus-visible { outline: 3px solid var(--forest); outline-offset: 4px; }
 @media (max-width: 500px) { .methods { flex-direction: column; gap: 8px; } .identity h2 { font-size: 23px; } }

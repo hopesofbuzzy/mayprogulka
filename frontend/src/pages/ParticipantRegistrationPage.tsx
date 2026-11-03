@@ -124,7 +124,7 @@ function RegistrationForm({ epoch }: { epoch: number }) {
       </div>}
       <p>У каждого участника — отдельный номер анкеты. Номер операции не заменяет номер анкеты.</p>
       <ul className={styles.resultList} aria-label="Созданные участники">{confirmation.participants.map(participant => <li key={participant.id}>
-        <strong>{participant.surname} {participant.name}</strong><span>ID участника: {participant.id}</span><span>Номер анкеты: {participant.form_id}</span><span>{paymentLabel(participant.payment_status)}</span>
+        <strong>{participant.surname} {participant.name}</strong><span>Номер участника: {participant.id}</span><span>Номер анкеты: {participant.form_id}</span><span>{paymentLabel(participant.payment_status)}</span>
         <Link className={styles.textLink} to={`/account/participants/${participant.id}`}>Карточка участника</Link>
       </li>)}</ul>
       {uncertain && <p>Ранее была отправка без подтверждения. Проверьте список на возможные дубли.</p>}
@@ -157,7 +157,7 @@ function RegistrationForm({ epoch }: { epoch: number }) {
       {routes.isPending && <p role="status" className={styles.note}>Загружаем маршруты…</p>}
       {routes.isError && <div className={styles.alert} role="alert">Не удалось загрузить маршруты. Личные данные сохранены.<br /><button type="button" className={styles.secondary} onClick={() => void routes.refetch()} disabled={routes.isFetching}>Повторить загрузку маршрутов</button></div>}
       {routes.isSuccess && !activeRoutes.length && <p className={styles.alert} role="status">Доступных маршрутов пока нет. Регистрацию отправить нельзя.</p>}
-      <p className={styles.note}>Год и активность маршрута указаны по данным сервера. Активность сама по себе не подтверждает открытую регистрацию.</p>
+      <p className={styles.note}>Условия участия и открытие регистрации уточните у организаторов. Год маршрута не определяет дату прогулки.</p>
       <button type="button" className={styles.secondary} onClick={() => void routes.refetch()} disabled={pending || routes.isFetching}>Обновить маршруты</button>
       <div className={styles.rows}>{rows.map((row, index) => <fieldset className={styles.row} key={row.key} disabled={pending}>
         <legend>Участник {index + 1}</legend>

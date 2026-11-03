@@ -16,5 +16,5 @@ function TypistFrame() {
 export function RequireTypist() {
   const { session } = useAuth();
   return session?.role === 'typist' ? <TypistFrame key={sessionStore.getCredentials()?.epoch} />
-    : <section className="container contentPage"><h1>Нет доступа</h1><p className={styles.intro}>Для рабочего места требуется роль наборщика (typist). Клиент не может назначить или расширить права. Обратитесь к ответственному за доступ.</p><p>403 · Доступ к служебным данным не выполнялся.</p></section>;
+    : <section className="container contentPage"><h1>Нет доступа</h1><p className={styles.intro}>Рабочее место доступно только наборщику. За доступом обратитесь к ответственному.</p><p>403 · Нет прав для этого раздела.</p></section>;
 }

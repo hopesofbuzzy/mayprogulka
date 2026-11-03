@@ -86,7 +86,7 @@ describe('public route identity and navigation', () => {
     routeReply = () => json({ routes }); mount('/routes/999');
     expect(await screen.findByRole('heading', { name: 'Маршрут не найден' })).toBeInTheDocument();
     expect(requests('/api/v1/checkpoints')).toHaveLength(0);
-    if (!routes.length) expect(screen.getByText('Сервис вернул пустой список маршрутов.')).toBeInTheDocument();
+    if (!routes.length) expect(screen.getByText('Маршруты пока не опубликованы.')).toBeInTheDocument();
   });
   it('waits for confirmed route presence before requesting checkpoints', async () => {
     let release!: (response: Response) => void; routeReply = () => new Promise(resolve => { release = resolve; });
@@ -207,10 +207,10 @@ describe('public guides', () => {
     const { user } = mount('/');
     await user.click(screen.getAllByRole('link', { name: /Как участвовать/ }).at(-1)!);
     expect(await screen.findByRole('heading', { name: 'Как участвовать' })).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Шаги участия' })).toHaveTextContent('без списания денег');
-    expect(screen.getByText(/Последующий ввод и сопоставление/)).toHaveTextContent('не задерживает');
-    expect(screen.getByText(/Номер анкеты \(form_id\)/)).toHaveTextContent('barcode');
-    expect(screen.getByText(/Если PDF недоступен/)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Шаги участия' })).toHaveTextContent('деньги не списываются');
+    expect(screen.getByText(/Порядок выдачи и оформления на вашем старте уточните/)).toHaveTextContent('уточните у организаторов');
+    expect(screen.getByText(/Номер анкеты и штрихкод физической карты не заменяют/)).toHaveTextContent('не заменяют друг друга');
+    expect(screen.getByText(/Если ссылки нет, уточните у организаторов/)).toBeInTheDocument();
     await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: 'Вопросы' }));
     expect(await screen.findByRole('heading', { name: 'Вопросы и ответы' })).toBeInTheDocument();
     expect(screen.getByRole('main')).toHaveFocus(); expect(fetchMock).not.toHaveBeenCalled();
@@ -229,8 +229,8 @@ describe('public guides', () => {
     const summary = screen.getByText('Списываются ли деньги при оплате?'); summary.focus(); await user.keyboard('{Enter}');
     expect(summary.closest('details')).toBeInTheDocument();
     const main = screen.getByRole('main');
-    expect(main).toHaveTextContent('без списания денег'); expect(main).toHaveTextContent('если сервер предоставил');
-    expect(main).toHaveTextContent('не физическая карта'); expect(main).toHaveTextContent('не полный официальный регламент');
+    expect(main).toHaveTextContent('деньги не списываются'); expect(main).toHaveTextContent('Если в разделе оплаты доступна ссылка');
+    expect(main).toHaveTextContent('не физическая карта'); expect(main).toHaveTextContent('Условия мероприятия уточните у организаторов');
     await waitFor(() => expect(document.title).toBe('Вопросы и ответы — Майская прогулка'));
   });
 });

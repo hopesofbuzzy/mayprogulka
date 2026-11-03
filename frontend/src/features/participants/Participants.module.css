@@ -48,3 +48,4 @@
 .resultList span { display: block; }
 @media (max-width: 700px) { .list, .fields { grid-template-columns: minmax(0, 1fr); } .card, .state, .detail, .row, .confirmation { padding: 22px; } .heading { gap: 20px; } .facts { gap: 18px 16px; } }
 @media (max-width: 390px) { .facts { grid-template-columns: minmax(0, 1fr); } }
+.statusCode { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }

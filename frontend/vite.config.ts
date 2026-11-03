@@ -6,6 +6,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return defineTestConfig({
     plugins: [react()],
+    // Preview serves the production assets only; hosting must route /api separately.
+    preview: { proxy: {} },
     server: {
       proxy: mode === 'e2e' ? {} : {
         '/api': {

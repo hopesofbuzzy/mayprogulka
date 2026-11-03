@@ -50,7 +50,7 @@ export function useBatchOperation(epoch: number, routeId: number) {
       if (!active() || read().phase !== 'checking' || read().revision !== revision) return;
       if (!routes.some(route => route.id === routeId)) throw new Error('Unavailable route');
       update(value => ({ ...value, phase: 'review', snapshot: value.rows.map(row => ({ ...row, values: { ...row.values } })), routeVersion: client.getQueryState(routesQuery.queryKey)?.dataUpdatedAt, revision: value.revision + 1 }));
-    } catch { if (active() && read().phase === 'checking') update(value => ({ ...value, phase: 'edit', message: 'Не удалось подтвердить маршрут свежим GET. Отправка запрещена.', revision: value.revision + 1 })); }
+    } catch { if (active() && read().phase === 'checking') update(value => ({ ...value, phase: 'edit', message: 'Не удалось обновить данные маршрута. Отправка запрещена.', revision: value.revision + 1 })); }
     finally { if (active()) busy.current = false; }
   }
   async function refresh() {
@@ -70,7 +70,7 @@ export function useBatchOperation(epoch: number, routeId: number) {
     const value = read(), routes = client.getQueryState(routesQuery.queryKey);
     if (!active() || !batchEnabled() || busy.current || value.phase !== 'review' || unresolved(value) || !ack || typed !== String(routeId) || !value.snapshot || singleBusy()) return;
     if (routes?.status !== 'success' || routes.fetchStatus !== 'idle' || routes.isInvalidated || routes.dataUpdatedAt !== value.routeVersion || Date.now() - routes.dataUpdatedAt >= 60_000 || !routes.data?.some(route => route.id === routeId)) {
-      update(item => ({ ...item, phase: 'edit', message: 'Основа маршрута изменилась или устарела. Заново проверьте партию.', revision: item.revision + 1 })); return;
+      update(item => ({ ...item, phase: 'edit', message: 'Данные маршрута изменились или устарели. Заново проверьте партию.', revision: item.revision + 1 })); return;
     }
     const controller = new AbortController(); request.current = controller; busy.current = true;
     update(item => ({ ...item, phase: 'pending', errors: {}, message: '', revision: item.revision + 1 }));

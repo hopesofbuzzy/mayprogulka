@@ -9,8 +9,8 @@ async function fillPaper(page: Page) {
   await page.getByLabel('Пол', { exact: true }).selectOption('male'); await page.getByLabel('Маршрут', { exact: true }).selectOption('15');
 }
 async function fillMatch(page: Page, form = '000F01') {
-  await page.getByLabel('Номер анкеты (form_id)', { exact: true }).fill(form);
-  await page.getByLabel('Штрихкод физической карты (barcode)', { exact: true }).fill('000001');
+  await page.getByLabel('Номер анкеты', { exact: true }).fill(form);
+  await page.getByLabel('Штрихкод физической карты', { exact: true }).fill('000001');
 }
 async function sendPaper(page: Page) {
   await page.getByRole('button', { name: 'Проверить анкету', exact: true }).click();
@@ -66,7 +66,7 @@ test('paper review creates one record, manually reuses server form ID and refres
   await expect(page.getByText('Отметка оплаты в системе не подтверждает получение денег.', { exact: true })).toBeVisible();
   expect(api.count('POST', paperPath)).toBe(1); expect(api.count('POST', matchPath)).toBe(0);
   await page.getByRole('link', { name: 'Перейти к сопоставлению', exact: true }).click();
-  await expect(page.getByLabel('Номер анкеты (form_id)')).toHaveValue('');
+  await expect(page.getByLabel('Номер анкеты')).toHaveValue('');
   expect(new URL(page.url()).search).toBe('');
   expect(await page.evaluate(() => JSON.stringify(history.state).includes('000P01'))).toBe(false);
   await fillMatch(page, '000P01'); await sendMatch(page);
@@ -79,8 +79,8 @@ test('paper review creates one record, manually reuses server form ID and refres
 
 test('online form uses match only, preserves zeros, requires review and ignores scanner Enter', async ({ page, api }, info) => {
   api.role = 'typist'; await login(page, api, urls[2]); await fillMatch(page);
-  await page.getByLabel('Номер анкеты (form_id)').focus(); await page.keyboard.press('Enter');
-  await expect(page.getByLabel('Штрихкод физической карты (barcode)')).toBeFocused();
+  await page.getByLabel('Номер анкеты').focus(); await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Штрихкод физической карты')).toBeFocused();
   await page.keyboard.press('Enter'); await expect(page.getByRole('button', { name: 'Проверить пару', exact: true })).toBeFocused();
   expect(api.count('POST', matchPath)).toBe(0);
   await page.getByRole('button', { name: 'Проверить пару', exact: true }).click();
@@ -95,19 +95,19 @@ test('online form uses match only, preserves zeros, requires review and ignores 
   expect(api.count('POST', matchPath)).toBe(1); expect(api.count('POST', paperPath)).toBe(0);
   await page.getByRole('button', { name: 'Следующая пара', exact: true }).click(); await fillMatch(page);
   await page.getByRole('button', { name: 'Очистить ввод', exact: true }).click();
-  await expect(page.getByLabel('Номер анкеты (form_id)')).toHaveValue(''); expect(api.count('POST', matchPath)).toBe(1);
+  await expect(page.getByLabel('Номер анкеты')).toHaveValue(''); expect(api.count('POST', matchPath)).toBe(1);
 });
 
 test('match 422 then 408 preserves pair and requires renewed risk confirmation after navigation', async ({ page, api }) => {
   api.role = 'typist'; api.matchMode = '422'; await login(page, api, urls[2]); await fillMatch(page); await sendMatch(page);
-  await expect(page.getByLabel('Штрихкод физической карты (barcode)')).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.getByLabel('Номер анкеты (form_id)')).toHaveValue('000F01');
+  await expect(page.getByLabel('Штрихкод физической карты')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByLabel('Номер анкеты')).toHaveValue('000F01');
   api.matchMode = '408'; await sendMatch(page); await expect(page.getByText(/Результат неизвестен/)).toBeVisible();
   expect(api.count('POST', matchPath)).toBe(2);
   await page.getByRole('link', { name: 'Непривязанные карты', exact: true }).click();
   await expect(page.getByText(/Отсутствие штрихкода в выборке не подтверждает/)).toBeVisible();
   await page.getByRole('link', { name: 'Сопоставление', exact: true }).click();
-  await expect(page.getByLabel('Штрихкод физической карты (barcode)')).toHaveValue('000001');
+  await expect(page.getByLabel('Штрихкод физической карты')).toHaveValue('000001');
   await expect(page.getByRole('button', { name: 'Проверить пару', exact: true })).toBeDisabled();
   await page.getByRole('checkbox').check(); api.matchMode = 'success';
   await page.getByRole('button', { name: 'Проверить пару', exact: true }).click(); expect(api.count('POST', matchPath)).toBe(2);
@@ -143,7 +143,7 @@ for (const status of [200, 401]) test(`old staff POST ${status} cannot expose A 
   await logout(page); api.identity = 'B'; await signIn(page, api);
   await page.getByRole('link', { name: 'Рабочее место', exact: true }).click();
   await page.getByRole('link', { name: 'Сопоставить с картой', exact: true }).click();
-  await expect(page.getByLabel('Номер анкеты (form_id)')).toHaveValue('');
+  await expect(page.getByLabel('Номер анкеты')).toHaveValue('');
   gate.release({ status, body: { status: 'old-status', barcode: '000001', participant_id: 1, participant_name: 'Old private name', message: 'Old private result' } });
   await gate.completed;
   await expect(page.getByText(/Old private name|Old private result/)).toHaveCount(0);

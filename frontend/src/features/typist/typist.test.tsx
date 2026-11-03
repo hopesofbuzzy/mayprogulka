@@ -61,9 +61,9 @@ async function fillPaper() {
   fireEvent.change(screen.getByLabelText('Маршрут'), { target: { value: '15' } });
 }
 async function fillMatch(form = '000F01', barcode = '000001') {
-  await screen.findByLabelText('Номер анкеты (form_id)');
-  fireEvent.change(screen.getByLabelText('Номер анкеты (form_id)'), { target: { value: form } });
-  fireEvent.change(screen.getByLabelText('Штрихкод физической карты (barcode)'), { target: { value: barcode } });
+  await screen.findByLabelText('Номер анкеты');
+  fireEvent.change(screen.getByLabelText('Номер анкеты'), { target: { value: form } });
+  fireEvent.change(screen.getByLabelText('Штрихкод физической карты'), { target: { value: barcode } });
 }
 async function submit(kind: 'paper' | 'match') {
   const context = mount(kind === 'paper' ? paths[1] : paths[2]);
@@ -112,10 +112,10 @@ describe('one paper form', () => {
     await act(async () => { resolve(json(paper, 201)); });
     await screen.findByRole('heading', { name: 'Ответ по бумажной анкете получен' });
     expect(screen.getByText('000P01')).toBeInTheDocument(); expect(screen.getByText('101')).toBeInTheDocument();
-    expect(screen.getByText('paid', { exact: true })).toBeInTheDocument(); expect(screen.queryByText('Оплачено', { exact: true })).not.toBeInTheDocument();
+    expect(screen.getByText('paid', { exact: true })).toBeInTheDocument(); expect(screen.queryByText('Отмечено в системе', { exact: true })).not.toBeInTheDocument();
     expect(screen.getByText('Отметка оплаты в системе не подтверждает получение денег.')).toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: 'Перейти к сопоставлению' }));
-    expect(screen.getByLabelText('Номер анкеты (form_id)')).toHaveValue('');
+    expect(screen.getByLabelText('Номер анкеты')).toHaveValue('');
     expect(router.state.location.pathname).toBe('/staff/typist/match'); expect(router.state.location.state).toBeNull();
     expect(matchCalls()).toHaveLength(0);
   });
@@ -143,7 +143,7 @@ describe('online match review and literal string codes', () => {
     const literal = ' 000Ab-01 ';
     postMatch = async () => json({ ...matched, barcode: literal });
     const { user } = mount(paths[2]); await fillMatch('000F01', literal);
-    screen.getByLabelText('Номер анкеты (form_id)').focus(); await user.keyboard('{Enter}{Enter}{Enter}{Enter}');
+    screen.getByLabelText('Номер анкеты').focus(); await user.keyboard('{Enter}{Enter}{Enter}{Enter}');
     expect(matchCalls()).toHaveLength(0); expect(paperCalls()).toHaveLength(0);
     if (screen.queryByRole('button', { name: 'Проверить пару' })) await user.click(screen.getByRole('button', { name: 'Проверить пару' }));
     expect(screen.getByRole('region', { name: 'Проверка пары' })).toBeInTheDocument();
@@ -157,13 +157,13 @@ describe('online match review and literal string codes', () => {
   it('clears only unsent input without an unlink/DELETE operation', async () => {
     const { user } = mount(paths[2]); await fillMatch();
     await user.click(screen.getByRole('button', { name: 'Очистить ввод' }));
-    expect(screen.getByLabelText('Номер анкеты (form_id)')).toHaveValue(''); expect(staffCalls()).toHaveLength(0);
+    expect(screen.getByLabelText('Номер анкеты')).toHaveValue(''); expect(staffCalls()).toHaveLength(0);
   });
   it('maps match 422 to barcode only and allows field correction without changing the other code', async () => {
     postMatch = async () => json({ detail: [{ loc: ['body', 'barcode'], msg: 'raw-private' }] }, 422);
     await submit('match'); await screen.findByRole('alert');
-    expect(screen.getByLabelText('Штрихкод физической карты (barcode)')).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByLabelText('Номер анкеты (form_id)')).toHaveValue('000F01'); expect(document.body).not.toHaveTextContent('raw-private');
+    expect(screen.getByLabelText('Штрихкод физической карты')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Номер анкеты')).toHaveValue('000F01'); expect(document.body).not.toHaveTextContent('raw-private');
   });
   it('invalidates only this epoch unlinked query without optimistic deletion', async () => {
     const { user, router, client } = mount(paths[3]); await screen.findByRole('list', { name: 'Выборка непривязанных карт' });
@@ -201,7 +201,7 @@ describe.each(['paper', 'match'] as const)('%s failures and lifecycle', kind => 
     expect(screen.getByRole('button', { name: kind === 'paper' ? 'Проверить анкету' : 'Проверить пару' })).toBeDisabled();
     await act(() => router.navigate(paths[0]!)); await screen.findByRole('heading', { name: 'Рабочее место наборщика' });
     await act(() => router.navigate(kind === 'paper' ? paths[1]! : paths[2]!));
-    expect(screen.getByLabelText(kind === 'paper' ? 'Имя' : 'Номер анкеты (form_id)', { exact: true })).toHaveValue(kind === 'paper' ? 'Бумажный' : '000F01');
+    expect(screen.getByLabelText(kind === 'paper' ? 'Имя' : 'Номер анкеты', { exact: true })).toHaveValue(kind === 'paper' ? 'Бумажный' : '000F01');
     expect(screen.getByRole('checkbox')).not.toBeChecked();
     await act(async () => { fireEvent(window, new Event('online')); fireEvent(window, new Event('focus')); });
     expect(postCalls()).toHaveLength(1);
@@ -219,7 +219,7 @@ describe.each(['paper', 'match'] as const)('%s failures and lifecycle', kind => 
     let resolve!: (reply: Response) => void; setPost(() => new Promise(done => { resolve = done; }));
     const { client } = await submit(kind);
     await act(async () => { sessionStore.logout(); login('typist', 9); });
-    expect(screen.getByLabelText(kind === 'paper' ? 'Имя' : 'Номер анкеты (form_id)', { exact: true })).toHaveValue('');
+    expect(screen.getByLabelText(kind === 'paper' ? 'Имя' : 'Номер анкеты', { exact: true })).toHaveValue('');
     await act(async () => { resolve(json(kind === 'paper' ? paper : matched, status === 401 ? 401 : kind === 'paper' ? 201 : 200)); });
     expect(document.body).not.toHaveTextContent('000P01'); expect(document.body).not.toHaveTextContent('Тестов Первый');
     expect(sessionStore.getSnapshot().session?.userId).toBe(9);
@@ -242,12 +242,12 @@ describe('unlinked private limited selection', () => {
   it('uses limit=100, private epoch key, string barcode and optional participant ID without claiming a total', async () => {
     const { client } = mount(paths[3]); const list = await screen.findByRole('list', { name: 'Выборка непривязанных карт' });
     expect(list).toHaveTextContent('000001'); expect(list).toHaveTextContent('000002');
-    expect(screen.getAllByText(/ID участника в ответе/)).toHaveLength(1);
+    expect(screen.getAllByText(/Номер участника/)).toHaveLength(1);
     const request = calls('/api/v1/typist/unlinked')[0]![0] as Request;
     expect(new URL(request.url).search).toBe('?limit=100'); expect(request.headers.get('Authorization') === 'Bearer synthetic-7').toBe(true);
     const query = client.getQueryCache().getAll().find(query => query.queryKey[3] === 'unlinked')!;
     expect(query.queryKey).toEqual(['private', 'typist', sessionStore.getCredentials()!.epoch, 'unlinked', 100]); expect(query.meta?.private).toBe(true);
-    expect(screen.getByText(/сервер не предоставляет общее количество/)).toBeInTheDocument();
+    expect(screen.getByText(/общее количество здесь недоступно/)).toBeInTheDocument();
   });
   it('shows loading, then empty without claiming all maps are linked', async () => {
     let resolve!: (reply: Response) => void; getMaps = () => new Promise(done => { resolve = done; }); mount(paths[3]);

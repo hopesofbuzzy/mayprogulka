@@ -28,7 +28,7 @@ function ExistingRoute({ id }: { id: number }) {
   if (query.isPending) return <p className={styles.panel} role="status">Загружаем маршрут…</p>;
   if (query.isError) return <div className={styles.panel} role="alert"><h1>Маршрут пока недоступен</h1><p>{routesError(query.error)}</p><button className="primaryButton" disabled={query.isFetching} onClick={() => void query.refetch()}>Повторить загрузку маршрутов</button></div>;
   const route = query.data.find(item => item.id === id);
-  if (!route) return <div className={styles.panel}><h1>Маршрут не найден</h1><p>{query.data.length ? 'В полученном списке нет маршрута с таким номером.' : 'Сервис вернул пустой список маршрутов.'}</p></div>;
+  if (!route) return <div className={styles.panel}><h1>Маршрут не найден</h1><p>{query.data.length ? 'В каталоге нет маршрута с таким номером.' : 'Маршруты пока не опубликованы.'}</p></div>;
   const mapUrl = safeMapUrl(route.map_url);
   return <>
     <header className={styles.routeHeader}>

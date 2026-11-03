@@ -57,9 +57,9 @@ async function start(kind: 'create' | 'edit' | 'delete', user: ReturnType<typeof
   await screen.findByRole('list', { name: 'КП выбранного маршрута' });
   await user.click(screen.getByRole('button', { name: kind === 'create' ? 'Создать один КП' : kind === 'edit' ? /Изменить КП.*Исходный КП/ : /Удалить КП.*Исходный КП/ }));
   await screen.findByRole('dialog');
-  if (kind === 'create') { change('Название КП', '  Новый КП  '); change('Адрес', '  Адрес;000  '); change('Координаты (строка)', '  opaque; 0000  '); change('Порядок', '0005'); }
+  if (kind === 'create') { change('Название КП', '  Новый КП  '); change('Адрес', '  Адрес;000  '); change('Координаты', '  opaque; 0000  '); change('Порядок', '0005'); }
   if (kind === 'edit') change('Название КП', 'Изменённый КП');
-  if (kind === 'delete') change('Введите checkpoint ID 201', '201');
+  if (kind === 'delete') change('Введите ID КП 201', '201');
   else { await user.click(screen.getByRole('button', { name: 'Проверить данные КП' })); await screen.findByRole('region', { name: 'Проверка КП' }); }
 }
 const confirm = (kind: 'create' | 'edit' | 'delete') => screen.getByRole('button', { name: kind === 'create' ? 'Подтвердить создание КП' : kind === 'edit' ? 'Подтвердить изменения КП' : 'Подтвердить удаление КП' });
@@ -83,7 +83,7 @@ describe('checkpoint identity and access', () => {
   });
   it('routes error retries only routes, then loads matching points', async () => {
     getRoutes = async () => json({}, 500); const { user } = mount(); await screen.findByRole('alert'); expect(cpReads()).toHaveLength(0);
-    getRoutes = async () => json({ routes: [route] }); await user.click(screen.getByRole('button', { name: 'Повторить GET маршрутов' })); await screen.findByRole('list', { name: 'КП выбранного маршрута' });
+    getRoutes = async () => json({ routes: [route] }); await user.click(screen.getByRole('button', { name: 'Повторить загрузку маршрутов' })); await screen.findByRole('list', { name: 'КП выбранного маршрута' });
   });
 });
 
@@ -92,7 +92,7 @@ describe('public checkpoint read contract', () => {
     const { client } = mount(); const list = await screen.findByRole('list', { name: 'КП выбранного маршрута' }); const cards = within(list).getAllByRole('listitem');
     expect(cards[0]).toHaveTextContent(other.name); expect(cards[1]).toHaveTextContent(point.name); expect(cards[0]).toHaveTextContent('порядок 0');
     expect(client.getQueryData(['checkpoints', 71])).toEqual(points); expect(document.querySelector('iframe, img, canvas')).toBeNull();
-    expect(cards[1]).toHaveTextContent('opaque; 0000'); expect(cards[1]).toHaveTextContent('Флаг начального КП'); expect(cards[1]).toHaveTextContent('Флаг конечного КП');
+    expect(cards[1]).toHaveTextContent('opaque; 0000'); expect(cards[1]).toHaveTextContent('Начальный КП'); expect(cards[1]).toHaveTextContent('Конечный КП');
   });
   it('loading then empty never invents a point', async () => {
     let release!: (response: Response) => void; getPoints = () => new Promise(resolve => { release = resolve; }); mount(); await screen.findByText('Загружаем КП маршрута…');
@@ -104,7 +104,7 @@ describe('public checkpoint read contract', () => {
       return mode === 'bad-json' ? new Response('{', { headers: { 'Content-Type': 'application/json' } }) : mode === 'foreign' ? json({ checkpoints: [{ ...point, route_id: 92 }] }) : mode === 'bad-dto' ? json({ checkpoints: [{}] }) : json({}, Number(mode));
     };
     const { user } = mount(); await screen.findByRole('alert'); expect(screen.getByRole('heading', { name: 'КП маршрута' })).toBeInTheDocument();
-    getPoints = async () => json({ checkpoints: points }); await user.click(screen.getByRole('button', { name: 'Повторить GET КП' })); await screen.findByRole('list', { name: 'КП выбранного маршрута' });
+    getPoints = async () => json({ checkpoints: points }); await user.click(screen.getByRole('button', { name: 'Повторить загрузку КП' })); await screen.findByRole('list', { name: 'КП выбранного маршрута' });
     expect(cpReads()).toHaveLength(2); expect(transport.mock.calls.filter(([input]) => new URL((input as Request).url).pathname === '/api/v1/routes')).toHaveLength(1);
   });
   it('route switch cancels and isolates a late GET from the previous route', async () => {
@@ -126,14 +126,14 @@ describe('single CRUD and fields', () => {
   it.each(['name', 'address', 'coordinates'] as const)('rejects blank %s locally; never sends null', field => expect(validate({ ...pointFields(point), [field]: '  \n ' }, 'edit')[field]).toBeDefined());
   it('POST review, double click, exact DTO and shared public cache refresh', async () => {
     const { user, client, router } = mount(); await start('create', user); expect(calls('POST')).toHaveLength(0); await user.dblClick(confirm('create'));
-    await screen.findByRole('heading', { name: 'Создание КП подтверждено' }); await screen.findByText('Список КП перечитан с сервера.'); expect(calls('POST')).toHaveLength(1);
+    await screen.findByRole('heading', { name: 'Создание КП подтверждено' }); await screen.findByText('Список КП обновлён.'); expect(calls('POST')).toHaveLength(1);
     expect(await calls('POST')[0]!.json()).toEqual({ route_id: 71, name: '  Новый КП  ', address: '  Адрес;000  ', coordinates: '  opaque; 0000  ', order: 5, is_start: false, is_finish: false });
     expect(client.getQueryData(['checkpoints', 71])).toEqual(points); await user.click(screen.getByRole('button', { name: 'Закрыть' }));
     await act(() => router.navigate('/routes/71')); expect(await screen.findByRole('list', { name: 'Контрольные пункты маршрута' })).toHaveTextContent(created.name.trim());
   });
   it('PUT sends changed-only fields including false, no route_id or null', async () => {
     const { user } = mount(); await start('edit', user); await user.click(screen.getByRole('button', { name: 'Вернуться к полям КП' }));
-    change('Название КП', point.name); await user.click(screen.getByLabelText('Флаг начального КП')); change('Координаты (строка)', ' new opaque ');
+    change('Название КП', point.name); await user.click(screen.getByLabelText('Начальный КП')); change('Координаты', ' new opaque ');
     await user.click(screen.getByRole('button', { name: 'Проверить данные КП' })); await user.click(confirm('edit')); await screen.findByRole('heading', { name: 'Изменение КП подтверждено' });
     expect(await calls('PUT')[0]!.json()).toEqual({ is_start: false, coordinates: ' new opaque ' });
   });
@@ -141,15 +141,15 @@ describe('single CRUD and fields', () => {
     const { user } = mount(); await start('edit', user); await user.click(screen.getByRole('button', { name: 'Вернуться к полям КП' })); change('Название КП', point.name); change('Порядок', '0000');
     await user.click(screen.getByRole('button', { name: 'Проверить данные КП' })); await screen.findByText('Нет изменений для отправки.'); expect(calls('PUT')).toHaveLength(0); expect(updateBody(pointFields(point), point)).toEqual({});
   });
-  it('DELETE requires checkpoint ID rather than route ID; 204 has no body or optimistic remove', async () => {
-    const { user, client } = mount(); await start('delete', user); change('Введите checkpoint ID 201', '71'); expect(confirm('delete')).toBeDisabled(); expect(client.getQueryData(['checkpoints', 71])).toEqual(points);
-    change('Введите checkpoint ID 201', '201'); await user.dblClick(confirm('delete')); await screen.findByRole('heading', { name: 'Операция удаления КП подтверждена' }); await screen.findByText('Список КП перечитан с сервера.');
+  it('DELETE requires ID КП rather than route ID; 204 has no body or optimistic remove', async () => {
+    const { user, client } = mount(); await start('delete', user); change('Введите ID КП 201', '71'); expect(confirm('delete')).toBeDisabled(); expect(client.getQueryData(['checkpoints', 71])).toEqual(points);
+    change('Введите ID КП 201', '201'); await user.dblClick(confirm('delete')); await screen.findByRole('heading', { name: 'Операция удаления КП подтверждена' }); await screen.findByText('Список КП обновлён.');
     expect(calls('DELETE')).toHaveLength(1); expect(await calls('DELETE')[0]!.text()).toBe('');
   });
   it('stale baseline blocks PUT until manual GET and explicit rebase preserves only intended changes', async () => {
     const { user, client } = mount(); await start('edit', user); points = points.map(item => item.id === 201 ? { ...item, address: 'Чужая правка адреса' } : item);
     await act(async () => { client.setQueryData(['checkpoints', 71], points); }); await waitFor(() => expect(confirm('edit')).toBeDisabled());
-    const accept = screen.getByRole('button', { name: 'Принять перечитанную основу, сохранив мои изменения' }); expect(accept).toBeDisabled();
+    const accept = screen.getByRole('button', { name: 'Использовать обновлённые данные, сохранив мою правку' }); expect(accept).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Перечитать КП перед действием' })); await waitFor(() => expect(accept).toBeEnabled()); await user.click(accept);
     await user.click(screen.getByRole('button', { name: 'Проверить данные КП' })); await user.click(confirm('edit')); await screen.findByRole('heading', { name: 'Изменение КП подтверждено' });
     expect(await calls('PUT')[0]!.json()).toEqual({ name: 'Изменённый КП' }); expect(points.find(item => item.id === 201)!.address).toBe('Чужая правка адреса');
@@ -157,7 +157,7 @@ describe('single CRUD and fields', () => {
   it.each(['create', 'edit', 'delete'] as const)('%s success is preserved when control GET fails', async kind => {
     mutate = async () => { getPoints = async () => json({}, 500); return kind === 'delete' ? new Response(null, { status: 204 }) : json(kind === 'create' ? created : point, kind === 'create' ? 201 : 200); };
     const { user } = mount(); await start(kind, user); await user.click(confirm(kind)); await screen.findByText('Операция с КП подтверждена, но перечитать список не удалось.');
-    getPoints = async () => json({ checkpoints: points }); await user.click(screen.getByRole('button', { name: 'Повторить только GET КП' })); await screen.findByText('Список КП перечитан с сервера.');
+    getPoints = async () => json({ checkpoints: points }); await user.click(screen.getByRole('button', { name: 'Повторить обновление списка КП' })); await screen.findByText('Список КП обновлён.');
   });
 });
 
@@ -166,7 +166,7 @@ describe('refusals, unknown writes and deferred operations', () => {
     const { user } = mount(); await screen.findByRole('list', { name: 'КП выбранного маршрута' }); await user.click(screen.getByRole('button', { name: 'Создать один КП' }));
     await user.type(screen.getByLabelText('Название КП'), 'Название'); await user.type(screen.getByLabelText('Адрес'), 'Адрес с пробелом');
     expect(screen.getByLabelText('Адрес')).toHaveValue('Адрес с пробелом'); expect(screen.getByLabelText('Адрес')).toHaveFocus();
-    await user.type(screen.getByLabelText('Координаты (строка)'), 'opaque: x;000'); expect(screen.getByLabelText('Координаты (строка)')).toHaveValue('opaque: x;000');
+    await user.type(screen.getByLabelText('Координаты'), 'opaque: x;000'); expect(screen.getByLabelText('Координаты')).toHaveValue('opaque: x;000');
   });
   it.each(['edit', 'delete'] as const)('closing pending %s aborts only local waiting and keeps a deferred marker', async kind => {
     mutate = () => new Promise(() => {}); const { user } = mount(); await start(kind, user); await user.click(confirm(kind));
@@ -190,7 +190,7 @@ describe('refusals, unknown writes and deferred operations', () => {
     let release!: (response: Response) => void; mutate = async () => { getPoints = () => new Promise(resolve => { release = resolve; }); return json(created, 201); };
     const { user, client } = mount(); await start('create', user); await user.click(confirm('create')); await screen.findByText('Перечитываем КП маршрута…');
     expect(client.getQueryData(['checkpoints', 71])).toEqual(points); expect(client.getQueryData(['routes'])).toBeDefined();
-    await act(async () => release(json({ checkpoints: [...points, created] }))); await screen.findByText('Список КП перечитан с сервера.');
+    await act(async () => release(json({ checkpoints: [...points, created] }))); await screen.findByText('Список КП обновлён.');
     expect(client.getQueryData(['checkpoints', 71])).toEqual([...points, created]);
   });
   for (const kind of ['create', 'edit', 'delete'] as const) {
@@ -198,7 +198,7 @@ describe('refusals, unknown writes and deferred operations', () => {
       mutate = async () => json({ detail: [{ loc: ['body', 'coordinates'], msg: '<script>private</script>', input: 'secret' }] }, status);
       const { user, client } = mount(); await start(kind, user); await user.click(confirm(kind)); expect(await screen.findByRole('alert')).toHaveTextContent(`(${status})`);
       expect(screen.queryByText(/<script>/)).not.toBeInTheDocument(); expect(client.getQueryData(['checkpoints', 71])).toEqual(points);
-      if (kind !== 'delete' && status === 422) expect(screen.getByLabelText('Координаты (строка)')).toHaveAttribute('aria-invalid', 'true');
+      if (kind !== 'delete' && status === 422) expect(screen.getByLabelText('Координаты')).toHaveAttribute('aria-invalid', 'true');
     });
     it.each(['408', '500', 'network', 'timeout', 'abort', 'bad-json', 'wrong-status', 'foreign'])(`${kind} %s stays uncertain without auto retry`, async mode => {
       mutate = async () => {
@@ -252,7 +252,7 @@ describe('refusals, unknown writes and deferred operations', () => {
     await act(() => router.navigate('/staff/routes/92/checkpoints')); expect(calls('PUT')[0]!.signal.aborted).toBe(true); await act(async () => release(json({ ...point, name: 'Поздняя запись' })));
     await act(() => router.navigate('/staff/routes/71/checkpoints')); await screen.findByText('Исход операции неизвестен'); expect(screen.getByLabelText('Название КП')).toHaveValue('Изменённый КП');
   });
-  it('PUT foreign checkpoint ID is not a success', async () => {
+  it('PUT foreign ID КП is not a success', async () => {
     mutate = async () => json({ ...point, id: 999 }); const { user } = mount(); await start('edit', user); await user.click(confirm('edit')); await screen.findByText('Исход операции неизвестен');
   });
   it('API-controlled checkpoint strings render as text rather than executing', async () => {

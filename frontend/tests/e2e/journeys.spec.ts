@@ -94,47 +94,47 @@ test('indexed 422 and uncertain registration preserve rows and require conscious
 
 test('payment: keyboard method selection, one POST, authoritative GET and null PDF', async ({ page, api }) => {
   await login(page, api, '/account/participants/42');
-  await page.getByRole('link', { name: 'Тестовая оплата', exact: true }).click();
-  const radio = page.getByRole('radio', { name: 'СБП (тест)', exact: true });
+  await page.getByRole('link', { name: 'Оплата участия', exact: true }).click();
+  const radio = page.getByRole('radio', { name: 'СБП', exact: true });
   await expect(radio).toBeEnabled();
   await radio.focus(); await page.keyboard.press('Space');
   await expect(radio).toBeChecked();
   expect(await radio.evaluate(element => getComputedStyle(element).outlineStyle)).not.toBe('none');
   const gate = api.deferPayment();
-  await page.getByRole('button', { name: 'Выполнить тестовую оплату', exact: true }).dblclick(); await gate.seen;
+  await page.getByRole('button', { name: 'Продолжить без списания', exact: true }).dblclick(); await gate.seen;
   await expect(page.getByRole('button', { name: 'Выполняем…', exact: true })).toBeDisabled();
-  await expect(page.getByRole('radio', { name: 'СБП (тест)', exact: true })).toBeDisabled();
+  await expect(page.getByRole('radio', { name: 'СБП', exact: true })).toBeDisabled();
   expect(api.count('POST', payPath)).toBe(1);
   expect(api.calls.find(call => call.path === payPath)?.paymentMethod).toBe('sbp');
   api.mine = api.mine.map(item => item.id === 42 ? { ...item, payment_status: 'paid' } : item);
   gate.release({ status: 200, body: { status: 'synthetic-status', payment_id: 'synthetic-operation-id', form_pdf_url: null } });
-  await expect(page.getByText('Оплачено', { exact: true })).toBeVisible();
-  await expect(page.getByText('Анкета пока недоступна', { exact: true })).toBeVisible();
+  await expect(page.getByText('Отмечено в системе', { exact: true })).toBeVisible();
+  await expect(page.getByText('Анкета для печати пока недоступна', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Открыть анкету для печати' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Обновить статус', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Обновить статус', exact: true })).toBeEnabled();
   expect(api.count('POST', payPath)).toBe(1);
   await page.getByRole('link', { name: 'В личный кабинет', exact: true }).click();
   const second = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Тестова Вторая', exact: true }) });
-  await expect(second).toContainText('Ожидает оплаты'); await expect(second).not.toContainText('Оплачено');
+  await expect(second).toContainText('Не отмечено'); await expect(second).not.toContainText('Отмечено в системе');
   await noOverflow(page);
 });
 
 for (const mode of ['408', 'network'] as const) test(`uncertain payment ${mode}: GET and back never retry POST`, async ({ page, api }, info) => {
   api.paymentMode = mode;
   await login(page, api, payPage);
-  await expect(page.getByRole('button', { name: 'Выполнить тестовую оплату', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Продолжить без списания', exact: true })).toBeEnabled();
   const gets = api.count('GET', myPath);
-  await page.getByRole('button', { name: 'Выполнить тестовую оплату', exact: true }).click();
-  await expect(page.getByText(/Результат тестовой операции неизвестен/)).toBeVisible();
+  await page.getByRole('button', { name: 'Продолжить без списания', exact: true }).click();
+  await expect(page.getByText(/Результат операции неизвестен/)).toBeVisible();
   expect(api.count('POST', payPath)).toBe(1); expect(api.count('GET', myPath)).toBe(gets);
   await page.getByRole('button', { name: 'Обновить статус', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Обновить статус', exact: true })).toBeEnabled();
   expect(api.count('GET', myPath)).toBe(gets + 1); expect(api.count('POST', payPath)).toBe(1);
-  await expect(page.getByRole('button', { name: 'Выполнить тестовую оплату' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Продолжить без списания' })).toHaveCount(0);
   await page.getByRole('link', { name: /К карточке участника/ }).click();
-  await expect(page.getByRole('link', { name: 'Тестовая оплата', exact: true })).toBeVisible();
-  await page.goBack(); await expect(page.getByText(/Результат тестовой операции неизвестен/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Оплата участия', exact: true })).toBeVisible();
+  await page.goBack(); await expect(page.getByText(/Результат операции неизвестен/)).toBeVisible();
   expect(api.count('POST', payPath)).toBe(1); await noOverflow(page);
   if (mode === '408') await representativeScreenshot(page, info, 'payment-408');
 });
@@ -142,33 +142,33 @@ for (const mode of ['408', 'network'] as const) test(`uncertain payment ${mode}:
 test('production PDF allowlist stays empty; navigation and reload cannot recreate a PDF or payment', async ({ page, api }) => {
   api.pdfUrl = '/test-approved/forms/00123.pdf';
   await login(page, api, payPage);
-  await page.getByRole('button', { name: 'Выполнить тестовую оплату', exact: true }).click();
-  await expect(page.getByText('Оплачено', { exact: true })).toBeVisible();
-  await expect(page.getByText('Адрес анкеты требует уточнения', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Продолжить без списания', exact: true }).click();
+  await expect(page.getByText('Отмечено в системе', { exact: true })).toBeVisible();
+  await expect(page.getByText('Анкета пока недоступна: ссылка требует проверки.', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Открыть анкету для печати' })).toHaveCount(0);
   await page.getByRole('link', { name: 'В личный кабинет', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Личный кабинет', exact: true })).toBeVisible();
-  await page.goBack(); await expect(page.getByText('Адрес анкеты требует уточнения', { exact: true })).toBeVisible();
+  await page.goBack(); await expect(page.getByText('Анкета пока недоступна: ссылка требует проверки.', { exact: true })).toBeVisible();
   await page.goForward(); await expect(page.getByRole('heading', { name: 'Личный кабинет', exact: true })).toBeVisible();
   await page.goBack(); await page.reload();
   await expect(page.getByRole('heading', { name: 'Вход', exact: true })).toBeVisible();
   await page.getByLabel('Имя пользователя').fill('synthetic-test-account'); await page.getByLabel('Пароль', { exact: true }).fill(api.password);
   await page.getByRole('button', { name: 'Войти', exact: true }).click();
-  await expect(page.getByText('Оплачено', { exact: true })).toBeVisible();
+  await expect(page.getByText('Отмечено в системе', { exact: true })).toBeVisible();
   await expect(page.getByText(/Технический номер операции/)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Выполнить тестовую оплату' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Продолжить без списания' })).toHaveCount(0);
   expect(api.count('POST', payPath)).toBe(1); await noOverflow(page);
 });
 
 for (const status of [200, 401]) test(`late payment ${status} from A cannot expose data or expire B`, async ({ page, api }) => {
   const gate = api.deferPayment(); await login(page, api, payPage);
-  await page.getByRole('button', { name: 'Выполнить тестовую оплату', exact: true }).click(); await gate.seen;
+  await page.getByRole('button', { name: 'Продолжить без списания', exact: true }).click(); await gate.seen;
   await logout(page); api.identity = 'B';
   // Stay in the same document: a reload would hide epoch-isolation regressions.
   await signIn(page, api);
   await page.getByRole('link', { name: 'Личный кабинет', exact: true }).click();
   await page.getByRole('link', { name: 'Подробнее: Другой Аккаунт', exact: true }).click();
-  await page.getByRole('link', { name: 'Тестовая оплата', exact: true }).click();
+  await page.getByRole('link', { name: 'Оплата участия', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Другой Аккаунт', exact: true })).toBeVisible();
   gate.release({ status, body: { status: 'old-status', payment_id: 'old-operation-id', form_pdf_url: '/test-approved/forms/00123.pdf' } });
   await gate.completed;

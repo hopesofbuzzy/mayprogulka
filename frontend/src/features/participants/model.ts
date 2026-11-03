@@ -65,9 +65,9 @@ export function indexedErrors(details: unknown, submittedKeys: string[]): RowErr
 }
 
 export function paymentLabel(status: string): string {
-  if (status === 'paid') return 'Оплачено';
-  if (status === 'pending') return 'Ожидает оплаты';
-  return `Неизвестный статус: ${status}`;
+  if (status === 'paid') return 'Отмечено в системе';
+  if (status === 'pending') return 'Не отмечено';
+  return 'Требует уточнения';
 }
 
 export function validParticipantId(value: string | undefined): number | null {

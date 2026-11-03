@@ -105,7 +105,7 @@ for (const mode of ['408', 'network'] as const) test(`unknown DELETE ${mode} off
   await expect(dialog(page).getByText('Исход предыдущей операции неизвестен.')).toBeVisible();
   await expect(dialog(page).getByRole('button', { name: 'Подтвердить удаление' })).toHaveCount(0);
   await dialog(page).getByRole('button', { name: 'Проверить состояние в каталоге' }).click();
-  await expect(dialog(page).getByText('Каталог запрошен заново. Сам результат записи по нему не доказан.')).toBeVisible();
+  await expect(dialog(page).getByText('Список обновлён, но результат операции нужно сверить с ответственным.')).toBeVisible();
   expect(api.count('DELETE', path + '/12')).toBe(1); await noOverflow(page);
 });
 

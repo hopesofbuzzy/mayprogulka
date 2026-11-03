@@ -76,8 +76,8 @@ describe('private account and own participant details', () => {
     const list = await screen.findByRole('list', { name: 'Мои участники' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(2);
     expect(list).toHaveTextContent('00123'); expect(list).toHaveTextContent('000314');
-    expect(list).toHaveTextContent('Неизвестный статус: review');
-    expect(list).not.toHaveTextContent('Оплачено');
+    expect(list).toHaveTextContent('Полученный статус: review');
+    expect(list).not.toHaveTextContent('Отмечено в системе');
     const request = calls('/api/v1/participants/my')[0]![0] as Request;
     expect(new URL(request.url).search).toBe('');
     expect(request.headers.get('Authorization')).toBe('Bearer test-only-7');
@@ -359,7 +359,7 @@ describe('multi-participant registration', () => {
     expect(within(list).queryAllByRole('listitem')).toHaveLength(count);
     expect(within(list).queryAllByRole('link')).toHaveLength(count);
     for (const record of returned) {
-      expect(within(list).getByText(`ID участника: ${record.id}`)).toBeInTheDocument();
+      expect(within(list).getByText(`Номер участника: ${record.id}`)).toBeInTheDocument();
       expect(within(list).getByText(`Номер анкеты: ${record.form_id}`)).toBeInTheDocument();
     }
     await screen.findByText('Список участников обновлён по данным сервера.');

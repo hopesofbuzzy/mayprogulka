@@ -6,7 +6,7 @@ import type { BatchRequest, Summary } from './model';
 
 export async function createBatch(body: BatchRequest, routeId: number, epoch: number, signal: AbortSignal): Promise<Summary> {
   requireAdmin(epoch);
-  if (!batchEnabled()) throw new AdminFailure('Пакетное создание выключено. Доступно только изолированное mock-тестирование.');
+  if (!batchEnabled()) throw new AdminFailure('Пакетное создание недоступно в этом окружении.');
   if (!Number.isSafeInteger(routeId) || body.route_id !== routeId || !body.checkpoints.length || body.checkpoints.some(row => row.route_id !== routeId)) throw new AdminFailure('Маршрут партии и каждой строки должен совпадать.');
   try {
     const { data, response } = await api.POST('/api/v1/admin/checkpoints/batch', { body, signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) });

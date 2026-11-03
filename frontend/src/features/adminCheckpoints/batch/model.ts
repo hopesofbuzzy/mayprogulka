@@ -53,5 +53,5 @@ export function safeMessage(value: Record<string, unknown>): string {
     return entries.slice(0, 8).map(([key, nested]) => `${cut(key)}: ${visit(nested, depth + 1)}`).join('; ');
   };
   const text = visit(value, 0);
-  return text + (shortened ? ' … Представление сокращено; уточните структуру у бэкенда.' : text ? '' : '(пустой объект)');
+  return text + (shortened ? ' … Сообщение сокращено. Подробности уточните у ответственного.' : text ? '' : '(пустой объект)');
 }

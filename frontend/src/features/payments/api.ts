@@ -11,7 +11,7 @@ export class PaymentFailure extends Error {
 
 export async function payParticipant(id: number, method: PaymentMethod, epoch: number, signal: AbortSignal): Promise<Payment> {
   if (!sessionStore.isCurrentSession(epoch)) throw new StaleSessionError();
-  if (!Number.isSafeInteger(id) || !['card', 'sbp'].includes(method)) throw new PaymentFailure('Проверьте участника и способ тестовой оплаты.', false);
+  if (!Number.isSafeInteger(id) || !['card', 'sbp'].includes(method)) throw new PaymentFailure('Проверьте участника и выбранный способ оплаты.', false);
   try {
     const { data, response } = await api.POST('/api/v1/participants/{participant_id}/pay', {
       params: { path: { participant_id: id } }, body: { payment_method: method },
@@ -25,13 +25,13 @@ export async function payParticipant(id: number, method: PaymentMethod, epoch: n
     if (!sessionStore.isCurrentSession(epoch) || error instanceof StaleSessionError) throw new StaleSessionError();
     if (!signal.aborted && error instanceof ApiError && error.status < 500 && error.status !== 408) {
       const messages: Record<number, string> = {
-        403: 'Нет доступа к тестовой оплате (403).',
-        404: 'Участник или сервис тестовой оплаты не найден (404).',
-        409: 'Сервер сообщил о конфликте тестовой оплаты (409).',
-        422: 'Сервер отклонил параметры тестовой оплаты (422).',
+        403: 'Нет доступа к изменению отметки оплаты (403).',
+        404: 'Участник или сервис оплаты не найден (404).',
+        409: 'Не удалось изменить отметку оплаты из-за конфликта данных (409).',
+        422: 'Проверьте параметры оплаты: данные отклонены (422).',
       };
-      throw new PaymentFailure(messages[error.status] ?? `Сервер отклонил тестовую оплату (${error.status}).`, false);
+      throw new PaymentFailure(messages[error.status] ?? `Не удалось изменить отметку оплаты (${error.status}).`, false);
     }
-    throw new PaymentFailure('Результат тестовой операции неизвестен. Сервер мог изменить статус участника. Сначала проверьте актуальный статус.', true);
+    throw new PaymentFailure('Результат операции неизвестен. Статус участника мог измениться. Сначала обновите статус.', true);
   }
 }

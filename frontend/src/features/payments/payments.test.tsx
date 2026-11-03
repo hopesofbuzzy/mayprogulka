@@ -46,12 +46,12 @@ function mount(path = '/account/participants/42/pay') {
 }
 async function ready() {
   const context = mount();
-  await screen.findByRole('button', { name: 'Выполнить тестовую оплату' });
+  await screen.findByRole('button', { name: 'Продолжить без списания' });
   return context;
 }
 async function submit() {
   const context = await ready();
-  await context.user.click(screen.getByRole('button', { name: 'Выполнить тестовую оплату' }));
+  await context.user.click(screen.getByRole('button', { name: 'Продолжить без списания' }));
   return context;
 }
 describe('test payment routing and identity', () => {
@@ -62,17 +62,17 @@ describe('test payment routing and identity', () => {
     fireEvent.change(screen.getByLabelText('Имя пользователя'), { target: { value: 'test-only' } });
     fireEvent.change(screen.getByLabelText('Пароль', { exact: true }), { target: { value: 'example-only-password' } });
     await user.click(screen.getByRole('button', { name: 'Войти' }));
-    await screen.findByRole('button', { name: 'Выполнить тестовую оплату' });
+    await screen.findByRole('button', { name: 'Продолжить без списания' });
     expect(router.state.location.pathname).toBe('/account/participants/42/pay');
   });
   it('links from the own participant card and shows server identity and test instructions', async () => {
     const { user } = mount('/account/participants/42');
-    await user.click(await screen.findByRole('link', { name: 'Тестовая оплата' }));
-    await screen.findByRole('button', { name: 'Выполнить тестовую оплату' });
+    await user.click(await screen.findByRole('link', { name: 'Оплата участия' }));
+    await screen.findByRole('button', { name: 'Продолжить без списания' });
     expect(screen.getByRole('heading', { name: 'Тестов Первый' })).toBeInTheDocument();
     expect(screen.getByText('Номер анкеты: 00042')).toBeInTheDocument();
-    expect(screen.getByText('Тестовая оплата — без списания денег')).toBeInTheDocument();
-    expect(screen.getByText(/После обновления страницы или повторного входа восстановить/)).toBeInTheDocument();
+    expect(screen.getByText('деньги не списываются').closest('p')).toHaveTextContent('Оплата пока не подключена. Этот шаг меняет статус участника — деньги не списываются.');
+    expect(screen.getByText(/Восстановить ссылку здесь нельзя/)).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
   it.each(['invalid', '9007199254740992', '999'])('never posts for an invalid or absent ID %s', async id => {
@@ -85,16 +85,16 @@ describe('test payment routing and identity', () => {
     mine = async () => value === 'empty' ? json({ participants: [] }) : json({}, 500);
     mount();
     await screen.findByRole('heading', { name: value === 'empty' ? 'Участник не найден среди ваших записей' : 'Участники пока недоступны' });
-    expect(screen.queryByRole('button', { name: 'Выполнить тестовую оплату' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Продолжить без списания' })).not.toBeInTheDocument();
     expect(calls('POST')).toHaveLength(0);
   });
   it.each(['paid', 'review'])('does not offer a POST for GET payment_status %s', async status => {
     mine = async () => json({ participants: [{ ...records[0], payment_status: status }] });
     mount();
     await screen.findByRole('heading', { name: 'Тестов Первый' });
-    expect(screen.queryByRole('button', { name: 'Выполнить тестовую оплату' })).not.toBeInTheDocument();
-    if (status === 'review') expect(screen.getByText('Неизвестный статус: review')).toBeInTheDocument();
-    else expect(screen.getByText(/Ссылка на анкету могла выдаваться/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Продолжить без списания' })).not.toBeInTheDocument();
+    if (status === 'review') expect(screen.getByText('Полученный статус: review')).toBeInTheDocument();
+    else expect(screen.getByText(/Ссылка на анкету здесь не восстанавливается/)).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Открыть анкету для печати' })).not.toBeInTheDocument();
     expect(calls('POST')).toHaveLength(0);
   });
@@ -106,8 +106,8 @@ describe('typed POST and authoritative verification', () => {
     let resolve!: (value: Response) => void;
     post = () => new Promise(done => { resolve = done; });
     const { user, client } = await ready();
-    await user.click(screen.getByRole('radio', { name: method === 'card' ? 'Карта (тест)' : 'СБП (тест)' }));
-    await user.dblClick(screen.getByRole('button', { name: 'Выполнить тестовую оплату' }));
+    await user.click(screen.getByRole('radio', { name: method === 'card' ? 'Карта' : 'СБП' }));
+    await user.dblClick(screen.getByRole('button', { name: 'Продолжить без списания' }));
     expect(calls('POST')).toHaveLength(1);
     const request = calls('POST')[0]![0] as Request;
     expect(new URL(request.url).pathname).toBe('/api/v1/participants/42/pay');
@@ -118,35 +118,35 @@ describe('typed POST and authoritative verification', () => {
     expect(client.getQueryData(['private', 'participants', sessionStore.getCredentials()!.epoch])).toEqual(records);
     mine = async () => json({ participants: [{ ...records[0], payment_status: 'paid' }, records[1]] });
     await act(async () => { resolve(json(response)); });
-    await screen.findByText('Оплачено');
+    await screen.findByText('Отмечено в системе');
     expect(calls('GET')).toHaveLength(2);
     const actual = client.getQueryData<typeof records>(['private', 'participants', sessionStore.getCredentials()!.epoch]);
     expect(actual?.[1]).toEqual(records[1]);
     expect(screen.getByText('server-arbitrary-status')).toBeInTheDocument();
-    expect(screen.getByText(/Технический номер операции: test-operation-only/)).toBeInTheDocument();
-    expect(screen.getByText('Анкета пока недоступна')).toBeInTheDocument();
+    expect(screen.getByText(/Номер операции: test-operation-only/)).toBeInTheDocument();
+    expect(screen.getByText('Анкета для печати пока недоступна')).toBeInTheDocument();
   });
   it('blocks repeated Enter while POST is pending', async () => {
     let resolve!: (value: Response) => void;
     post = () => new Promise(done => { resolve = done; });
     const { user } = await ready();
-    screen.getByRole('button', { name: 'Выполнить тестовую оплату' }).focus();
+    screen.getByRole('button', { name: 'Продолжить без списания' }).focus();
     await user.keyboard('{Enter}{Enter}{Enter}');
     expect(calls('POST')).toHaveLength(1);
     await act(async () => { resolve(json(response)); });
-    await screen.findByText('Анкета пока недоступна');
+    await screen.findByText('Анкета для печати пока недоступна');
   });
   it.each(['pending', 'review', 'failure', 'missing'])('keeps POST evidence but does not claim paid after verification %s, and repeats GET only', async result => {
     const { user } = await ready();
     mine = async () => result === 'failure' ? json({}, 500) : json({ participants: result === 'missing' ? [] : [{ ...records[0], payment_status: result }] });
-    await user.click(screen.getByRole('button', { name: 'Выполнить тестовую оплату' }));
+    await user.click(screen.getByRole('button', { name: 'Продолжить без списания' }));
     await screen.findByText(/Операция принята сервером, но актуальный статус ещё не подтверждён/);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Обновить статус' })).toBeEnabled());
-    expect(screen.queryByText('Оплачено', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText('Отмечено в системе', { exact: true })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Тестов Первый' })).toBeInTheDocument();
     mine = async () => json({ participants: [{ ...records[0], payment_status: 'paid' }] });
     await user.click(screen.getByRole('button', { name: 'Обновить статус' }));
-    await screen.findByText('Оплачено');
+    await screen.findByText('Отмечено в системе');
     expect(calls('POST')).toHaveLength(1); expect(calls('GET')).toHaveLength(3);
     expect(screen.queryByText(/актуальный статус ещё не подтверждён/)).not.toBeInTheDocument();
   });
@@ -165,16 +165,16 @@ describe('uncertain and explicit failures', () => {
       return json({ detail: 'do-not-expose-private-error' }, failure as number);
     };
     const { user } = await submit();
-    expect(await screen.findByRole('alert')).toHaveTextContent('Результат тестовой операции неизвестен');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Результат операции неизвестен');
     expect(screen.getByRole('heading', { name: 'Тестов Первый' })).toBeInTheDocument();
     expect(screen.getByText('Номер анкеты: 00042')).toBeInTheDocument();
     expect(calls('POST')).toHaveLength(1); expect(calls('GET')).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Выполнить тестовую оплату' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Продолжить без списания' })).not.toBeInTheDocument();
     expect(document.body).not.toHaveTextContent('do-not-expose-private-error');
     await user.click(screen.getByRole('button', { name: 'Обновить статус' }));
     await waitFor(() => expect(calls('GET')).toHaveLength(2));
-    expect(screen.queryByText('Оплачено', { exact: true })).not.toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('Даже статус «Ожидает оплаты» не доказывает');
+    expect(screen.queryByText('Отмечено в системе', { exact: true })).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Даже если отметка не изменилась, операция могла сохраниться');
     expect(calls('POST')).toHaveLength(1);
   });
   it.each([403, 404, 409, 422])('handles explicit POST %s without logout, raw details or another POST', async status => {
@@ -186,7 +186,7 @@ describe('uncertain and explicit failures', () => {
     await user.click(screen.getByRole('button', { name: 'Обновить статус' }));
     await waitFor(() => expect(calls('GET')).toHaveLength(2));
     expect(calls('POST')).toHaveLength(1);
-    expect(screen.queryByText('Оплачено', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText('Отмечено в системе', { exact: true })).not.toBeInTheDocument();
   });
   it('expires the current session on a payment 401', async () => {
     post = async () => json({}, 401);
@@ -200,7 +200,7 @@ describe('conditional PDF and private operation memory', () => {
   it.each([null, undefined, ''])('has no fake PDF action for an absent URL %#', async url => {
     post = async () => json({ ...response, form_pdf_url: url });
     await submit();
-    await screen.findByText('Анкета пока недоступна');
+    await screen.findByText('Анкета для печати пока недоступна');
     expect(screen.queryByRole('link', { name: 'Открыть анкету для печати' })).not.toBeInTheDocument();
   });
   it('shows only an explicitly approved URL with noreferrer, without opening it or carrying Bearer', async () => {
@@ -224,7 +224,7 @@ describe('conditional PDF and private operation memory', () => {
   it.each(['https://evil.example/00123.pdf', 'javascript:alert(1)', 'data:application/pdf,a', 'https://name:pass@localhost/00123.pdf', '/unapproved.pdf'])('blocks unsafe PDF %# without exposing the raw URL', async url => {
     post = async () => json({ ...response, form_pdf_url: url });
     await submit();
-    await screen.findByText('Адрес анкеты требует уточнения');
+    await screen.findByText('Анкета пока недоступна: ссылка требует проверки.');
     expect(screen.queryByRole('link', { name: 'Открыть анкету для печати' })).not.toBeInTheDocument();
     expect(document.body.textContent).not.toContain(url);
   });
@@ -248,7 +248,7 @@ describe('conditional PDF and private operation memory', () => {
     const { user, client } = await ready();
     mine = () => new Promise(done => { resolveA = done; });
     post = async () => json({ ...response, form_pdf_url: pdf });
-    await user.click(screen.getByRole('button', { name: 'Выполнить тестовую оплату' }));
+    await user.click(screen.getByRole('button', { name: 'Продолжить без списания' }));
     await screen.findByRole('link', { name: 'Открыть анкету для печати' });
     await waitFor(() => expect(calls('GET')).toHaveLength(2));
     mine = () => new Promise(done => { resolveB = done; });
@@ -267,7 +267,7 @@ describe('conditional PDF and private operation memory', () => {
     const { user, router, client } = await submit();
     const request = calls('POST')[0]![0] as Request;
     await user.click(screen.getByRole('link', { name: /К карточке участника/ }));
-    await screen.findByRole('link', { name: 'Тестовая оплата' });
+    await screen.findByRole('link', { name: 'Оплата участия' });
     expect(request.signal.aborted).toBe(true);
     const state = client.getQueryData(paymentRecordOptions(sessionStore.getCredentials()!.epoch, 42).queryKey);
     expect(state?.phase).toBe('uncertain');
@@ -275,9 +275,9 @@ describe('conditional PDF and private operation memory', () => {
     await screen.findByText(/Запрос прерван на устройстве/);
     await act(async () => { resolve(json({ ...response, form_pdf_url: pdf })); });
     expect(screen.queryByRole('link', { name: 'Открыть анкету для печати' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Выполнить тестовую оплату' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Продолжить без списания' })).not.toBeInTheDocument();
     await act(() => router.navigate(1));
-    await screen.findByRole('link', { name: 'Тестовая оплата' });
+    await screen.findByRole('link', { name: 'Оплата участия' });
     expect(calls('POST')).toHaveLength(1);
   });
   it('never pays again to recover a PDF after logout and a new paid session', async () => {
@@ -286,9 +286,9 @@ describe('conditional PDF and private operation memory', () => {
     await screen.findByRole('link', { name: 'Открыть анкету для печати' });
     mine = async () => json({ participants: [{ ...records[0], payment_status: 'paid' }] });
     await act(async () => { sessionStore.logout(); login(); });
-    await screen.findByText('Оплачено');
+    await screen.findByText('Отмечено в системе');
     expect(screen.queryByRole('link', { name: 'Открыть анкету для печати' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Выполнить тестовую оплату' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Продолжить без списания' })).not.toBeInTheDocument();
     expect(client.getQueryCache().getAll().filter(query => query.queryKey[1] === 'payment')).toHaveLength(1);
     expect(calls('POST')).toHaveLength(1);
   });
@@ -297,7 +297,7 @@ describe('conditional PDF and private operation memory', () => {
     const { router } = await submit();
     await screen.findByRole('link', { name: 'Открыть анкету для печати' });
     await act(() => router.navigate('/account/participants/77/pay'));
-    await screen.findByRole('button', { name: 'Выполнить тестовую оплату' });
+    await screen.findByRole('button', { name: 'Продолжить без списания' });
     expect(screen.getByRole('heading', { name: 'Тестова Вторая' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Открыть анкету для печати' })).not.toBeInTheDocument();
     expect(document.body).not.toHaveTextContent('test-operation-only');

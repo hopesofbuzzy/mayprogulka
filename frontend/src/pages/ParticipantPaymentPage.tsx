@@ -56,49 +56,50 @@ function PaymentPage({ epoch, id }: { epoch: number; id: number | null }) {
       await verifyPayment(client, epoch, id);
     } catch (error) {
       if (error instanceof StaleSessionError || !sessionStore.isCurrentSession(epoch)) return;
-      const failure = error instanceof PaymentFailure ? error : new PaymentFailure('Результат тестовой операции неизвестен. Сначала проверьте статус.', true);
+      const failure = error instanceof PaymentFailure ? error : new PaymentFailure('Результат операции неизвестен. Сначала проверьте статус.', true);
       updatePaymentRecord(client, epoch, id, state => ({ ...state, phase: failure.uncertain ? 'uncertain' : 'rejected', message: failure.message }));
     } finally { busy.current = false; }
   }
 
   return <section className="container contentPage">
     <Link className={common.back} to={id !== null ? `/account/participants/${id}` : '/account'}>← {id !== null ? 'К карточке участника' : 'В личный кабинет'}</Link>
-    <h1>Тестовая оплата</h1>
+    <h1>Оплата участия</h1>
     <div className={styles.panel}>
-      <p className={styles.banner}>Тестовая оплата — без списания денег</p>
+      <p id="payment-notice" className={styles.banner}>Оплата пока не подключена. Этот шаг меняет статус участника — <strong>деньги не списываются</strong>.</p>
       {id === null ? <div className={common.state}><h2>Некорректный номер участника</h2><p>Выберите участника из своего списка в кабинете.</p></div>
         : !subject && (mine.isPending || mine.isFetching) ? <p role="status" className={common.state}>Загружаем участника…</p>
           : !subject && mine.isError ? <ParticipantsFailure error={mine.error} pending={mine.isFetching} retry={() => void mine.refetch()} />
             : !subject ? <div className={common.state}><h2>Участник не найден среди ваших записей</h2><Link className={common.textLink} to="/account">В личный кабинет</Link></div>
               : <div className={common.detail}>
-                <div className={styles.identity}><h2>{subject.surname} {subject.name}</h2><p>{subject.route_name}</p><p>Номер анкеты: {subject.form_id}</p><p>ID участника: {subject.id}</p></div>
-                <p>Текущий статус участника: <strong>{mine.isSuccess && participant ? paymentLabel(participant.payment_status) : 'Сейчас не подтверждён'}</strong></p>
+                <div className={styles.identity}><h2>{subject.surname} {subject.name}</h2><p>{subject.route_name}</p><p>Номер анкеты: {subject.form_id}</p><p>Номер участника: {subject.id}</p></div>
+                <p>Отметка оплаты: <strong>{mine.isSuccess && participant ? paymentLabel(participant.payment_status) : 'Сейчас не подтверждена'}</strong></p>
+                {participant && !['pending', 'paid'].includes(participant.payment_status) && <p className={common.note}>Полученный статус: {participant.payment_status}</p>}
                 {mine.isError && <ParticipantsFailure error={mine.error} pending={mine.isFetching} retry={() => { if (attempted) void verifyPayment(client, epoch, subject.id); else void mine.refetch(); }} />}
                 {mine.isFetching && <p role="status" className={common.progress}>Обновляем статус участника…</p>}
-                {!attempted && participant?.payment_status === 'pending' && <form onSubmit={event => void submit(event)} aria-busy={pending}>
+                {!attempted && participant?.payment_status === 'pending' && <form onSubmit={event => void submit(event)} aria-busy={pending} aria-describedby="payment-notice">
                   <fieldset className={styles.methods} disabled={checking || !mine.isSuccess}>
-                    <legend>Способ тестовой оплаты</legend>
-                    <label><input type="radio" name="payment_method" value="card" checked={method === 'card'} onChange={() => setMethod('card')} />Карта (тест)</label>
-                    <label><input type="radio" name="payment_method" value="sbp" checked={method === 'sbp'} onChange={() => setMethod('sbp')} />СБП (тест)</label>
+                    <legend>Способ оплаты</legend>
+                    <label><input type="radio" name="payment_method" value="card" checked={method === 'card'} onChange={() => setMethod('card')} />Карта</label>
+                    <label><input type="radio" name="payment_method" value="sbp" checked={method === 'sbp'} onChange={() => setMethod('sbp')} />СБП</label>
                   </fieldset>
-                  <div className={styles.explanation}><h3>Что будет дальше</h3><p>Тестовая операция изменит статус этого участника без перевода денег. После неё мы проверим актуальный статус. Анкета для печати может не появиться.</p><p>Если сервер предоставит разрешённую ссылку, она останется доступна только в текущей сессии. После обновления страницы или повторного входа восстановить её здесь нельзя.</p></div>
-                  <div className={common.actions}><button className={common.submit} type="submit" disabled={checking || !mine.isSuccess}>Выполнить тестовую оплату</button></div>
+                  <div className={styles.explanation}><h3>Что будет дальше</h3><p>Мы обновим отметку оплаты выбранного участника и проверим её состояние. Анкета для печати может быть недоступна.</p><details><summary>О ссылке на анкету</summary><p>Если ссылка появится, сохраните анкету до обновления страницы или выхода. Восстановить ссылку здесь нельзя.</p></details></div>
+                  <div className={common.actions}><button className={common.submit} type="submit" disabled={checking || !mine.isSuccess}>Продолжить без списания</button></div>
                 </form>}
-                {pending && <div role="status" className={styles.result}><p>Ждём ответ тестовой операции…</p><fieldset className={styles.methods} disabled><legend>Способ тестовой оплаты</legend><label><input type="radio" checked readOnly />{method === 'card' ? 'Карта (тест)' : 'СБП (тест)'}</label></fieldset><button className={common.submit} disabled>Выполняем…</button></div>}
+                {pending && <div role="status" className={styles.result}><p>Обновляем отметку оплаты…</p><fieldset className={styles.methods} disabled><legend>Способ оплаты</legend><label><input type="radio" checked readOnly />{method === 'card' ? 'Карта' : 'СБП'}</label></fieldset><button className={common.submit} disabled>Выполняем…</button></div>}
                 {record.phase === 'accepted' && <div className={styles.result}>
-                  <p>Операция принята сервером. Это тестовый ответ, без перевода денег.</p>
-                  <p>Статус тестовой операции: <strong>{record.result?.status}</strong></p>
-                  <p>Технический номер операции: {record.result?.payment_id}</p>
+                  <h3>Ответ получен</h3>
+                  <p>Запрос принят. Актуальная отметка участника показана отдельно выше.</p>
+                  <details><summary>Сведения об операции</summary><p>Полученный статус: <strong>{record.result?.status}</strong></p><p>Номер операции: {record.result?.payment_id}</p></details>
                   {!confirmedPaid && <p role="alert" className={common.alert}>Операция принята сервером, но актуальный статус ещё не подтверждён. Обновите статус; не отправляйте операцию повторно.</p>}
                 </div>}
-                {(record.phase === 'uncertain' || record.phase === 'rejected') && <div className={common.alert} role="alert"><strong>{record.message}</strong>{record.phase === 'uncertain' && <p>Возможно, тестовая операция уже прошла; повтор может создать дубль. Повторная отправка на этой странице недоступна. Даже статус «Ожидает оплаты» не доказывает, что операция не дошла.</p>}</div>}
+                {(record.phase === 'uncertain' || record.phase === 'rejected') && <div className={common.alert} role="alert"><strong>{record.message}</strong>{record.phase === 'uncertain' && <p>Повторная отправка недоступна, чтобы избежать дубля. Даже если отметка не изменилась, операция могла сохраниться. Обновите статус и сверьтесь с ответственным.</p>}</div>}
                 {record.verification === 'missing' && <p role="alert" className={common.alert}>В обновлённом списке участник не найден. Результат операции по статусу не подтверждён.</p>}
                 {!pending && <div className={common.actions}><button type="button" className={common.secondary} disabled={checking} onClick={() => { if (attempted) void verifyPayment(client, epoch, subject.id); else void mine.refetch(); }}>Обновить статус</button><Link className={common.textLink} to="/account">В личный кабинет</Link></div>}
-                {!attempted && participant?.payment_status === 'paid' && <p className={common.note}>Повторная тестовая оплата недоступна. Ссылка на анкету могла выдаваться только после операции и здесь не восстанавливается.</p>}
-                {!attempted && participant && !['pending', 'paid'].includes(participant.payment_status) && <p className={common.note}>Этот статус не разрешает тестовую оплату. Обновите данные; допустимые статусы требуют уточнения.</p>}
+                {!attempted && participant?.payment_status === 'paid' && <p className={common.note}>Повторное изменение отметки недоступно. Ссылка на анкету здесь не восстанавливается.</p>}
+                {!attempted && participant && !['pending', 'paid'].includes(participant.payment_status) && <p className={common.note}>При этом статусе продолжить нельзя. Обновите данные или уточните статус у организаторов.</p>}
                 {record.phase === 'accepted' && <div className={styles.pdf}>
                   {safePdf ? <><a className={common.textLink} href={safePdf} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Открыть анкету для печати</a><p className={common.note}>Распечатайте анкету и возьмите с собой на старт. После обновления страницы или повторного входа эта ссылка не восстанавливается.</p></>
-                    : <p>{record.result?.form_pdf_url ? 'Адрес анкеты требует уточнения' : 'Анкета пока недоступна'}</p>}
+                    : <p>{record.result?.form_pdf_url ? 'Анкета пока недоступна: ссылка требует проверки.' : 'Анкета для печати пока недоступна'}</p>}
                 </div>}
               </div>}
     </div>

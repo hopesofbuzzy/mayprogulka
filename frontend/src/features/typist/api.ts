@@ -17,7 +17,7 @@ const integer = (value: unknown): value is number => typeof value === 'number' &
 const strings = (value: Record<string, unknown>, names: string[]) => names.every(name => typeof value[name] === 'string');
 const timeout = (signal: AbortSignal) => AbortSignal.any([signal, AbortSignal.timeout(15_000)]);
 export function staffReadError(error: Error): string {
-  if (error instanceof ApiError) return error.status === 403 ? 'Сервер запретил доступ к непривязанным картам (403). Права роли требуют проверки ответственным.' : `Не удалось загрузить выборку карт (${error.status}).`;
+  if (error instanceof ApiError) return error.status === 403 ? 'Нет доступа к списку карт (403). Обратитесь к ответственному за доступ.' : `Не удалось загрузить выборку карт (${error.status}).`;
   return error instanceof StaffFailure ? error.message : 'Не удалось загрузить выборку карт. Проверьте подключение и повторите загрузку.';
 }
 export function unlinkedOptions(epoch: number, limit = 100) {
@@ -36,10 +36,10 @@ export function unlinkedOptions(epoch: number, limit = 100) {
 function failure(error: unknown, epoch: number, signal: AbortSignal): never {
   authorize(epoch);
   if (!signal.aborted && error instanceof ApiError && error.status >= 400 && error.status < 500 && error.status !== 408) {
-    const context: Record<number, string> = { 400: 'Сервер отклонил запрос', 403: 'Нет права на действие', 404: 'Запись или сервис не найдены', 409: 'Конфликт записи или привязки. Исправление и отвязка через текущий API недоступны', 422: 'Проверьте поля: сервер отклонил данные' };
+    const context: Record<number, string> = { 400: 'Сервер отклонил запрос', 403: 'Нет права на действие', 404: 'Запись или сервис не найдены', 409: 'Конфликт записи или связи. Исправить или отменить её здесь нельзя', 422: 'Проверьте поля: сервер отклонил данные' };
     throw new StaffFailure(`${context[error.status] ?? 'Сервер отклонил запрос'} (${error.status}).`, false, error.details);
   }
-  throw new StaffFailure('Результат неизвестен. Запись или привязка могла уже сохраниться. Перед повтором обратитесь к ответственному или проверьте доступный серверный источник.', true);
+  throw new StaffFailure('Результат неизвестен. Запись или связь могла сохраниться. Перед повтором проверьте её с ответственным.', true);
 }
 export async function createPaper(body: PaperInput, epoch: number, signal: AbortSignal): Promise<PaperResult> {
   authorize(epoch);

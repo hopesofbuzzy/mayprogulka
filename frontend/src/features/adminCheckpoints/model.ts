@@ -6,7 +6,7 @@ export type Fields = { name: string; address: string; coordinates: string; order
 export type Errors = Partial<Record<keyof Fields, string>>;
 export type Create = components['schemas']['CheckpointCreateRequest'];
 export type Patch = { [K in keyof components['schemas']['CheckpointUpdateRequest']]?: NonNullable<components['schemas']['CheckpointUpdateRequest'][K]> };
-export const labels = { name: 'Название КП', address: 'Адрес', coordinates: 'Координаты (строка)', order: 'Порядок', is_start: 'Флаг начального КП', is_finish: 'Флаг конечного КП' };
+export const labels = { name: 'Название КП', address: 'Адрес', coordinates: 'Координаты', order: 'Порядок', is_start: 'Начальный КП', is_finish: 'Конечный КП' };
 export const names = Object.keys(labels) as (keyof Fields)[];
 export const emptyFields = (): Fields => ({ name: '', address: '', coordinates: '', order: '', is_start: false, is_finish: false });
 export const pointFields = (point: Checkpoint): Fields => ({ name: point.name, address: point.address, coordinates: point.coordinates, order: String(point.order), is_start: point.is_start, is_finish: point.is_finish });
@@ -15,7 +15,7 @@ export function validate(values: Fields, kind: Kind): Errors {
   if (kind === 'delete') return {};
   const errors: Errors = {};
   for (const field of ['name', 'address', 'coordinates'] as const) if (!values[field].trim()) errors[field] = 'Введите непробельный текст.';
-  if (!Number.isSafeInteger(orderNumber(values.order))) errors.order = 'Введите безопасное целое число порядка.';
+  if (!Number.isSafeInteger(orderNumber(values.order))) errors.order = 'Введите целое число порядка. Слишком большие значения не поддерживаются.';
   return errors;
 }
 export function createBody(values: Fields, routeId: number): Create { return { ...values, route_id: routeId, order: orderNumber(values.order) }; }

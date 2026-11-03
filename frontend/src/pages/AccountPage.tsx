@@ -15,7 +15,7 @@ export function AccountPage() {
       {query.isFetching && !query.isPending && <p className={styles.progress} role="status">Обновляем список участников…</p>}
       {query.isError && <ParticipantsFailure error={query.error} pending={query.isFetching} retry={() => void query.refetch()} />}
       {query.isSuccess && (query.data.length ? <ParticipantsList participants={query.data} /> : <div className={styles.state}><h2>Вы пока не зарегистрировали участников</h2><p>Можно добавить себя и близких. Для каждого участника выберите собственный маршрут.</p><Link className={styles.textLink} to="/account/participants/new">Добавить участника</Link></div>)}
-      <p className={styles.note}>Сессия хранится только в памяти этой вкладки. После обновления страницы потребуется войти снова. Кнопка «Выйти» очищает локальную сессию, но не отзывает уже выданный сервером токен.</p>
+      <p className={styles.note}>После обновления страницы войдите снова. Отметка оплаты в списке не подтверждает перевод денег.</p>
     </section>
   );
 }
