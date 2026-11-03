@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Logo } from '../shared/assets/Logo';
 import { useAuth } from '../features/auth/AuthProvider';
 import { LogoutButton } from '../features/auth/LogoutButton';
+import { checkpointPathId } from '../features/routes/model';
 import styles from './PublicLayout.module.css';
 
 function PublicNav() {
@@ -54,7 +55,7 @@ export function PublicLayout() {
     }
     const title = ({ '/': 'Город становится ближе', '/routes': 'Маршруты', '/how-to': 'Как участвовать', '/faq': 'Вопросы и ответы', '/login': 'Вход', '/signup': 'Регистрация', '/account': 'Личный кабинет', '/account/participants/new': 'Регистрация участников' } as Record<string, string>)[pathname] ?? (/^\/routes\/[^/]+\/?$/.test(pathname) ? 'Детали маршрута' : pathname.startsWith('/account/participants/') ? 'Карточка участника' : 'Страница не найдена');
     const staffTitle = ({ '/staff/routes': 'Управление маршрутами', '/staff/typist': 'Рабочее место наборщика', '/staff/typist/new': 'Бумажная анкета', '/staff/typist/match': 'Сопоставление с картой', '/staff/typist/unlinked': 'Непривязанные карты' } as Record<string, string>)[pathname];
-    document.title = `${staffTitle ?? (/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Тестовая оплата' : title)} — Майская прогулка`;
+    document.title = `${checkpointPathId(pathname) !== null ? 'Контрольные пункты маршрута' : staffTitle ?? (/^\/account\/participants\/\d+\/pay$/.test(pathname) ? 'Тестовая оплата' : title)} — Майская прогулка`;
   }, [pathname]);
   return (
     <>

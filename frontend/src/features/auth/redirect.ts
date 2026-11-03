@@ -1,3 +1,5 @@
+import { checkpointPathId } from '../routes/model';
+
 const staffPaths = new Set(['/staff/routes', '/staff/typist', '/staff/typist/new', '/staff/typist/match', '/staff/typist/unlinked']);
 const allowedPaths = new Set(['/', '/routes', '/account', ...staffPaths]);
 
@@ -14,10 +16,11 @@ export function safeReturnTo(value: unknown): string {
     }
     if (unsafe(decoded)) return '/account';
     const url = new URL(value, 'https://internal.invalid');
-    if (staffPaths.has(url.pathname) && value !== url.pathname) return '/account';
+    const checkpointPath = checkpointPathId(url.pathname) !== null;
+    if ((staffPaths.has(url.pathname) || checkpointPath) && value !== url.pathname) return '/account';
     const participantPath = /^\/account\/participants\/(new|\d+(?:\/pay)?)$/.exec(url.pathname);
     const supportedParticipant = participantPath && (participantPath[1] === 'new' || Number.isSafeInteger(Number(participantPath[1]!.split('/')[0])));
-    if (url.origin !== 'https://internal.invalid' || (!allowedPaths.has(url.pathname) && !supportedParticipant)) return '/account';
+    if (url.origin !== 'https://internal.invalid' || (!allowedPaths.has(url.pathname) && !supportedParticipant && !checkpointPath)) return '/account';
     return `${url.pathname}${url.search}${url.hash}`;
   } catch { return '/account'; }
 }

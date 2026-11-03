@@ -19,6 +19,7 @@ export const appRoutes: RouteObject[] = [{
     { path: 'signup', lazy: async () => ({ Component: (await import('../pages/AuthPage')).SignupPage }) },
     { Component: RequireAuth, children: [
       { Component: RequireAdmin, children: [{ path: 'staff/routes', lazy: async () => ({ Component: (await import('../pages/AdminRoutesPage')).AdminRoutesPage }) }] },
+      { Component: RequireAdmin, children: [{ path: 'staff/routes/:routeId/checkpoints', lazy: async () => ({ Component: (await import('../pages/AdminCheckpointsPage')).AdminCheckpointsPage }) }] },
       { path: 'account', lazy: async () => ({ Component: (await import('../pages/AccountPage')).AccountPage }) },
       { path: 'account/participants/new', lazy: async () => ({ Component: (await import('../pages/ParticipantRegistrationPage')).ParticipantRegistrationPage }) },
       { path: 'account/participants/:id', lazy: async () => ({ Component: (await import('../pages/ParticipantDetailPage')).ParticipantDetailPage }) },

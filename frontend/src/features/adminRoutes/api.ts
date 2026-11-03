@@ -1,14 +1,11 @@
 import { api } from '../../shared/api/client';
 import { ApiError, StaleSessionError } from '../../shared/api/errors';
-import { sessionStore } from '../../shared/session/store';
+import { AdminFailure, currentAdmin } from '../adminShared/api';
+export { AdminFailure, currentAdmin } from '../adminShared/api';
 import { isPublicRoute } from '../routes/model';
 import type { PublicRoute } from '../routes/model';
 import type { CreateRoute, Kind, UpdateRoute } from './model';
 
-export class AdminFailure extends Error {
-  constructor(message: string, public readonly uncertain = false, public readonly details: unknown = undefined) { super(message); }
-}
-export const currentAdmin = (epoch: number) => sessionStore.isCurrentSession(epoch) && sessionStore.getSnapshot().session?.role === 'admin';
 function authorize(epoch: number) { if (!currentAdmin(epoch)) throw new StaleSessionError(); }
 export async function mutateRoute(kind: Kind, body: CreateRoute | UpdateRoute, id: number | undefined, epoch: number, signal: AbortSignal): Promise<PublicRoute | null> {
   authorize(epoch);

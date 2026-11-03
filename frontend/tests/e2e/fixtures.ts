@@ -5,7 +5,7 @@ import type { components } from '../../src/shared/api/schema';
 import { participants, otherParticipants, registration, routes } from './data';
 
 type Reply = { status: number; body: unknown };
-type Call = { method: string; path: string; authenticated: boolean; routeIds?: number[]; routeId?: number; participantId?: number; paymentMethod?: string };
+type Call = { method: string; path: string; authenticated: boolean; routeIds?: number[]; routeId?: number; checkpointId?: number; participantId?: number; paymentMethod?: string };
 type Mode = 'success' | '422' | '408' | 'network';
 function deferred<T>() {
   let release!: (value: T) => void;
@@ -29,7 +29,13 @@ export class MockApi {
   private staffCompleted = deferred<void>();
   routeMode: 'success' | '500' | 'html' | 'empty' | 'invalid' = 'success';
   publicRoutes: components['schemas']['RouteResponse'][] = structuredClone(routes);
-  checkpointMode: 'success' | 'empty' | '500' | '403' | 'network' | 'invalid' = 'success';
+  checkpointMode: 'success' | 'empty' | '500' | '403' | 'network' | 'invalid' | 'foreign' = 'success';
+  checkpointWriteMode: 'success' | '422' | '403' | '409' | '408' | 'network' | 'timeout' = 'success';
+  checkpointRecords = new Map<number, components['schemas']['CheckpointResponse'][]>();
+  checkpointReadFailure = false;
+  private checkpointGate: ReturnType<typeof deferred<Reply>> | null = null;
+  private checkpointSeen = deferred<void>();
+  private checkpointCompleted = deferred<void>();
   adminMode: 'success' | '422' | '408' | '409' | '403' | 'network' = 'success';
   adminReadFailure = false;
   private adminGate: ReturnType<typeof deferred<Reply>> | null = null;
@@ -45,6 +51,10 @@ export class MockApi {
   private completed = deferred<void>();
 
   count(method: string, path: string) { return this.calls.filter(call => call.method === method && call.path === path).length; }
+  deferCheckpoint() {
+    this.checkpointGate = deferred<Reply>();
+    return { seen: this.checkpointSeen.promise, release: this.checkpointGate.release, completed: this.checkpointCompleted.promise };
+  }
   deferAdmin() {
     this.adminGate = deferred<Reply>();
     return { seen: this.adminSeen.promise, release: this.adminGate.release, completed: this.adminCompleted.promise };
@@ -96,11 +106,45 @@ export class MockApi {
       if (this.checkpointMode === '500' || this.checkpointMode === '403') return reply({}, Number(this.checkpointMode));
       if (this.checkpointMode === 'invalid') return reply({ checkpoints: [{ name: { unexpected: true } }] });
       const checkpoints: components['schemas']['CheckpointResponse'][] = [
-        { id: 3, route_id: id, name: 'Тестовый финиш', address: 'Синтетический адрес финиша', coordinates: 'opaque: format not agreed', order: 3, is_start: false, is_finish: true },
-        { id: 1, route_id: id, name: 'Тестовый старт', address: 'Синтетический адрес старта', coordinates: 'opaque: format not agreed', order: 1, is_start: true, is_finish: false },
-        { id: 2, route_id: id, name: 'Тестовый лесной КП', address: 'Синтетический адрес КП', coordinates: 'opaque: format not agreed', order: 2, is_start: false, is_finish: false },
+        { id: id * 100 + 3, route_id: id, name: 'Тестовый финиш', address: 'Синтетический адрес финиша', coordinates: 'opaque: format not agreed', order: 3, is_start: false, is_finish: true },
+        { id: id * 100 + 1, route_id: id, name: 'Тестовый старт', address: 'Синтетический адрес старта', coordinates: 'opaque: format not agreed', order: 1, is_start: true, is_finish: false },
+        { id: id * 100 + 2, route_id: id, name: 'Тестовый лесной КП', address: 'Синтетический адрес КП', coordinates: 'opaque: format not agreed', order: 2, is_start: false, is_finish: false },
       ];
-      return reply({ checkpoints: this.checkpointMode === 'empty' ? [] : checkpoints });
+      if (!this.checkpointRecords.has(id)) this.checkpointRecords.set(id, checkpoints);
+      if (this.checkpointMode === 'foreign') return reply({ checkpoints: [{ ...checkpoints[0], route_id: id + 1 }] });
+      return reply({ checkpoints: this.checkpointMode === 'empty' ? [] : this.checkpointRecords.get(id) });
+    }
+    if ((method === 'POST' && path === '/api/v1/admin/checkpoints') || (['PUT', 'DELETE'].includes(method) && /^\/api\/v1\/admin\/checkpoints\/\d+$/.test(path))) {
+      expect(authenticated && this.role === 'admin', 'Checkpoint writes require current exact admin synthetic credentials').toBe(true);
+      expect(url.search).toBe('');
+      const body = method === 'DELETE' ? {} : request.postDataJSON() as Record<string, unknown>;
+      const checkpointId = method === 'POST' ? 1205 : Number(path.split('/').at(-1));
+      const baseline = [...this.checkpointRecords.values()].flat().find(point => point.id === checkpointId);
+      const routeId = method === 'POST' ? body.route_id as number : baseline?.route_id;
+      expect(Number.isSafeInteger(routeId) && this.publicRoutes.some(item => item.id === routeId)).toBe(true);
+      const fields = ['name', 'address', 'coordinates', 'order', 'is_start', 'is_finish'];
+      if (method === 'POST') expect(Object.keys(body).sort()).toEqual([...fields, 'route_id'].sort());
+      if (method === 'PUT') { expect(Object.keys(body).length).toBeGreaterThan(0); expect(Object.keys(body).every(field => fields.includes(field))).toBe(true); }
+      if (method === 'DELETE') expect(request.postData()).toBeNull();
+      if (method !== 'POST') expect(Boolean(baseline), 'Checkpoint must exist in the selected synthetic list').toBe(true);
+      for (const field of ['name', 'address', 'coordinates']) if (Object.hasOwn(body, field)) expect(typeof body[field] === 'string' && Boolean((body[field] as string).trim())).toBe(true);
+      if (Object.hasOwn(body, 'order')) expect(Number.isSafeInteger(body.order)).toBe(true);
+      for (const field of ['is_start', 'is_finish']) if (Object.hasOwn(body, field)) expect(typeof body[field]).toBe('boolean');
+      call.checkpointId = checkpointId; call.routeId = routeId; this.checkpointSeen.release();
+      if (this.checkpointGate) {
+        const delayed = await this.checkpointGate.promise;
+        try { await (delayed.status === 204 ? route.fulfill({ status: 204, body: '' }) : reply(delayed.body, delayed.status)); } finally { this.checkpointCompleted.release(); }
+        return;
+      }
+      if (this.checkpointWriteMode === 'network' || this.checkpointWriteMode === 'timeout') return route.abort(this.checkpointWriteMode === 'timeout' ? 'timedout' : 'failed');
+      if (this.checkpointWriteMode === '422') return reply({ detail: [{ loc: ['body', 'coordinates'], msg: '<script>untrusted</script>' }] }, 422);
+      if (this.checkpointWriteMode !== 'success') return reply({}, Number(this.checkpointWriteMode));
+      if (this.checkpointReadFailure) this.checkpointMode = '500';
+      const existing = this.checkpointRecords.get(routeId!) ?? [];
+      if (method === 'DELETE') { this.checkpointRecords.set(routeId!, existing.filter(point => point.id !== checkpointId)); return route.fulfill({ status: 204, body: '' }); }
+      const result = method === 'POST' ? { ...body, id: checkpointId } as components['schemas']['CheckpointResponse'] : { ...baseline!, ...body };
+      this.checkpointRecords.set(routeId!, method === 'POST' ? [...existing, result] : existing.map(point => point.id === checkpointId ? result : point));
+      return reply(result, method === 'POST' ? 201 : 200);
     }
     if ((method === 'POST' && path === '/api/v1/admin/routes') || (['PUT', 'DELETE'].includes(method) && /^\/api\/v1\/admin\/routes\/\d+$/.test(path))) {
       expect(authenticated && this.role === 'admin', 'Admin mutations require exact current admin synthetic credentials').toBe(true);

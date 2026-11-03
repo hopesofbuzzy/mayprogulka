@@ -25,3 +25,10 @@ export function isCheckpoint(value: unknown, routeId: number): value is Checkpoi
 }
 
 export const uniqueIds = (items: { id: number }[]) => new Set(items.map(item => item.id)).size === items.length;
+
+export function checkpointPathId(path: string): number | null {
+  const match = /^\/staff\/routes\/([0-9]+)\/checkpoints$/.exec(path);
+  if (!match || match[0] !== path) return null;
+  const id = parseRouteId(match[1]);
+  return id !== null && String(id) === match[1] ? id : null;
+}

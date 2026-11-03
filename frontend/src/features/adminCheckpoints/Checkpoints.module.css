@@ -1,0 +1,6 @@
+.back { display: inline-block; margin-bottom: 24px; padding-block: 6px; font-size: 14px; font-weight: 700; text-underline-offset: 4px; }
+.facts { margin: 16px 0 0; }
+.facts > div { padding-block: 6px; }
+.facts dt { font-size: 12px; color: var(--muted); }
+.facts dd { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.notice { margin-top: 20px; line-height: 1.7; }
