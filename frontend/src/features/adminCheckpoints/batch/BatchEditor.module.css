@@ -1,0 +1,6 @@
+.dialog { overscroll-behavior: contain; }
+.rows { display: grid; gap: 20px; padding: 0; margin-block: 24px; list-style: none; }
+.dialog .rows fieldset { min-width: 0; padding: 18px; border: 1px solid var(--border); border-radius: 14px; }
+.rows legend { font-weight: 700; font-size: 17px; padding-inline: 6px; }
+.message { padding-top: 12px; border-top: 1px solid var(--border); margin-top: 12px; }
+.message p { white-space: pre-wrap; overflow-wrap: anywhere; }

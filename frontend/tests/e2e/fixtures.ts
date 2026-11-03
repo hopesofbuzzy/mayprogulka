@@ -33,6 +33,12 @@ export class MockApi {
   checkpointWriteMode: 'success' | '422' | '403' | '409' | '408' | 'network' | 'timeout' = 'success';
   checkpointRecords = new Map<number, components['schemas']['CheckpointResponse'][]>();
   checkpointReadFailure = false;
+  batchMode: 'full' | 'partial' | 'contradictory' | 'zero' | '422' | '403' | '409' | '408' | '500' | 'network' | 'timeout' | 'malformed' = 'full';
+  batchReadFailure = false;
+  private batchGate: ReturnType<typeof deferred<Reply>> | null = null;
+  private batchSeen = deferred<void>();
+  private batchCompleted = deferred<void>();
+  private batchNextId = 5000;
   private checkpointGate: ReturnType<typeof deferred<Reply>> | null = null;
   private checkpointSeen = deferred<void>();
   private checkpointCompleted = deferred<void>();
@@ -51,6 +57,10 @@ export class MockApi {
   private completed = deferred<void>();
 
   count(method: string, path: string) { return this.calls.filter(call => call.method === method && call.path === path).length; }
+  deferBatch() {
+    this.batchGate = deferred<Reply>();
+    return { seen: this.batchSeen.promise, release: this.batchGate.release, completed: this.batchCompleted.promise };
+  }
   deferCheckpoint() {
     this.checkpointGate = deferred<Reply>();
     return { seen: this.checkpointSeen.promise, release: this.checkpointGate.release, completed: this.checkpointCompleted.promise };
@@ -113,6 +123,34 @@ export class MockApi {
       if (!this.checkpointRecords.has(id)) this.checkpointRecords.set(id, checkpoints);
       if (this.checkpointMode === 'foreign') return reply({ checkpoints: [{ ...checkpoints[0], route_id: id + 1 }] });
       return reply({ checkpoints: this.checkpointMode === 'empty' ? [] : this.checkpointRecords.get(id) });
+    }
+    if (method === 'POST' && path === '/api/v1/admin/checkpoints/batch') {
+      expect(authenticated && this.role === 'admin', 'Batch requires the current exact synthetic admin').toBe(true);
+      expect(url.search).toBe('');
+      const body = request.postDataJSON() as components['schemas']['BatchCheckpointCreateRequest'];
+      expect(Object.keys(body).sort()).toEqual(['checkpoints', 'route_id']);
+      expect(Number.isSafeInteger(body.route_id) && this.publicRoutes.some(route => route.id === body.route_id)).toBe(true);
+      expect(Array.isArray(body.checkpoints) && body.checkpoints.length > 0).toBe(true);
+      for (const item of body.checkpoints) {
+        expect(Object.keys(item).sort()).toEqual(['address', 'coordinates', 'is_finish', 'is_start', 'name', 'order', 'route_id']);
+        expect(item.route_id).toBe(body.route_id); expect(Number.isSafeInteger(item.order)).toBe(true);
+        for (const field of ['name', 'address', 'coordinates'] as const) expect(typeof item[field] === 'string' && Boolean(item[field].trim())).toBe(true);
+        expect(typeof item.is_start).toBe('boolean'); expect(typeof item.is_finish).toBe('boolean');
+      }
+      call.routeId = body.route_id; call.routeIds = body.checkpoints.map(row => row.route_id); this.batchSeen.release();
+      const save = (count: number) => { const existing = this.checkpointRecords.get(body.route_id) ?? []; this.checkpointRecords.set(body.route_id, [...existing, ...body.checkpoints.slice(0, count).map(point => ({ ...point, id: ++this.batchNextId }))]); };
+      if (this.batchGate) {
+        const delayed = await this.batchGate.promise;
+        try { if (delayed.status === 201) save((delayed.body as components['schemas']['BatchCheckpointResponse']).created_count); await reply(delayed.body, delayed.status); } finally { this.batchCompleted.release(); } return;
+      }
+      if (this.batchMode === 'network' || this.batchMode === 'timeout') return route.abort(this.batchMode === 'timeout' ? 'timedout' : 'failed');
+      if (this.batchMode === 'malformed') return route.fulfill({ status: 201, contentType: 'application/json', body: '{' });
+      if (this.batchMode === '422') return reply({ detail: [{ loc: ['body', 'checkpoints', 1, 'coordinates'], msg: '<script>untrusted</script>' }] }, 422);
+      if (['403', '409', '408', '500'].includes(this.batchMode)) return reply({}, Number(this.batchMode));
+      const count = this.batchMode === 'partial' ? 1 : this.batchMode === 'zero' ? 0 : body.checkpoints.length;
+      const errors = this.batchMode === 'partial' || this.batchMode === 'contradictory' ? [{ arbitrary: { detail: '<script>synthetic message</script>', url: 'https://example.test/not-a-link' } }] : [];
+      save(count); if (this.batchReadFailure) this.checkpointMode = '500';
+      return reply({ created_count: count, errors }, 201);
     }
     if ((method === 'POST' && path === '/api/v1/admin/checkpoints') || (['PUT', 'DELETE'].includes(method) && /^\/api\/v1\/admin\/checkpoints\/\d+$/.test(path))) {
       expect(authenticated && this.role === 'admin', 'Checkpoint writes require current exact admin synthetic credentials').toBe(true);

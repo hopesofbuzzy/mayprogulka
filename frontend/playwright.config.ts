@@ -27,6 +27,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4179 --strictPort --mode e2e',
+    env: { VITE_ENABLE_CHECKPOINT_BATCH: 'true' },
     url: 'http://127.0.0.1:4179',
     reuseExistingServer: false,
     timeout: 30_000,

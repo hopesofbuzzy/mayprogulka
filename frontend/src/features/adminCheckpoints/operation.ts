@@ -6,6 +6,7 @@ import type { Checkpoint } from '../routes/model';
 import { createBody, emptyFields, pointFields, samePoint, serverFields, updateBody, validate } from './model';
 import type { Fields } from './model';
 import { mutateCheckpoint } from './api';
+import { blocksCreate } from './batch/model';
 
 export function useCheckpointOperation(epoch: number, routeId: number) {
   const client = useQueryClient(), options = checkpointsQuery(routeId);
@@ -16,7 +17,7 @@ export function useCheckpointOperation(epoch: number, routeId: number) {
     canConfirm: editor => {
       const routes = client.getQueryState(routesQuery.queryKey);
       if (routes?.status !== 'success' || !routes.data?.some(route => route.id === routeId)) return false;
-      if (editor.kind === 'create') return true;
+      if (editor.kind === 'create') return !blocksCreate(client, epoch, routeId);
       const list = client.getQueryState(options.queryKey), point = list?.data?.find(item => item.id === editor.baseline?.id);
       return list?.status === 'success' && Boolean(point && editor.baseline && samePoint(point, editor.baseline));
     },
