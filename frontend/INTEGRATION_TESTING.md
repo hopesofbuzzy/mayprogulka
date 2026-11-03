@@ -155,6 +155,21 @@ Probe дополнительно использует UNREACHABLE для отс�
 
 ## 8. Локальная приёмка frontend
 
+### TASK-10: checkpoint batch, только mock
+
+`VITE_ENABLE_CHECKPOINT_BATCH=true` действует только в mode `e2e`. По умолчанию dev/production OFF, production не включать. E2E webServer явно задаёт флаг; `tests/e2e/admin-checkpoint-batch.spec.ts` использует тот же строгий MockApi/network guard. Единственный новый разрешённый контрактный метод — POST `/api/v1/admin/checkpoints/batch`, exact path/без query, Bearer актуального admin, два согласованных уровня route_id, точные поля каждой строки. Fixture назначает синтетические ID и изменяет публичную выборку по смоделированному count. Frontend не выводит ID из count/имён, не сопоставляет errors строкам и не повторяет партию. Ни одного живого запроса.
+
+Обычные команды ниже включают полный набор. Отдельно default-off проверяет production dist через Vite preview:
+
+```powershell
+npm.cmd run build
+npx.cmd playwright test --config playwright.batch-off.config.ts
+```
+
+Снимки/полный JSON/сводка обоих прогонов и unit/quality checks копируются в `../local_docs/task-10-artifacts/`; результаты — `../local_docs/TASK-10-REPORT.md`. Отдельный явно обозначенный интерактивный mock-preview на 4180 запускается командой из README. Он использует один Vite с test-only middleware, без backend proxy и без live fallback, не входит в production bundle; прочие изменяющие операции отклоняются. Не заменяет Playwright и не доказывает реальную интеграцию.
+
+**Real FastAPI batch / negative role tests / read-only probe: NOT_RUN. Live writes: 0.** Прежний read-only preflight не расширен. Gate снятия блокировки будущего live: утверждённый изолированный origin/БД и владелец очистки; admin, participant, typist, organizer, anonymous/expired; отрицательные RBAC-тесты; точное правило route_id обоих уровней; атомарность/partial и примеры errors/count; способ идентификации результата/идемпотентность; план ручной сверки и синтетических данных; отдельное письменное разрешение на POST. Вопросы: `../local_docs/TASK-10-BACKEND-QUESTIONS.md`. Пока этого нет, статус только UI ready / mock verified / LIVE_BLOCKED.
+
 TASK-09: `/staff/routes/:routeId/checkpoints` использует общий публичный GET маршрутов и КП, строго без Bearer; запись доступна только актуальной роли admin. В mock fixture добавлены ровно POST `/api/v1/admin/checkpoints`, PUT/DELETE `/api/v1/admin/checkpoints/{checkpoint_id}`. Проверяются DTO, Bearer текущей сессии, частичный PUT без route_id/null и без тела у DELETE. Batch не разрешён. Неизвестные API и внешняя сеть по-прежнему блокируются, живого fallback нет. Синтетические ID КП уникальны между маршрутами; координаты остаются непреобразованной строкой. Старые assertions не ослаблены.
 
 `tests/e2e/admin-checkpoints.spec.ts`: 19 сценариев × 4 viewport, 76 новых запусков; вместе с прежними 224 — 300. Покрыты прямой URL/login/403, навигация/reload, одиночные CRUD и публичное обновление, клавиатура/focus, 422/409/408/timeout, явное принятие перечитанной основы, безопасное отложенное закрытие unknown DELETE и блокировка того же ID, поздние ответы всех трёх методов при смене аккаунта. В Vitest добавлены 117 проверок (всего 631). Артефакты и точные результаты конкретного прогона: `../local_docs/task-09-artifacts/`, `../local_docs/TASK-09-REPORT.md`.

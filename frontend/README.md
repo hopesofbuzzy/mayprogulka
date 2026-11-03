@@ -200,6 +200,28 @@ Roboto поставляется локально через `@fontsource/roboto`
 
 Новых зависимостей нет. Batch, импорт, геокарты и сканирование не подключены. Полные проверки: 631 Vitest, 300 Playwright (в том числе 76 новых запусков на 360/390/768/1280 px), 15 тестов preflight; TypeScript/lint/API check/build проходят. Это синтетические проверки, **Real FastAPI: NOT_RUN**, реальных записей нет. Отчёт: `../local_docs/TASK-09-REPORT.md`, вопросы: `../local_docs/TASK-09-BACKEND-QUESTIONS.md`, снимки: `../local_docs/task-09-artifacts/`.
 
+## Партия КП TASK-10 — UI ready / mock verified, live blocked
+
+На прежней странице `/staff/routes/:routeId/checkpoints` добавлен редактор «Добавить несколько КП» без нового URL. Функция **default-off**: требуется точное `VITE_ENABLE_CHECKPOINT_BATCH=true` **и** изолированный Vite mode `e2e`. В обычном dev и production она недоступна даже при случайном true. Это ограничение этапа, а не замена серверного RBAC. `.env.example` оставляет false; production включать нельзя. Playwright задаёт true только своему серверу 127.0.0.1:4179, без backend proxy; fixture перехватывает точный batch endpoint и отклоняет неизвестную сеть.
+
+Две пустые строки, минимум одна, устойчивые UI keys, независимые флаги; order только ручной, координаты не преобразуются. Review перечитывает routesQuery и показывает снимок значений, затем требуется точный ID маршрута и отдельный ack риска. Изменения/возврат/новая основа сбрасывают подтверждение. Один POST `/api/v1/admin/checkpoints/batch` содержит верхний route_id и тот же route_id каждой строки. Не подменяется циклом одиночных POST.
+
+Runtime проверяется 201/JSON, count от 0 до числа строк и errors как массив объектов. Полный N/N без errors — только сообщение сервера без ID; partial, N/N с errors и 0/N требуют сверки. Каждая errors-позиция — ограниченный экранированный текст без сопоставления UI-строке, ссылок, failed_count или retry. 422 связывается с UI keys только по точному bounded loc `body/checkpoints/index/field`. 408/5xx/сеть/timeout/abort/повреждённый ответ — unknown. Автоповторов нет. После валидного 201 обновляется только общий checkpointsQuery(routeId), без выдуманных ID/optimistic вставки. Сбой GET не стирает отчёт POST.
+
+Partial/unknown сохраняются в приватном memory-only Query state по epoch/routeId. Их можно отложить, вернуться после SPA-навигации и сверить GET. Новое одиночное/пакетное CREATE того же маршрута блокируется; edit/delete известных ID и другие маршруты доступны. GET не снимает блокировку. «Разобрано вне приложения» требует нового ввода route ID и отдельного ack, что приложение не доказало отсутствие дублей. Это только локальная отметка; повтор исходной партии не предлагается. Logout/switch/reload теряют приватные данные; приложение не журнал аудита.
+
+Для отдельного **ручного mock-просмотра**, без FastAPI и без реальных данных:
+
+```powershell
+# В frontend/, отдельный процесс. Не запускать как production.
+$env:VITE_ENABLE_CHECKPOINT_BATCH = 'true'
+node scripts/batch-mock-preview.mjs
+```
+
+Открыть `http://127.0.0.1:4180/staff/routes/12/checkpoints`; синтетический вход `preview-admin` / `preview-only`. Вверху страницы явно обозначен mock-режим. В названии любой строки `[partial]` моделирует partial, `[unknown]` — HTTP408. Остальные записи этим preview отклоняются; это один Vite test server, без proxy/fetch к FastAPI. Синтетические данные живут в процессе и сбрасываются после его остановки. Это не общая серверная реализация или интеграция. Для выключения остановить процесс и удалить переменную из его оболочки.
+
+Отдельная браузерная проверка gate OFF на production dist: сначала `npm.cmd run build`, затем `npx.cmd playwright test --config playwright.batch-off.config.ts`. Обычный полный E2E: `npm.cmd run test:e2e`. Реальные batch POST, live RBAC/probe **NOT_RUN**. До них нужны изолированные origin/БД, все отрицательные роли, письменное разрешение, правила двух route_id, partial/errors/idempotency и ручная сверка/очистка. Вопросы и отчёт: `../local_docs/TASK-10-BACKEND-QUESTIONS.md`, `../local_docs/TASK-10-REPORT.md`; артефакты `../local_docs/task-10-artifacts/`. Batch не является импортом файлов, maps/scan/statistics не реализованы.
+
 ## Документы
 
 В TASK-02 используется обновлённая мастер-спецификация **v4.3** из `../local_docs/MayProgulka_Agent_Package_Task01_2026-11-03/docs/frontend/FRONTEND_MASTER_SPEC_v4.3.md`; прежняя ссылка v4.2 в AGENTS устарела по указанию пользователя. `local_docs` остаётся игнорируемой. Рабочая копия OpenAPI не изменялась. Игнорируемые инструкции и референсы не попадут автоматически в новый clone; их нужно передать отдельно.
