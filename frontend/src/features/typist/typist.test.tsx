@@ -49,6 +49,18 @@ const calls = (path: string) => transport.mock.calls.filter(([input]) => new URL
 const paperCalls = () => calls('/api/v1/typist/paper-form');
 const matchCalls = () => calls('/api/v1/typist/match');
 const staffCalls = () => transport.mock.calls.filter(([input]) => new URL((input as Request).url).pathname.startsWith('/api/v1/typist/'));
+it('focuses match validation, retains typing focus and announces the confirmed result without repeating POST', async () => {
+  const { user } = mount('/staff/typist/match'); await screen.findByLabelText('Номер анкеты');
+  await user.click(screen.getByRole('button', { name: 'Проверить пару' }));
+  const form = screen.getByLabelText('Номер анкеты'); await waitFor(() => expect(form).toHaveFocus());
+  await user.type(form, '000F01'); expect(form).toHaveFocus();
+  fireEvent.change(screen.getByLabelText('Штрихкод физической карты'), { target: { value: '000001' } });
+  await user.click(screen.getByRole('button', { name: 'Проверить пару' }));
+  expect(screen.getByRole('region', { name: 'Проверка пары' })).toHaveFocus();
+  await user.click(screen.getByRole('button', { name: 'Подтвердить сопоставление' }));
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Ответ сопоставления получен' })).toHaveFocus());
+  expect(matchCalls()).toHaveLength(1);
+});
 async function signIn(user: ReturnType<typeof userEvent.setup>) {
   fireEvent.change(screen.getByLabelText('Имя пользователя'), { target: { value: 'synthetic-only' } });
   fireEvent.change(screen.getByLabelText('Пароль', { exact: true }), { target: { value: 'synthetic-password' } });

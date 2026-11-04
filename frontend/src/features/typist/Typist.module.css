@@ -12,7 +12,7 @@
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
 .field { min-width: 0; }
 .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 7px; }
-.field input, .field select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #b8c4b8; border-radius: 9px; background: #fffefb; color: var(--ink); font: inherit; font-size: 16px; }
+.field input, .field select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--control-border); border-radius: 9px; background: #fffefb; color: var(--ink); font: inherit; font-size: 16px; }
 .field input:focus-visible, .field select:focus-visible { outline: 3px solid var(--forest); outline-offset: 2px; }
 .field [aria-invalid='true'] { border-color: #a52d18; }
 .hint { color: var(--muted); font-size: 13px; line-height: 1.7; margin-top: 12px; }

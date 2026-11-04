@@ -10,7 +10,7 @@
 .nav a { position: relative; padding-block: 30px; text-decoration: none; white-space: nowrap; }
 .nav a[aria-current='page']::after { position: absolute; content: ''; height: 2px; background: var(--coral); bottom: 13px; left: 0; right: 0; }
 .accountActions { display: flex; align-items: center; gap: 10px; justify-self: end; }
-.account { display: inline-flex; align-items: center; text-decoration: none; border: 1px solid #ccd4ca; border-radius: 10px; background: transparent; color: var(--forest); min-height: 40px; padding-inline: 13px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.account { display: inline-flex; align-items: center; text-decoration: none; border: 1px solid var(--control-border); border-radius: 10px; background: transparent; color: var(--forest); min-height: 40px; padding-inline: 13px; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .account > span[aria-hidden] { margin-left: 10px; }
 .staffAccount > span:first-child { line-height: 1.2; }
 @media (max-width: 900px) { .staffAccount { font-size: 11px; padding-inline: 9px; } .staffAccount > span:first-child { max-width: 64px; white-space: normal; text-align: center; } .headerInner[data-staff='true'] { column-gap: 16px; } }
@@ -30,7 +30,7 @@
   .headerInner { min-height: 71px; grid-template-columns: minmax(0, 1fr) auto auto; padding-block: 12px; gap: 0 10px; }
   .brand { grid-column: 1; grid-row: 1; }
   .brand svg { width: 44px; height: 47px; }
-  .menuToggle { grid-column: 3; grid-row: 1; display: inline-grid; place-items: center; width: 44px; height: 40px; padding: 0; border: 1px solid var(--border); border-radius: 10px; color: var(--forest); background: transparent; cursor: pointer; }
+  .menuToggle { grid-column: 3; grid-row: 1; display: inline-grid; place-items: center; width: 44px; height: 40px; padding: 0; border: 1px solid var(--control-border); border-radius: 10px; color: var(--forest); background: transparent; cursor: pointer; }
   .nav { display: none; grid-column: 1 / -1; grid-row: 2; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; padding-top: 12px; font-size: 13px; }
   .nav[data-open='true'] { display: grid; }
   .nav a { padding: 12px 6px; }

@@ -12,9 +12,9 @@
 .facts dd { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.5; white-space: pre-wrap; }
 .full { grid-column: 1 / -1; }
 .textLink { color: var(--forest); font-size: 14px; font-weight: 700; text-underline-offset: 4px; }
-.secondary { min-height: 44px; border: 1px solid #bac8b9; border-radius: 10px; padding: 10px 16px; background: transparent; color: var(--forest); font-size: 13px; font-weight: 700; cursor: pointer; }
+.secondary { min-height: 44px; border: 1px solid var(--control-border); border-radius: 10px; padding: 10px 16px; background: transparent; color: var(--forest); font-size: 13px; font-weight: 700; cursor: pointer; }
 .secondary:hover { background: #edf1e6; }
-.secondary:disabled, .submit:disabled { opacity: .65; cursor: not-allowed; }
+.secondary:disabled, .submit:disabled { cursor: not-allowed; }
 .state, .detail, .confirmation { margin-top: 28px; }
 .state h2, .detail h2, .confirmation h2 { font-size: 25px; line-height: 1.3; }
 .state p, .detail > p, .confirmation p { margin-top: 12px; line-height: 1.7; }
@@ -29,13 +29,13 @@
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; }
 .field { min-width: 0; }
 .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
-.field input, .field select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid #b8c4b8; border-radius: 9px; padding: 10px 12px; background: #fffefb; color: var(--ink); font: inherit; font-size: 16px; }
+.field input, .field select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--control-border); border-radius: 9px; padding: 10px 12px; background: #fffefb; color: var(--ink); font: inherit; font-size: 16px; }
 .field input:focus-visible, .field select:focus-visible { outline: 3px solid var(--forest); outline-offset: 2px; }
 .field [aria-invalid='true'] { border-color: #a52d18; }
 .fieldError { margin-top: 7px; color: #9b2d19; font-size: 12px; line-height: 1.6; }
 .fieldHint { margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .alert { padding: 18px 20px; margin-block: 22px; border: 1px solid #e6baa3; border-radius: 12px; background: #fcf0e6; color: #70371f; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
-.alert:focus { outline: 2px solid var(--coral); outline-offset: 3px; }
+.alert:focus { outline: 2px solid var(--coral-action); outline-offset: 3px; }
 .alert p + p { margin-top: 12px; }
 .alert button { margin-top: 16px; }
 .acknowledgement { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; }

@@ -13,17 +13,16 @@
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 20px; }
 .actions a, .mapLink { font-size: 13px; font-weight: 700; text-underline-offset: 4px; }
 .mapLink { display: inline-block; margin-top: 14px; }
-.secondary, .danger { min-height: 42px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--forest-deep); font-size: 13px; font-weight: 700; cursor: pointer; }
+.secondary, .danger { min-height: 42px; padding: 10px 14px; border: 1px solid var(--control-border); border-radius: 10px; background: transparent; color: var(--forest-deep); font-size: 13px; font-weight: 700; cursor: pointer; }
 .danger { border-color: #b66650; color: #9a321e; }
-.secondary:disabled, .danger:disabled, .workspace :global(.primaryButton):disabled { opacity: .6; }
 .dialog { width: min(760px, calc(100vw - 32px)); max-height: calc(100svh - 40px); overflow: auto; padding: 28px; color: var(--ink); background: var(--paper); border: 1px solid var(--border); border-radius: 18px; overflow-wrap: anywhere; }
 .dialog::backdrop { background: #123726aa; }
 .dialog .toolbar { margin-top: 0; }
 .dialog h2 { margin: 0; font-size: 29px; color: var(--forest-deep); }
 .dialog h3 { font-size: 21px; }
-.dialog input:not([type='checkbox']), .dialog textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #a6b4a5; border-radius: 8px; background: #fffef9; color: var(--ink); font: inherit; }
+.dialog input:not([type='checkbox']), .dialog textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--control-border); border-radius: 8px; background: #fffef9; color: var(--ink); font: inherit; }
 .dialog textarea { min-height: 96px; resize: vertical; }
-.dialog input:focus-visible, .dialog textarea:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
+.dialog input:focus-visible, .dialog textarea:focus-visible { outline: 3px solid var(--coral-action); outline-offset: 3px; }
 .dialog [aria-invalid='true'] { border-color: #a03620; }
 .form { margin-top: 24px; }
 .form fieldset { padding: 0; margin: 0; border: 0; }

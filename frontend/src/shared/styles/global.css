@@ -7,17 +7,19 @@ button { font: inherit; }
 a { color: inherit; }
 button, a { touch-action: manipulation; }
 a:focus-visible, button:focus-visible, summary:focus-visible {
-  outline: 3px solid var(--coral);
+  outline: 3px solid var(--coral-action);
   outline-offset: 5px;
+  box-shadow: 0 0 0 3px var(--paper);
 }
 main:focus { outline: none; }
 h1, h2, p { margin: 0; }
 button:disabled { cursor: not-allowed; }
+button:disabled, button:disabled:hover { opacity: 1; color: var(--forest-deep); background: #e4e8df; border: 1px dashed var(--control-border); }
 .container { width: min(var(--container), calc(100% - 64px)); margin-inline: auto; }
 .primaryButton {
   display: inline-flex; align-items: center; justify-content: center; gap: 16px;
   min-height: 45px; padding: 0 18px; border: 0; border-radius: var(--radius);
-  background: var(--coral); color: #fff; font-size: 12px; font-weight: 700;
+  background: var(--coral-action); color: #fff; font-size: 12px; font-weight: 700;
   text-decoration: none; cursor: pointer;
 }
 .primaryButton:hover { background: var(--coral-dark); }

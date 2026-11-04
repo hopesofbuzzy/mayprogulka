@@ -20,6 +20,8 @@ export class MockApi {
   readonly password = randomUUID(); // Generated per test; never logged or persisted.
   identity: 'A' | 'B' = 'A';
   role = 'participant';
+  authStatus: 200 | 401 | 422 = 200;
+  checkpoint422Field = 'coordinates';
   paperMode: Mode = 'success';
   matchMode: Mode = 'success';
   unlinkedMode: 'success' | '403' | '500' = 'success';
@@ -175,7 +177,7 @@ export class MockApi {
         return;
       }
       if (this.checkpointWriteMode === 'network' || this.checkpointWriteMode === 'timeout') return route.abort(this.checkpointWriteMode === 'timeout' ? 'timedout' : 'failed');
-      if (this.checkpointWriteMode === '422') return reply({ detail: [{ loc: ['body', 'coordinates'], msg: '<script>untrusted</script>' }] }, 422);
+      if (this.checkpointWriteMode === '422') return reply({ detail: [{ loc: ['body', this.checkpoint422Field], msg: '<script>untrusted</script>' }] }, 422);
       if (this.checkpointWriteMode !== 'success') return reply({}, Number(this.checkpointWriteMode));
       if (this.checkpointReadFailure) this.checkpointMode = '500';
       const existing = this.checkpointRecords.get(routeId!) ?? [];
@@ -227,6 +229,7 @@ export class MockApi {
       expect(body.password === this.password, 'Only the generated synthetic password is allowed').toBe(true);
       expect(body.username === 'synthetic-test-account', 'Only the synthetic UI account is allowed').toBe(true);
       if (signup) expect(body.email === 'account@example.test').toBe(true);
+        if (this.authStatus !== 200) return reply(this.authStatus === 422 ? { detail: [{ loc: ['body', 'username'], msg: 'Synthetic rejection' }] } : {}, this.authStatus);
       return reply({ access_token: this.tokens[this.identity], user_id: this.identity === 'A' ? 7 : 9, role: this.role }, signup ? 201 : 200);
     }
     if (method === 'GET' && path === '/api/v1/participants/my') {

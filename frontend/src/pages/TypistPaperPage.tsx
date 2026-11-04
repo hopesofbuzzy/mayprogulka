@@ -17,13 +17,24 @@ export function TypistPaperPage() {
   const op = useStaffOperation('paper', epoch, emptyPaper, (values, ticket, signal) => createPaper(paperBody(values), ticket, signal), fieldNames);
   const { state } = op;
   const id = useId();
-  const review = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (state.phase === 'review') review.current?.focus(); }, [state.phase]);
+  const review = useRef<HTMLDivElement>(null), resultHeading = useRef<HTMLHeadingElement>(null);
+  const previousPhase = useRef(state.phase);
+  useEffect(() => {
+    const before = previousPhase.current; previousPhase.current = state.phase;
+    if (state.phase === 'review') review.current?.focus();
+    else if (state.phase === 'confirmed') resultHeading.current?.focus();
+    else if (state.phase === 'edit' && before !== 'edit') document.getElementById(`${id}-${fieldNames.find(name => state.errors[name]) ?? fieldNames[0]}`)?.focus();
+  }, [state.phase, state.errors, id]);
   const active = routes.data?.filter(route => route.is_active === true) ?? [];
   const available = routes.isSuccess && !routes.isFetching && active.length > 0;
   const selected = active.find(route => route.id === Number(state.values.route_id));
   const validate = () => validatePaper(state.values, available ? routes.data! : []);
-  if (state.phase === 'confirmed' && state.result) return <><h1>Ответ по бумажной анкете получен</h1><div className={styles.panel}>
+  function checkPaper() {
+    const errors = validate(); op.review(errors);
+    const first = fieldNames.find(name => errors[name]);
+    if (first) requestAnimationFrame(() => document.getElementById(`${id}-${first}`)?.focus());
+  }
+  if (state.phase === 'confirmed' && state.result) return <><h1 ref={resultHeading} tabIndex={-1}>Ответ по бумажной анкете получен</h1><div className={styles.panel}>
     <dl className={styles.facts}><div><dt>Назначенный номер анкеты</dt><dd>{state.result.form_id}</dd></div><div><dt>Номер участника</dt><dd>{state.result.participant_id}</dd></div><div><dt>Отметка оплаты в системе</dt><dd>{state.result.payment_status}</dd></div></dl>
     <p>Отметка оплаты в системе не подтверждает получение денег.</p><p>Запишите номер анкеты. На экране сопоставления введите его вручную вместе со штрихкодом карты.</p>
     {state.duplicateRisk && <p className={common.alert}>Ранее была отправка без подтверждения. Проверьте возможные дубли с ответственным.</p>}
@@ -39,7 +50,7 @@ export function TypistPaperPage() {
     {state.phase === 'review' ? <div ref={review} tabIndex={-1} className={styles.panel} role="region" aria-label="Проверка бумажной анкеты"><h2>Проверьте анкету перед созданием</h2>
       <dl className={styles.facts}>{fieldNames.map(name => <div key={name}><dt>{labels[name]}</dt><dd>{name === 'route_id' ? selected ? `${selected.name} · ${selected.year} · ${selected.distance} км` : 'Маршрут недоступен' : state.values[name] || 'Не указано'}</dd></div>)}</dl>
       <div className={common.actions}><button className={common.submit} type="button" disabled={!available || (state.uncertain && !op.acknowledged)} onClick={() => void op.confirm(validate)}>Подтвердить создание анкеты</button><button className={common.secondary} type="button" onClick={op.edit}>Вернуться к вводу</button></div>
-    </div> : <form className={`${styles.form} ${styles.panel}`} noValidate aria-busy={state.phase === 'pending'} onSubmit={event => { event.preventDefault(); if (available) op.review(validate()); }}>
+    </div> : <form className={`${styles.form} ${styles.panel}`} noValidate aria-busy={state.phase === 'pending'} onSubmit={event => { event.preventDefault(); if (available) checkPaper(); }}>
       <fieldset disabled={state.phase === 'pending'} style={{ border: 0, padding: 0, margin: 0 }}><legend className={styles.hint}>Данные одной бумажной анкеты</legend><div className={styles.fields}>{fieldNames.map(name => {
         const fieldId = `${id}-${name}`, issue = state.errors[name];
         const commonInput = { id: fieldId, value: state.values[name], required: name !== 'middle_name', 'aria-invalid': Boolean(issue), 'aria-describedby': issue ? `${fieldId}-error` : undefined, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => op.change(name, event.target.value) };

@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -20,7 +20,7 @@ function mount(path = '/', role?: string) {
 
 it('opens /about directly with its own title and confirmed identity without API', async () => {
   mount('/about'); await screen.findByRole('heading', { name: 'О Майской прогулке' });
-  expect(document.title).toBe('О Майской прогулке — Майская прогулка');
+  await waitFor(() => expect(document.title).toBe('О Майской прогулке — Майская прогулка'));
   expect(screen.getByRole('main')).toHaveTextContent('Традиция пешей прогулки в Екатеринбурге с 1984 года.');
   expect(screen.getByRole('main')).toHaveTextContent('один аккаунт позволяет зарегистрировать нескольких участников');
   expect(fetchMock).not.toHaveBeenCalled();
