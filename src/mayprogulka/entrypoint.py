@@ -5,6 +5,7 @@ from mayprogulka.routes.v1.routes.router import router as routes_router
 from mayprogulka.routes.v1.checkpoints.router import router as checkpoints_router
 from mayprogulka.routes.v1.maps.router import router as maps_router
 from mayprogulka.routes.v1.typist.router import router as typist_router
+from mayprogulka.routes.v1.scans.router import router as scans_router
 from contextlib import asynccontextmanager
 from database.database import create_db, create_default_admin
 
@@ -25,5 +26,6 @@ api_router.include_router(routes_router)
 api_router.include_router(checkpoints_router)
 api_router.include_router(maps_router)
 api_router.include_router(typist_router)
+api_router.include_router(scans_router)
 
 app.include_router(api_router)

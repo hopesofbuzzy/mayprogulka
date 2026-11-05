@@ -495,10 +495,882 @@
           }
         }
       }
+    },
+    "/api/v1/checkpoints": {
+      "get": {
+        "tags": [
+          "checkpoints"
+        ],
+        "summary": "Get Checkpoints",
+        "description": "Получить список контрольных пунктов маршрута.",
+        "operationId": "get_checkpoints_api_v1_checkpoints_get",
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Route Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckpointListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/checkpoints": {
+      "post": {
+        "tags": [
+          "checkpoints"
+        ],
+        "summary": "Create Checkpoint",
+        "description": "Создание нового контрольного пункта.",
+        "operationId": "create_checkpoint_api_v1_admin_checkpoints_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckpointCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckpointResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/checkpoints/{checkpoint_id}": {
+      "put": {
+        "tags": [
+          "checkpoints"
+        ],
+        "summary": "Update Checkpoint",
+        "description": "Обновление данных контрольного пункта.",
+        "operationId": "update_checkpoint_api_v1_admin_checkpoints__checkpoint_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checkpoint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Checkpoint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckpointUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckpointResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "checkpoints"
+        ],
+        "summary": "Delete Checkpoint",
+        "description": "Удаление контрольного пункта (если нет отметок участников).",
+        "operationId": "delete_checkpoint_api_v1_admin_checkpoints__checkpoint_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checkpoint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Checkpoint Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/checkpoints/batch": {
+      "post": {
+        "tags": [
+          "checkpoints"
+        ],
+        "summary": "Create Checkpoints Batch",
+        "description": "Массовое создание КП для маршрута.",
+        "operationId": "create_checkpoints_batch_api_v1_admin_checkpoints_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchCheckpointCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchCheckpointResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/maps": {
+      "post": {
+        "tags": [
+          "admin",
+          "maps"
+        ],
+        "summary": "Create Map",
+        "description": "Создать карту (participant_id опционален).",
+        "operationId": "create_map_api_v1_admin_maps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/maps/batch": {
+      "post": {
+        "tags": [
+          "admin",
+          "maps"
+        ],
+        "summary": "Create Maps Batch",
+        "description": "Массовое создание карт (только barcode, без привязки).",
+        "operationId": "create_maps_batch_api_v1_admin_maps_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchMapCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchMapResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/maps/{barcode}": {
+      "get": {
+        "tags": [
+          "admin",
+          "maps"
+        ],
+        "summary": "Get Map Info",
+        "description": "Получить информацию о карте (работает даже если не привязана).",
+        "operationId": "get_map_info_api_v1_admin_maps__barcode__get",
+        "parameters": [
+          {
+            "name": "barcode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Barcode"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapInfoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/typist/paper-form": {
+      "post": {
+        "tags": [
+          "typist"
+        ],
+        "summary": "Create From Paper Form",
+        "description": "Ввод данных с бумажной анкеты на старте.\nСоздаёт участника с payment_status=\"paid\" сразу.",
+        "operationId": "create_from_paper_form_api_v1_typist_paper_form_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaperFormRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperFormResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/typist/match": {
+      "post": {
+        "tags": [
+          "typist"
+        ],
+        "summary": "Match Map To Participant",
+        "description": "Сопоставление карты с участником по номеру анкеты.\nСвязывает barcode карты с form_id участника.",
+        "operationId": "match_map_to_participant_api_v1_typist_match_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/typist/unlinked": {
+      "get": {
+        "tags": [
+          "typist"
+        ],
+        "summary": "Get Unlinked Maps",
+        "description": "Получение списка непривязанных карт.\nПоказывает карты, которые ещё не сопоставлены с участниками.",
+        "operationId": "get_unlinked_maps_api_v1_typist_unlinked_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnlinkedMapListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scans": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Scan Single",
+        "description": "Одиночное сканирование участника на КП организатором.\nОсновной эндпоинт для волонтёров на контрольных пунктах.",
+        "operationId": "scan_single_api_v1_scans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/scans/batch": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Scan Batch",
+        "description": "Пакетное сканирование (массовое чтение).\nКритически важен для скорости: обрабатывает массив barcode'ов одной транзакцией.",
+        "operationId": "scan_batch_api_v1_scans_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/scans/upload-file": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Upload Scan File",
+        "description": "Загрузка файла со списком штрих-кодов (офлайн-синхронизация).\nФайл должен быть текстовым, по одному barcode на строку.",
+        "operationId": "upload_scan_file_api_v1_scans_upload_file_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checkpoint_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Checkpoint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_scan_file_api_v1_scans_upload_file_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadFileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scans/self": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Scan Self",
+        "description": "Самостоятельная отметка участника на КП по общему QR-коду.\nУчастник сканирует QR-код на КП (который содержит checkpoint_id),\nприложение отправляет запрос с токеном участника.",
+        "operationId": "scan_self_api_v1_scans_self_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelfScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "BatchCheckpointCreateRequest": {
+        "properties": {
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/CheckpointCreateRequest"
+            },
+            "type": "array",
+            "title": "Checkpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_id",
+          "checkpoints"
+        ],
+        "title": "BatchCheckpointCreateRequest"
+      },
+      "BatchCheckpointResponse": {
+        "properties": {
+          "created_count": {
+            "type": "integer",
+            "title": "Created Count"
+          },
+          "errors": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "created_count",
+          "errors"
+        ],
+        "title": "BatchCheckpointResponse"
+      },
+      "BatchMapCreateRequest": {
+        "properties": {
+          "barcodes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Barcodes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcodes"
+        ],
+        "title": "BatchMapCreateRequest"
+      },
+      "BatchMapResponse": {
+        "properties": {
+          "created_count": {
+            "type": "integer",
+            "title": "Created Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "created_count"
+        ],
+        "title": "BatchMapResponse"
+      },
+      "BatchScanError": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode",
+          "error"
+        ],
+        "title": "BatchScanError",
+        "description": "Ошибка обработки одного сканирования."
+      },
+      "BatchScanItem": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "title": "BatchScanItem",
+        "description": "Элемент пакетного сканирования."
+      },
+      "BatchScanRequest": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          },
+          "scans": {
+            "items": {
+              "$ref": "#/components/schemas/BatchScanItem"
+            },
+            "type": "array",
+            "title": "Scans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_id",
+          "scans"
+        ],
+        "title": "BatchScanRequest",
+        "description": "Пакетное сканирование."
+      },
+      "BatchScanResponse": {
+        "properties": {
+          "processed": {
+            "type": "integer",
+            "title": "Processed"
+          },
+          "already_passed": {
+            "type": "integer",
+            "title": "Already Passed"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/BatchScanError"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processed",
+          "already_passed",
+          "errors"
+        ],
+        "title": "BatchScanResponse",
+        "description": "Результат пакетного сканирования."
+      },
       "Body_upload_route_map_api_v1_routes__route_id__map_post": {
         "properties": {
           "file": {
@@ -512,6 +1384,199 @@
           "file"
         ],
         "title": "Body_upload_route_map_api_v1_routes__route_id__map_post"
+      },
+      "Body_upload_scan_file_api_v1_scans_upload_file_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_scan_file_api_v1_scans_upload_file_post"
+      },
+      "CheckpointCreateRequest": {
+        "properties": {
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "coordinates": {
+            "type": "string",
+            "title": "Coordinates"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order"
+          },
+          "is_start": {
+            "type": "boolean",
+            "title": "Is Start",
+            "default": false
+          },
+          "is_finish": {
+            "type": "boolean",
+            "title": "Is Finish",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_id",
+          "name",
+          "address",
+          "coordinates",
+          "order"
+        ],
+        "title": "CheckpointCreateRequest"
+      },
+      "CheckpointListResponse": {
+        "properties": {
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/CheckpointResponse"
+            },
+            "type": "array",
+            "title": "Checkpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoints"
+        ],
+        "title": "CheckpointListResponse"
+      },
+      "CheckpointResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "coordinates": {
+            "type": "string",
+            "title": "Coordinates"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order"
+          },
+          "is_start": {
+            "type": "boolean",
+            "title": "Is Start"
+          },
+          "is_finish": {
+            "type": "boolean",
+            "title": "Is Finish"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "route_id",
+          "name",
+          "address",
+          "coordinates",
+          "order",
+          "is_start",
+          "is_finish"
+        ],
+        "title": "CheckpointResponse"
+      },
+      "CheckpointUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "coordinates": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coordinates"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          },
+          "is_start": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Start"
+          },
+          "is_finish": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Finish"
+          }
+        },
+        "type": "object",
+        "title": "CheckpointUpdateRequest"
       },
       "HTTPValidationError": {
         "properties": {
@@ -544,6 +1609,166 @@
         ],
         "title": "LoginRequest"
       },
+      "MapCreateRequest": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "participant_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "title": "MapCreateRequest",
+        "description": "Создание карты. participant_id опционален (привязка происходит позже)."
+      },
+      "MapInfoResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "participant_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Id"
+          },
+          "is_linked": {
+            "type": "boolean",
+            "title": "Is Linked"
+          },
+          "participant_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Name"
+          },
+          "participant_surname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Surname"
+          },
+          "route_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Name"
+          },
+          "has_started": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Started"
+          },
+          "has_finished": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Finished"
+          },
+          "payment_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "barcode",
+          "is_linked"
+        ],
+        "title": "MapInfoResponse",
+        "description": "Подробная информация о карте."
+      },
+      "MapResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "participant_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Id"
+          },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "is_linked": {
+            "type": "boolean",
+            "title": "Is Linked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "barcode",
+          "is_linked"
+        ],
+        "title": "MapResponse"
+      },
       "MapUploadResponse": {
         "properties": {
           "map_url": {
@@ -556,6 +1781,139 @@
           "map_url"
         ],
         "title": "MapUploadResponse"
+      },
+      "MatchRequest": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "form_id": {
+            "type": "string",
+            "title": "Form Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode",
+          "form_id"
+        ],
+        "title": "MatchRequest",
+        "description": "Сопоставление карты с участником."
+      },
+      "MatchResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
+          },
+          "participant_name": {
+            "type": "string",
+            "title": "Participant Name"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "barcode",
+          "participant_id",
+          "participant_name",
+          "message"
+        ],
+        "title": "MatchResponse",
+        "description": "Результат сопоставления."
+      },
+      "PaperFormRequest": {
+        "properties": {
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "surname": {
+            "type": "string",
+            "title": "Surname"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "middle_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Middle Name"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date",
+            "title": "Date Of Birth"
+          },
+          "gender": {
+            "type": "string",
+            "title": "Gender"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_id",
+          "surname",
+          "name",
+          "date_of_birth",
+          "gender",
+          "phone_number",
+          "email"
+        ],
+        "title": "PaperFormRequest",
+        "description": "Ввод данных с бумажной анкеты на старте."
+      },
+      "PaperFormResponse": {
+        "properties": {
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
+          },
+          "form_id": {
+            "type": "string",
+            "title": "Form Id"
+          },
+          "payment_status": {
+            "type": "string",
+            "title": "Payment Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "participant_id",
+          "form_id",
+          "payment_status"
+        ],
+        "title": "PaperFormResponse",
+        "description": "Результат создания участника с бумажной анкеты."
       },
       "ParticipantData": {
         "properties": {
@@ -683,7 +2041,7 @@
           "map_barcode": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -996,6 +2354,139 @@
         "type": "object",
         "title": "RouteUpdateRequest"
       },
+      "ScanRequest": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode",
+          "checkpoint_id"
+        ],
+        "title": "ScanRequest",
+        "description": "Одиночное сканирование на КП."
+      },
+      "ScanResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "participant_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Name"
+          },
+          "checkpoint_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Name"
+          },
+          "passed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "barcode",
+          "message"
+        ],
+        "title": "ScanResponse",
+        "description": "Результат одиночного сканирования."
+      },
+      "SelfScanRequest": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_id"
+        ],
+        "title": "SelfScanRequest",
+        "description": "Самостоятельная отметка участника."
+      },
+      "SelfScanResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "checkpoint_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Name"
+          },
+          "passed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "SelfScanResponse",
+        "description": "Результат самостоятельной отметки."
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -1023,6 +2514,80 @@
           "role"
         ],
         "title": "TokenResponse"
+      },
+      "UnlinkedMapListResponse": {
+        "properties": {
+          "maps": {
+            "items": {
+              "$ref": "#/components/schemas/UnlinkedMapResponse"
+            },
+            "type": "array",
+            "title": "Maps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "maps"
+        ],
+        "title": "UnlinkedMapListResponse",
+        "description": "Список непривязанных карт."
+      },
+      "UnlinkedMapResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "participant_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "barcode"
+        ],
+        "title": "UnlinkedMapResponse",
+        "description": "Непривязанная карта."
+      },
+      "UploadFileResponse": {
+        "properties": {
+          "processed": {
+            "type": "integer",
+            "title": "Processed"
+          },
+          "already_passed": {
+            "type": "integer",
+            "title": "Already Passed"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/BatchScanError"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processed",
+          "already_passed",
+          "errors"
+        ],
+        "title": "UploadFileResponse",
+        "description": "Результат загрузки файла со сканированиями."
       },
       "ValidationError": {
         "properties": {
