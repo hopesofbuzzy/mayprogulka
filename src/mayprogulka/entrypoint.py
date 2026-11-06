@@ -1,25 +1,31 @@
-# Заглушечное приложение на FastAPI
+from fastapi import FastAPI, APIRouter
+from mayprogulka.routes.v1.auth.router import router as auth_router
+from mayprogulka.routes.v1.participants.router import router as participants_router
+from mayprogulka.routes.v1.routes.router import router as routes_router
+from mayprogulka.routes.v1.checkpoints.router import router as checkpoints_router
+from mayprogulka.routes.v1.maps.router import router as maps_router
+from mayprogulka.routes.v1.typist.router import router as typist_router
+from mayprogulka.routes.v1.scans.router import router as scans_router
+from contextlib import asynccontextmanager
+from database.database import create_db, create_default_admin
 
-from typing import Annotated
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # При старте создаем все таблицы
+    await create_db()
+    await create_default_admin()
+    yield
 
-from fastapi import FastAPI, Depends
-from pydantic import BaseModel, Field
-from module.extension import prints
+app = FastAPI(title="May Progulka API", lifespan=lifespan)
 
-app = FastAPI()
+api_router = APIRouter(prefix="/api/v1")
+# Регистрация роутов FastAPI Users
+api_router.include_router(auth_router)
+api_router.include_router(participants_router)
+api_router.include_router(routes_router)
+api_router.include_router(checkpoints_router)
+api_router.include_router(maps_router)
+api_router.include_router(typist_router)
+api_router.include_router(scans_router)
 
-async def common_parameters(
-    q: str | None = None,
-    skip: int = 0,
-    limit: int = -1
-):
-    return {"q": q, "skip": skip, "limit": limit}
-
-@app.get("/items/")
-async def get_items(commons: Annotated[dict, Depends(common_parameters)]):
-    prints()
-    return commons
-
-@app.get("/users/")
-async def get_users(commons: Annotated[dict, Depends(common_parameters)]):
-    return commons
+app.include_router(api_router)

@@ -53,3 +53,6 @@ Thumbs.db
 *.temp
 *.log
 *~
+
+# Backend SQLite databases
+*.db
