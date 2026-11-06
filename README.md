@@ -11,7 +11,7 @@ uv add <библиотека>
 
 `src\` - модули бэкенда.
 
-`web\` - фронтенд.
+`frontend\` - фронтенд.
 
 `src\mayprogulka\openapi.json` - структура API.
 

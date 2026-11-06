@@ -64,22 +64,3 @@ Production-off конфигурация обслуживает предвари�
 
 3 Node readiness tests проверяют разрешённый dev proxy target, отсутствие proxy в e2e/preview и отсутствие достижимых fixtures/mock scripts/storage fallback в runtime import graph. Они не запускают API. Preflight tests также используют контролируемый fetch без живой сети.
 
-Фактические результаты TASK-11, screenshots и список файлов: `../local_docs/TASK-11-REPORT.md`, `TASK-11-COPY-AUDIT.md`, `TASK-11-API-READINESS.md`, `task-11-artifacts/`. Исторические этапы — отдельные TASK-01…10 отчёты; их mock PASS не доказывает live.
-
-## Production и будущая интеграция
-
-`npm.cmd run build` создаёт статический dist. Vite preview обслуживает его **без API proxy**; это явно задано, поскольку Vite иначе наследует server.proxy. Preview не является production-сервером. Размещение должно отдельно маршрутизировать /api/v1/* в FastAPI, статические assets в файлы, клиентские URL в SPA index.html. Нельзя возвращать HTML приложения на API URL. Нужны согласованные HTTPS, reverse proxy, кеширование и SPA fallback; серверная конфигурация не менялась.
-
-Текущий live-статус: **Real FastAPI: NOT_RUN**. TASK-11 не делает даже read-only вызов без утверждённого origin. `integration:preflight` требует LIVE_API_ORIGIN и выполняет только GET /openapi.json и GET /api/v1/routes без Bearer/cookies/редиректов/retry. Без origin — NOT_RUN, без сети. Команды Windows/Git Bash/POSIX и классификация результатов: [INTEGRATION_TESTING.md](./INTEGRATION_TESTING.md).
-
-TASK-14: preflight сравнивает все 22 известные операции и ожидаемые схемы; дополнительные методы сервера допускаются со статусом `COMPATIBLE_WITH_EXTRAS` и списком added/changed/missing. Это не подключает новые функции: tracked OpenAPI и типы сохраняются, сканирование не реализовано, batch-КП выключен в обычном приложении. Реальный FastAPI по-прежнему **NOT_RUN**.
-
-До write smoke команда предоставляет изолированные origin/БД/учётные записи, устраняет backend security blockers (admin maps и фиксированные секреты), сверяет live schema, проверяет отрицательный RBAC и даёт отдельное письменное разрешение на конкретные записи. Фронтенд не меняет Python/database/OpenAPI и не объединяет ветки.
-
-## Структура и дизайн
-
-app/pages/features/shared; отдельные routes/auth/participants/payments/typist/adminRoutes/adminCheckpoints/adminShared. Единственный client и generated schema.d.ts; api:check проверяет воспроизводимость без правки контракта.
-
-Сохранены исходный hero, двухколоночная композиция на1280, локальные SVG/логотип, CSS Modules и forest/paper/coral. Локальная Roboto — выбранная близкая гарнитура, не доказанное название шрифта оригинала. Лицензия SIL OFL1.1: THIRD_PARTY_LICENSES.txt. Карты/фотографии/шрифты с внешних хостов не подключены.
-
-AGENTS и local_docs игнорируются и не попадут автоматически в clone: инструкции, v4.3 и утверждённые references нужно передать отдельно. Git операции записи/истории агент не выполняет.
