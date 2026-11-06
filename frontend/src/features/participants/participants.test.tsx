@@ -15,7 +15,7 @@ const routes = [
   { id: 17, name: 'Неактивный тестовый', distance: 33, year: 2024, is_active: false },
 ];
 const participants = [
-  { id: 101, form_id: '00123', surname: 'Тестов', name: 'Первый', route_name: routes[0]!.name, payment_status: 'pending', has_started: false, has_finished: false, map_barcode: null },
+  { id: 101, form_id: '00123', surname: 'Тестов', name: 'Первый', route_name: routes[0]!.name, payment_status: 'unpaid', has_started: false, has_finished: false, map_barcode: null },
   { id: 102, form_id: '00456', surname: 'Тестова', name: 'Вторая', route_name: routes[1]!.name, payment_status: 'review', has_started: true, has_finished: false, map_barcode: '000314' },
 ];
 const registration = { registration_id: 900, participants: participants.map(({ id, form_id, surname, name, payment_status }) => ({ id, form_id, surname, name, payment_status })) };
@@ -63,7 +63,7 @@ async function form() {
 }
 function fill(index = 1, route = '12', name = 'Первый') {
   const row = within(screen.getByRole('group', { name: `Участник ${index}` }));
-  const data = { surname: 'Тестов', name, middle_name: '', date_of_birth: '1995-05-20', email: 'family@example.test', phone_number: 'местный 123, доб. 2' };
+  const data = { surname: 'Тестов', name, middle_name: '', date_of_birth: '1995-05-20', email: 'family@example.test', phone_number: '+7 (900) 123-45-67 доб. 2' };
   for (const [label, value] of [['Фамилия', data.surname], ['Имя', data.name], ['Дата рождения', data.date_of_birth], ['Email', data.email], ['Телефон', data.phone_number]]) fireEvent.change(row.getByLabelText(label!, { exact: true }), { target: { value } });
   fireEvent.change(row.getByLabelText('Пол'), { target: { value: index === 1 ? 'male' : 'female' } });
   fireEvent.change(row.getByLabelText('Маршрут'), { target: { value: route } });
@@ -86,15 +86,18 @@ describe('private account and own participant details', () => {
     expect(query.queryKey).toEqual(['private', 'participants', sessionStore.getCredentials()!.epoch]);
     expect(screen.queryByRole('button', { name: /Оплатить|PDF/ })).not.toBeInTheDocument();
   });
-  it('shows genuine loading and empty state, then manually refreshes', async () => {
+  it('shows genuine loading and empty state, then refreshes on revisiting the account', async () => {
     let resolve!: (response: Response) => void;
     getMine = () => new Promise(done => { resolve = done; });
-    const { user } = mount();
+    const { router } = mount();
     expect(await screen.findByText('Загружаем ваших участников…')).toHaveAttribute('role', 'status');
     await act(async () => { resolve(json({ participants: [] })); });
     expect(await screen.findByRole('heading', { name: 'Вы пока не зарегистрировали участников' })).toBeInTheDocument();
     getMine = async () => json({ participants });
-    await user.click(screen.getByRole('button', { name: 'Обновить' }));
+    expect(screen.queryByRole('button', { name: 'Обновить' })).not.toBeInTheDocument();
+    await act(async () => { await router.navigate('/account/participants/new'); });
+    await screen.findByRole('button', { name: 'Зарегистрировать участников' });
+    await act(async () => { await router.navigate('/account'); });
     expect(await screen.findByRole('list', { name: 'Мои участники' })).toBeInTheDocument();
     expect(calls('/api/v1/participants/my')).toHaveLength(2);
   });
@@ -125,11 +128,11 @@ describe('private account and own participant details', () => {
   it('ignores the deferred response of account A after switching to B and preserves public cache', async () => {
     let resolveOld!: (response: Response) => void;
     const oldEpoch = sessionStore.getCredentials()!.epoch;
-    const { client, router, user } = mount();
+    const { client, router } = mount();
     await screen.findByText('Тестов Первый');
     client.setQueryData(['routes'], routes);
     getMine = () => new Promise(done => { resolveOld = done; });
-    await user.click(screen.getByRole('button', { name: 'Обновить' }));
+    await act(async () => { void client.refetchQueries({ queryKey: ['private', 'participants', oldEpoch], exact: true }); });
     await waitFor(() => expect(calls('/api/v1/participants/my')).toHaveLength(2));
     let resolveNew!: (response: Response) => void;
     getMine = () => new Promise(done => { resolveNew = done; });
@@ -199,7 +202,7 @@ describe('multi-participant registration', () => {
     expect(Object.keys(records[0]!).sort()).toEqual(['date_of_birth', 'email', 'gender', 'middle_name', 'name', 'phone_number', 'route_id', 'surname']);
     expect(records.map(item => item.gender)).toEqual(['male', 'female']);
     expect(records[0]!.middle_name).toBeNull();
-    expect(records[0]!.phone_number).toBe('местный 123, доб. 2');
+    expect(records[0]!.phone_number).toBe('+7 (900) 123-45-67 доб. 2');
     expect(records[0]!.email).toBe(records[1]!.email);
     expect((postCalls()[0]![0] as Request).headers.get('Authorization')).toBe('Bearer test-only-7');
     await act(async () => { resolve(json(registration, 201)); });
@@ -304,7 +307,7 @@ describe('multi-participant registration', () => {
     expect(screen.getByLabelText('Фамилия')).toHaveValue('Тестов');
     expect(screen.getByLabelText('Дата рождения')).toHaveValue('1995-05-20');
     expect(screen.getByLabelText('Email')).toHaveValue('family@example.test');
-    expect(screen.getByLabelText('Телефон')).toHaveValue('местный 123, доб. 2');
+    expect(screen.getByLabelText('Телефон')).toHaveValue('+7 (900) 123-45-67 доб. 2');
     expect(screen.getByLabelText('Пол')).toHaveValue('male');
     expect(screen.getByLabelText('Маршрут')).toHaveValue('12');
     const repeat = screen.getByRole('button', { name: 'Повторить отправку с риском дублирования' });

@@ -1,17 +1,17 @@
 import { Link } from 'react-router';
 import type { Participant } from './model';
-import { paymentLabel } from './model';
+import { knownPaymentStatus, paymentLabel } from './model';
 import { participantsError } from './api';
 import styles from './Participants.module.css';
 
 export function PaymentStatus({ status }: { status: string }) {
-  return <span className={styles.statusBadge} data-status={['paid','pending'].includes(status) ? status : 'unknown'}>{paymentLabel(status)}</span>;
+  return <span className={styles.statusBadge} data-status={knownPaymentStatus(status) ? status : 'unknown'}>{paymentLabel(status)}</span>;
 }
 
 export function ParticipantFacts({ participant }: { participant: Participant }) {
   return <dl className={styles.facts}>
     <div><dt>Номер анкеты</dt><dd>{participant.form_id}</dd></div>
-    <div><dt>Отметка оплаты</dt><dd><PaymentStatus status={participant.payment_status} />{!['pending', 'paid'].includes(participant.payment_status) && <small className={styles.statusCode}>Полученный статус: {participant.payment_status}</small>}</dd></div>
+    <div><dt>Отметка оплаты</dt><dd><PaymentStatus status={participant.payment_status} />{!knownPaymentStatus(participant.payment_status) && <small className={styles.statusCode}>Полученный статус: {participant.payment_status}</small>}</dd></div>
     <div><dt>Старт</dt><dd>{participant.has_started ? 'Отмечен' : 'Не отмечен'}</dd></div>
     <div><dt>Финиш</dt><dd>{participant.has_finished ? 'Отмечен' : 'Не отмечен'}</dd></div>
     <div className={styles.full}><dt>Штрихкод физической карты</dt><dd>{participant.map_barcode || 'Пока не указан'}</dd></div>

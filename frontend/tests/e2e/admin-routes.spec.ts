@@ -109,9 +109,9 @@ for (const mode of ['408', 'network'] as const) test(`unknown DELETE ${mode} off
   expect(api.count('DELETE', path + '/12')).toBe(1); await noOverflow(page);
 });
 
-for (const kind of ['create', 'edit', 'delete'] as const) for (const status of [200, 401]) test(`late admin ${kind} ${status} cannot leak A state or expire admin B`, async ({ page, api }) => {
+for (const kind of ['create', 'edit', 'delete'] as const) for (const status of [200, 401]) test(`late admin ${kind} ${status} after reload cannot leak A state or expire admin B`, async ({ page, api }) => {
   api.role = 'admin'; const gate = api.deferAdmin(); await login(page, api, '/staff/routes'); await open(page, kind); await send(page, kind); await gate.seen;
-  await dialog(page).getByRole('button', { name: 'Выйти', exact: true }).click(); api.identity = 'B'; await signIn(page, api);
+  await page.goto('/staff/routes'); api.identity = 'B'; await signIn(page, api);
   await expect(page.getByRole('heading', { name: 'Управление маршрутами', exact: true })).toBeVisible();
   gate.release({ status: status === 401 ? 401 : kind === 'create' ? 201 : kind === 'delete' ? 204 : 200, body: { id: 101, name: 'Old admin result', year: 2030, distance: 1, is_active: true } }); await gate.completed;
   await expect(dialog(page)).toHaveCount(0); await expect(page.getByText('Old admin result')).toHaveCount(0);

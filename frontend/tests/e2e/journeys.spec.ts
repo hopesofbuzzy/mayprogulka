@@ -111,8 +111,7 @@ test('payment: keyboard method selection, one POST, authoritative GET and null P
   await expect(page.getByText('Отмечено в системе', { exact: true })).toBeVisible();
   await expect(page.getByText('Анкета для печати пока недоступна', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Открыть анкету для печати' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Обновить статус', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Обновить статус', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Проверить статус', exact: true })).toHaveCount(0);
   expect(api.count('POST', payPath)).toBe(1);
   await page.getByRole('link', { name: 'В личный кабинет', exact: true }).click();
   const second = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Тестова Вторая', exact: true }) });
@@ -128,8 +127,8 @@ for (const mode of ['408', 'network'] as const) test(`uncertain payment ${mode}:
   await page.getByRole('button', { name: 'Продолжить без списания', exact: true }).click();
   await expect(page.getByText(/Результат операции неизвестен/)).toBeVisible();
   expect(api.count('POST', payPath)).toBe(1); expect(api.count('GET', myPath)).toBe(gets);
-  await page.getByRole('button', { name: 'Обновить статус', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Обновить статус', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Проверить статус', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Проверить статус', exact: true })).toBeEnabled();
   expect(api.count('GET', myPath)).toBe(gets + 1); expect(api.count('POST', payPath)).toBe(1);
   await expect(page.getByRole('button', { name: 'Продолжить без списания' })).toHaveCount(0);
   await page.getByRole('link', { name: /К карточке участника/ }).click();

@@ -52,6 +52,31 @@ async function fillSignup(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('account forms', () => {
+  it('switches participant → admin → participant through ordinary login without a stale returnTo or private cache', async () => {
+    let role = 'participant', identity = 20;
+    transport.mockImplementation(async input => {
+      const request = input as Request;
+      if (new URL(request.url).pathname === '/api/v1/routes') return json({ routes: [] });
+      return json({ access_token: `synthetic-cycle-${identity}`, user_id: identity, role });
+    });
+    const { user, router, client } = mount();
+    for (const nextRole of ['participant', 'admin', 'participant']) {
+      role = nextRole; identity++;
+      await screen.findByRole('heading', { name: 'Вход' });
+      // Moving between auth tabs must preserve only an explicit intent, not /account fallback.
+      await user.click(within(screen.getByRole('navigation', { name: 'Доступ к аккаунту' })).getByRole('link', { name: 'Регистрация' }));
+      await screen.findByRole('heading', { name: 'Создать аккаунт' });
+      await user.click(within(screen.getByRole('navigation', { name: 'Доступ к аккаунту' })).getByRole('link', { name: 'Вход' }));
+      await fillLogin(user); await user.click(screen.getByRole('button', { name: 'Войти' }));
+      await waitFor(() => expect(router.state.location.pathname).toBe(role === 'admin' ? '/staff/routes' : '/account'));
+      expect(screen.queryByRole('heading', { name: 'Нет доступа' })).not.toBeInTheDocument();
+      client.setQueryData(['private', 'synthetic-secret'], { owner: identity });
+      await user.click(within(screen.getByRole('banner')).getAllByRole('button', { name: 'Выйти из аккаунта' }).at(-1)!);
+      await screen.findByRole('heading', { name: 'Вход' });
+      expect(router.state.location.state).toBeNull();
+      expect(client.getQueryCache().findAll({ queryKey: ['private'] })).toHaveLength(0);
+    }
+  });
   it('registers with exactly the contract DTO, logs in on 201 and opens the account without auth/me', async () => {
     transport.mockResolvedValue(json(tokenReply(), 201));
     const { user } = mount('/signup');
@@ -185,7 +210,7 @@ describe('guard, logout and private cache', () => {
       void signal;
       return new Promise<string>(done => { resolve = done; });
     } }).catch(() => undefined);
-    await user.click(within(screen.getByRole('banner')).getAllByRole('button', { name: 'Выйти' }).at(-1)!);
+    await user.click(within(screen.getByRole('banner')).getAllByRole('button', { name: 'Выйти из аккаунта' }).at(-1)!);
     expect(await screen.findByRole('heading', { name: 'Вход' })).toBeInTheDocument();
     expect(sessionStore.getCredentials()).toBeNull();
     expect(client.getQueryData(['private', 11, 'example'])).toBeUndefined();

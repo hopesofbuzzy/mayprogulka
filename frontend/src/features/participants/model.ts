@@ -24,14 +24,33 @@ export function validDate(value: string): boolean {
   return year >= 1 && date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
-export function validateRows(rows: Row[], routes: Route[]): RowErrors {
+export function validPersonName(value: string): boolean {
+  return /\p{L}/u.test(value) && /^[\p{L}\p{M}\p{Zs}\p{Pd}'’‘ʼ·・\u200c\u200d]+$/u.test(value.trim());
+}
+
+export function validPhone(value: string): boolean {
+  const number = value.trim().replace(/\p{Zs}*(?:доб\.?|ext\.?|x|#)\p{Zs}*\d{1,6}$/iu, '').trim();
+  const digits = number.replace(/\D/g, '').length;
+  return /^\+?[\d\p{Zs}().-]+$/u.test(number) && digits >= 7 && digits <= 15;
+}
+
+export function validBirthDate(value: string, today = new Date()): boolean {
+  const localToday = `${String(today.getFullYear()).padStart(4, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  return validDate(value) && value <= localToday;
+}
+
+export function validateRows(rows: Row[], routes: Route[], today = new Date()): RowErrors {
   const errors: RowErrors = {};
   for (const row of rows) {
     const values = row.values;
     const fields: FieldErrors = {};
-    for (const name of ['surname', 'name', 'phone_number'] as const) if (!values[name].trim()) fields[name] = 'Заполните это поле.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) fields.email = 'Введите корректный email.';
-    if (!validDate(values.date_of_birth)) fields.date_of_birth = 'Укажите корректную календарную дату.';
+    for (const name of ['surname', 'name', 'middle_name'] as const) {
+      if (name !== 'middle_name' && !values[name].trim()) fields[name] = 'Заполните это поле.';
+      else if (values[name].trim() && !validPersonName(values[name])) fields[name] = 'Используйте буквы, пробелы, дефис или апостроф. Цифры в ФИО не допускаются.';
+    }
+    if (!validPhone(values.phone_number)) fields.phone_number = 'Укажите телефон: от 7 до 15 цифр. Допустимы +, пробелы, скобки и дефисы.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) fields.email = 'Введите корректный email.';
+    if (!validBirthDate(values.date_of_birth, today)) fields.date_of_birth = 'Укажите существующую дату рождения не позднее сегодняшнего дня.';
     if (values.gender !== 'male' && values.gender !== 'female') fields.gender = 'Выберите пол.';
     if (!values.route_id || !routes.some(route => route.is_active === true && route.id === Number(values.route_id))) fields.route_id = 'Выберите доступный маршрут из списка.';
     if (Object.keys(fields).length) errors[row.key] = fields;
@@ -41,9 +60,9 @@ export function validateRows(rows: Row[], routes: Route[]): RowErrors {
 
 export function registrationBody(rows: Row[]): { participants: ParticipantInput[] } {
   return { participants: rows.map(({ values }) => ({
-    surname: values.surname, name: values.name, middle_name: values.middle_name || null,
+    surname: values.surname.trim(), name: values.name.trim(), middle_name: values.middle_name.trim() || null,
     date_of_birth: values.date_of_birth, gender: values.gender, route_id: Number(values.route_id),
-    email: values.email, phone_number: values.phone_number,
+    email: values.email.trim(), phone_number: values.phone_number.trim(),
   })) };
 }
 
@@ -66,9 +85,11 @@ export function indexedErrors(details: unknown, submittedKeys: string[]): RowErr
 
 export function paymentLabel(status: string): string {
   if (status === 'paid') return 'Отмечено в системе';
-  if (status === 'pending') return 'Не отмечено';
+  if (status === 'unpaid') return 'Не отмечено';
   return 'Требует уточнения';
 }
+
+export const knownPaymentStatus = (status: string) => status === 'unpaid' || status === 'paid';
 
 export function validParticipantId(value: string | undefined): number | null {
   if (!value || !/^\d+$/.test(value) || !Number.isSafeInteger(Number(value))) return null;

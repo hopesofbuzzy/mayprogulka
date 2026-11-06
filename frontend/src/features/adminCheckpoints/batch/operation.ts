@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { StaleSessionError } from '../../../shared/api/errors';
 import { AdminFailure, currentAdmin } from '../../adminShared/api';
@@ -13,6 +13,7 @@ export function useBatchOperation(epoch: number, routeId: number) {
   const { data: state } = useQuery({ queryKey: key, enabled: false, initialData: initialBatch, queryFn: async () => initialBatch(), meta: { private: true }, staleTime: Infinity, gcTime: Infinity });
   const basis = useQuery({ ...routesQuery, enabled: false });
   const request = useRef<AbortController | null>(null), alive = useRef(true), busy = useRef(false);
+  const [, renderInput] = useReducer(value => value + 1, 0);
   const read = () => client.getQueryData<BatchState>(key)!;
   const update = (change: (value: BatchState) => BatchState) => { if (currentAdmin(epoch)) client.setQueryData<BatchState>(key, value => change(value ?? initialBatch())); };
   const singleBusy = () => {
@@ -36,13 +37,20 @@ export function useBatchOperation(epoch: number, routeId: number) {
   }
   function changeRows(change: (rows: Row[]) => Row[]) { if (read().phase !== 'edit') return; update(value => ({ ...value, rows: change(value.rows), message: '', revision: value.revision + 1 })); }
   function change<K extends keyof Fields>(key: string, field: K, value: Fields[K]) {
-    changeRows(rows => rows.map(row => row.key === key ? { ...row, values: { ...row.values, [field]: value } } : row));
-    update(item => ({ ...item, errors: { ...item.errors, [key]: { ...item.errors[key], [field]: undefined } } }));
+    if (read().phase !== 'edit') return;
+    update(item => {
+      const errors = { ...item.errors }, fields = { ...errors[key] };
+      delete fields[field];
+      if (Object.keys(fields).length) errors[key] = fields; else delete errors[key];
+      return { ...item, errors, rows: item.rows.map(row => row.key === key ? { ...row, values: { ...row.values, [field]: value } } : row), message: '', revision: item.revision + 1 };
+    });
+    // Match shared editor input timing; keep values/errors in one cache update.
+    renderInput();
   }
   async function review() {
     if (!active() || !batchEnabled() || busy.current || read().phase !== 'edit' || unresolved(read()) || singleBusy()) return;
     const errors = validateRows(read().rows);
-    if (Object.keys(errors).length) { update(value => ({ ...value, errors, message: 'Проверьте поля партии.', revision: value.revision + 1 })); return; }
+    if (Object.keys(errors).length) { update(value => ({ ...value, errors, focusRevision: (value.focusRevision ?? 0) + 1, message: 'Проверьте поля партии.', revision: value.revision + 1 })); return; }
     busy.current = true; const revision = read().revision;
     update(value => ({ ...value, phase: 'checking', errors: {}, message: '' }));
     try {
@@ -83,7 +91,7 @@ export function useBatchOperation(epoch: number, routeId: number) {
       if (!active() || controller.signal.aborted || error instanceof StaleSessionError) return;
       const failure = error instanceof AdminFailure ? error : new AdminFailure('Исход партии неизвестен.', true);
       update(item => ({ ...item, phase: failure.uncertain ? 'result' : 'edit', unknown: failure.uncertain, message: failure.message,
-        errors: validationFields(failure.details, value.snapshot!), revision: item.revision + 1 }));
+        errors: validationFields(failure.details, value.snapshot!), focusRevision: (item.focusRevision ?? 0) + 1, revision: item.revision + 1 }));
     } finally { if (request.current === controller) { request.current = null; busy.current = false; } }
   }
   return { state, confirmationRevision: `${state.revision}/${basis.dataUpdatedAt}/${basis.fetchStatus}`, locked: unresolved(state) || state.phase === 'pending' || state.refresh === 'pending', close, review, confirm, refresh, change,

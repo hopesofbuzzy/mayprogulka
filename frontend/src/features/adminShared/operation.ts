@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { StaleSessionError } from '../../shared/api/errors';
 import { AdminFailure, currentAdmin } from './api';
 
 export type Kind = 'create' | 'edit' | 'delete';
 export type AdminEditor<V, B> = { kind: Kind; baseline?: B; values: V; phase: 'edit' | 'review' | 'pending' | 'confirmed';
-  uncertain: boolean; earlierUncertain: boolean; errors: Partial<Record<keyof V, string>>; message: string; result?: B | null; refresh?: 'pending' | 'success' | 'error' };
+  uncertain: boolean; earlierUncertain: boolean; errors: Partial<Record<keyof V, string>>; message: string; result?: B | null; refresh?: 'pending' | 'success' | 'error'; focusRevision?: number };
 type State<V, B> = { editor: AdminEditor<V, B> | null; paused?: AdminEditor<V, B>[] };
 type Definition<V, B> = {
   scope: string; contextId?: number; allowDefer?: boolean;
   values: (baseline?: B) => V;
-  validate: (values: V, kind: Kind) => Partial<Record<keyof V, string>>;
+  validate: (values: V, kind: Kind, baseline?: B) => Partial<Record<keyof V, string>>;
   changed: (editor: AdminEditor<V, B>) => boolean;
   fields: (details: unknown) => Partial<Record<keyof V, string>>;
   run: (editor: AdminEditor<V, B>, signal: AbortSignal) => Promise<B | null>;
@@ -24,6 +24,7 @@ export function useAdminWorkflow<V, B extends { id: number }>(epoch: number, def
   const initial = (): State<V, B> => ({ editor: null });
   const { data: state } = useQuery({ queryKey: key, enabled: false, meta: { private: true }, initialData: initial, queryFn: async () => initial(), staleTime: Infinity, gcTime: Infinity });
   const controller = useRef<AbortController | null>(null);
+  const [, renderInput] = useReducer(value => value + 1, 0);
   const [acknowledged, setAcknowledged] = useState(false), [checked, setChecked] = useState(false), [checking, setChecking] = useState(false);
   const read = () => client.getQueryData<State<V, B>>(key);
   const update = (change: (value: State<V, B>) => State<V, B>) => { if (currentAdmin(epoch)) client.setQueryData<State<V, B>>(key, value => change(value ?? initial())); };
@@ -44,7 +45,16 @@ export function useAdminWorkflow<V, B extends { id: number }>(epoch: number, def
     update(state => ({ ...state, editor: { kind, baseline, values: definition.values(baseline), phase: 'edit', uncertain: false, earlierUncertain: false, errors: {}, message: '' } }));
   }
   function change<K extends keyof V>(field: K, value: V[K]) {
-    resetAcknowledgement(); edit(editor => editor.phase !== 'edit' ? editor : { ...editor, values: { ...editor.values, [field]: value }, errors: { ...editor.errors, [field]: undefined } });
+    resetAcknowledgement();
+    edit(editor => {
+      if (editor.phase !== 'edit') return editor;
+      const errors = { ...editor.errors };
+      delete errors[field];
+      return { ...editor, values: { ...editor.values, [field]: value }, errors };
+    });
+    // Query notifications are deferred. Controlled inputs must render in the
+    // input event itself, so the next keystroke cannot read an older DOM value.
+    renderInput();
   }
   async function check() {
     if (!currentAdmin(epoch) || checking) return;
@@ -56,9 +66,9 @@ export function useAdminWorkflow<V, B extends { id: number }>(epoch: number, def
   function review() {
     edit(editor => {
       if (editor.phase !== 'edit' || editor.kind === 'delete' || (editor.uncertain && (!checked || !acknowledged))) return editor;
-      const errors = definition.validate(editor.values, editor.kind);
+      const errors = definition.validate(editor.values, editor.kind, editor.baseline);
       const unchanged = editor.kind === 'edit' && !definition.changed(editor);
-      return { ...editor, errors, message: Object.keys(errors).length ? 'Проверьте поля.' : unchanged ? 'Нет изменений для отправки.' : '', phase: Object.keys(errors).length || unchanged ? 'edit' : 'review' };
+      return { ...editor, errors, focusRevision: (editor.focusRevision ?? 0) + 1, message: Object.keys(errors).length ? 'Проверьте поля.' : unchanged ? 'Нет изменений для отправки.' : '', phase: Object.keys(errors).length || unchanged ? 'edit' : 'review' };
     });
   }
   async function confirm(typedId: string, recordAvailable: boolean) {
@@ -67,7 +77,7 @@ export function useAdminWorkflow<V, B extends { id: number }>(epoch: number, def
     if (editor.kind === 'delete' ? editor.uncertain || typedId !== String(editor.baseline?.id) : editor.phase !== 'review' || (editor.uncertain && (!checked || !acknowledged))) return;
     if (editor.kind !== 'create' && !recordAvailable) return;
     if (definition.canConfirm && !definition.canConfirm(editor)) return;
-    if (Object.keys(definition.validate(editor.values, editor.kind)).length || (editor.kind === 'edit' && !definition.changed(editor))) return;
+    if (Object.keys(definition.validate(editor.values, editor.kind, editor.baseline)).length || (editor.kind === 'edit' && !definition.changed(editor))) return;
     const request = new AbortController(); controller.current = request;
     edit(value => ({ ...value, phase: 'pending', message: '', errors: {} }));
     try {
@@ -80,7 +90,7 @@ export function useAdminWorkflow<V, B extends { id: number }>(epoch: number, def
     } catch (error) {
       if (request.signal.aborted || error instanceof StaleSessionError || !currentAdmin(epoch)) return;
       const failure = error instanceof AdminFailure ? error : new AdminFailure('Результат неизвестен. Проверьте состояние у ответственного.', true);
-      edit(value => ({ ...value, phase: 'edit', uncertain: value.uncertain || failure.uncertain, earlierUncertain: value.earlierUncertain || failure.uncertain, message: failure.message, errors: definition.fields(failure.details) }));
+      edit(value => ({ ...value, phase: 'edit', focusRevision: (value.focusRevision ?? 0) + 1, uncertain: value.uncertain || failure.uncertain, earlierUncertain: value.earlierUncertain || failure.uncertain, message: failure.message, errors: definition.fields(failure.details) }));
       resetAcknowledgement();
     } finally { if (controller.current === request) controller.current = null; }
   }

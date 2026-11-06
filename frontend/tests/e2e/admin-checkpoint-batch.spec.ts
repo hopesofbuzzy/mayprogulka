@@ -9,7 +9,7 @@ async function start(page: Page) {
   await expect(modal(page)).toBeVisible();
   for (const index of [1, 2]) {
     const row = modal(page).getByRole('group', { name: `Строка ${index} — номер в интерфейсе`, exact: true });
-    for (const [label, value] of [['Название КП', `Синтетическая строка ${index}`], ['Адрес', 'Синтетический адрес'], ['Координаты', '  000 opaque; 00  '], ['Порядок', index === 1 ? '0005' : '-1']]) await row.getByLabel(label!, { exact: true }).fill(value!);
+    for (const [label, value] of [['Название КП', `Синтетическая строка ${index}`], ['Адрес', 'Синтетический адрес'], ['Координаты', '  56.8300, 060.6000  '], ['Порядок прохождения', index === 1 ? '0005' : '-1']]) await row.getByLabel(label!, { exact: true }).fill(value!);
   }
 }
 async function review(page: Page) { await modal(page).getByRole('button', { name: 'Проверить перед отправкой' }).click(); await expect(modal(page).getByRole('region', { name: 'Проверка партии', exact: true })).toBeFocused(); }
@@ -31,7 +31,7 @@ test('batch one request, two route_id levels, review confirmation and public GET
   await modal(page).getByRole('button', { name: 'Вернуться к строкам' }).click(); await review(page); await expect(modal(page).getByRole('checkbox', { name: /Понимаю риск/ })).not.toBeChecked();
   await confirm(page); await expect(modal(page).getByText('Сервер сообщил о создании 2 из 2 КП', { exact: true })).toBeVisible(); await expect(modal(page).getByText(/Список КП обновлён/)).toBeVisible();
   expect(api.count('POST', apiPath)).toBe(1); expect(api.count('POST', '/api/v1/admin/checkpoints')).toBe(0); expect(api.calls.filter(call => call.path === apiPath)[0]!.routeIds).toEqual([12, 12]);
-  const created = api.checkpointRecords.get(12)!.filter(point => point.id > 5000); expect(created.map(point => point.coordinates)).toEqual(['  000 opaque; 00  ', '  000 opaque; 00  ']); expect(created.map(point => point.order)).toEqual([5, -1]);
+  const created = api.checkpointRecords.get(12)!.filter(point => point.id > 5000); expect(created.map(point => point.coordinates)).toEqual(['  56.8300, 060.6000  ', '  56.8300, 060.6000  ']); expect(created.map(point => point.order)).toEqual([5, -1]);
   await modal(page).getByRole('button', { name: 'Закрыть партию' }).click(); await expect(page.getByRole('button', { name: 'Добавить несколько КП' })).toBeFocused();
   await page.getByRole('link', { name: 'Публичный маршрут →' }).click(); await expect(page.getByRole('list', { name: 'Контрольные пункты маршрута' })).toContainText('Синтетическая строка 2'); await page.goBack(); await expect(page.getByRole('heading', { name: 'КП маршрута', exact: true })).toBeVisible(); expect(api.count('POST', apiPath)).toBe(1); await page.reload(); await expect(page.getByRole('heading', { name: 'Вход', exact: true })).toBeVisible();
 });
@@ -63,9 +63,9 @@ for (const mode of ['403', '409', '422'] as const) test(`batch ${mode} preserves
   expect(api.count('POST', apiPath)).toBe(1); await noDialogOverflow(page);
 });
 
-for (const status of [201, 401]) test(`late batch ${status} cannot expose A or expire B`, async ({ page, api }) => {
+for (const status of [201, 401]) test(`late batch ${status} after reload cannot expose A or expire B`, async ({ page, api }) => {
   api.role = 'admin'; const pending = api.deferBatch(); await login(page, api, path); await start(page); await review(page); await confirm(page); await pending.seen;
-  await modal(page).getByRole('button', { name: 'Выйти', exact: true }).click(); api.identity = 'B'; await signIn(page, api); await expect(page.getByRole('button', { name: 'Добавить несколько КП' })).toBeVisible();
+  await page.goto(path); api.identity = 'B'; await signIn(page, api); await expect(page.getByRole('button', { name: 'Добавить несколько КП' })).toBeVisible();
   pending.release({ status, body: status === 201 ? { created_count: 2, errors: [{ secret: 'Old batch response' }] } : {} }); await pending.completed;
   await expect(modal(page)).toHaveCount(0); await expect(page.getByText('Old batch response')).toHaveCount(0); await expect(page.getByRole('button', { name: 'Создать один КП' })).toBeEnabled(); expect(api.count('POST', apiPath)).toBe(1); await noOverflow(page);
 });

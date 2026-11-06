@@ -68,7 +68,7 @@ async function signIn(user: ReturnType<typeof userEvent.setup>) {
 }
 async function fillPaper() {
   await screen.findByRole('option', { name: /Тестовый городской/ });
-  for (const [label, value] of [['Фамилия', 'Тестов'], ['Имя', 'Бумажный'], ['Дата рождения', '1995-05-20'], ['Email', 'paper@example.test'], ['Телефон', 'местный 123']]) fireEvent.change(screen.getByLabelText(label!, { exact: true }), { target: { value } });
+  for (const [label, value] of [['Фамилия', 'Тестов'], ['Имя', 'Бумажный'], ['Дата рождения', '1995-05-20'], ['Email', 'paper@example.test'], ['Телефон', '+7 (900) 123-45-67']]) fireEvent.change(screen.getByLabelText(label!, { exact: true }), { target: { value } });
   fireEvent.change(screen.getByLabelText('Пол'), { target: { value: 'male' } });
   fireEvent.change(screen.getByLabelText('Маршрут'), { target: { value: '15' } });
 }
@@ -119,7 +119,7 @@ describe('one paper form', () => {
     expect(paperCalls()).toHaveLength(1);
     expect(screen.getByLabelText('Имя', { exact: true })).toBeDisabled();
     const request = paperCalls()[0]![0] as Request;
-    expect(await request.clone().json()).toEqual({ surname: 'Тестов', name: 'Бумажный', middle_name: null, date_of_birth: '1995-05-20', gender: 'male', email: 'paper@example.test', phone_number: 'местный 123', route_id: 15 });
+    expect(await request.clone().json()).toEqual({ surname: 'Тестов', name: 'Бумажный', middle_name: null, date_of_birth: '1995-05-20', gender: 'male', email: 'paper@example.test', phone_number: '+7 (900) 123-45-67', route_id: 15 });
     expect(request.headers.get('Authorization') === 'Bearer synthetic-7').toBe(true);
     await act(async () => { resolve(json(paper, 201)); });
     await screen.findByRole('heading', { name: 'Ответ по бумажной анкете получен' });

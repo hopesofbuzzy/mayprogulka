@@ -4,7 +4,7 @@ import { Link, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../features/auth/AuthProvider';
 import { authenticate, AuthError, CancelledAuthError, validateAuth } from '../features/auth/api';
 import type { AuthFields, AuthMode, FieldErrors, FieldName } from '../features/auth/api';
-import { returnToFromState } from '../features/auth/redirect';
+import { authReturnState, returnToFromState } from '../features/auth/redirect';
 import { WalkingScene } from '../shared/assets/WalkingScene';
 import styles from './AuthPage.module.css';
 
@@ -66,8 +66,8 @@ function AuthPage({ mode }: { mode: AuthMode }) {
         </aside>
         <div className={styles.panel}>
           <nav className={styles.tabs} aria-label="Доступ к аккаунту">
-            <Link to="/login" state={{ returnTo }} aria-current={!signup ? 'page' : undefined}>Вход</Link>
-            <Link to="/signup" state={{ returnTo }} aria-current={signup ? 'page' : undefined}>Регистрация</Link>
+            <Link to="/login" state={authReturnState(location.state)} aria-current={!signup ? 'page' : undefined}>Вход</Link>
+            <Link to="/signup" state={authReturnState(location.state)} aria-current={signup ? 'page' : undefined}>Регистрация</Link>
           </nav>
           <h1 id={`${id}-title`}>{signup ? 'Создать аккаунт' : 'Вход'}</h1>
           <p className={styles.intro}>{signup ? 'Ваш первый шаг к личному кабинету.' : 'Войдите, чтобы открыть личный кабинет.'}</p>

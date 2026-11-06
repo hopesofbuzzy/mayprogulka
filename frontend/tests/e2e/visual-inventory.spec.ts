@@ -222,7 +222,7 @@ test('participant removal stays intact, labelled and keyboard operable with long
   await submit.click(); await expect(page.getByRole('alert')).toContainText('Проверьте поля участников');
   await verifyParticipantLayout(page, info, 'validation-after-removal');
   for (const index of [1, 2]) {
-    for (const [label, value] of [['Имя','Синтетическое Длинное Имя'],['Дата рождения','1995-05-20'],['Email',`synthetic.long.family.contact.${index}@example.test`],['Телефон','синтетический телефон 000000000000']]) await row(index).getByLabel(label!, { exact: true }).fill(value!);
+    for (const [label, value] of [['Имя','Синтетическое Длинное Имя'],['Дата рождения','1995-05-20'],['Email',`synthetic.long.family.contact.${index}@example.test`],['Телефон','+7 (900) 123-45-67 доб. 123456']]) await row(index).getByLabel(label!, { exact: true }).fill(value!);
     await row(index).getByLabel('Пол', { exact: true }).selectOption(index === 1 ? 'male' : 'female');
     await row(index).getByLabel('Маршрут', { exact: true }).selectOption(index === 1 ? '12' : '15');
   }

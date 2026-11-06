@@ -7,7 +7,7 @@ import { appRoutes } from '../app/router';
 import { sessionStore } from '../shared/session/store';
 
 const route = { id: 71, name: 'Синтетический маршрут', year: 2026, distance: 12, is_active: true };
-const participant = { id: 42, surname: 'Тестов', name: 'Первый', route_name: route.name, form_id: '00042', map_barcode: '000777', payment_status: 'pending', has_started: false, has_finished: false };
+const participant = { id: 42, surname: 'Тестов', name: 'Первый', route_name: route.name, form_id: '00042', map_barcode: '000777', payment_status: 'unpaid', has_started: false, has_finished: false };
 const point = { id: 201, route_id: 71, name: 'Синтетический КП', address: 'Синтетический адрес', coordinates: '000 opaque', order: 0, is_start: true, is_finish: true };
 const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
 const clients: QueryClient[] = [], routers: ReturnType<typeof createMemoryRouter>[] = [], requests: Request[] = [];
@@ -21,7 +21,7 @@ beforeEach(() => {
     const request = input as Request, url = new URL(request.url); requests.push(request);
     if (url.pathname === '/api/v1/routes') { if (unavailable) throw new TypeError('Synthetic disconnected transport'); return json({ routes: [route] }); }
     if (url.pathname === '/api/v1/checkpoints') return json({ checkpoints: [point] });
-    if (url.pathname === '/api/v1/participants/my') return json({ participants: [{ ...participant, payment_status: unknownStatus ? 'needs_review' : paid ? 'paid' : 'pending' }] });
+    if (url.pathname === '/api/v1/participants/my') return json({ participants: [{ ...participant, payment_status: unknownStatus ? 'needs_review' : paid ? 'paid' : 'unpaid' }] });
     if (url.pathname === '/api/v1/participants/42/pay' && request.method === 'POST') { paid = true; return json({ status: 'arbitrary_operation_status', payment_id: 'synthetic-operation', form_pdf_url: null }); }
     throw new Error('Unexpected synthetic API request');
   }));

@@ -30,7 +30,7 @@ for (const method of ['card', 'sbp'] as const) test(`payment ${method} has one p
 test('uncertain payment preserves warning and never retries on status refresh', async ({ page, api }, info) => {
   api.paymentMode = '408'; await login(page, api, paymentPage); await page.getByRole('button', { name: 'Продолжить без списания' }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'Результат операции неизвестен' })).toBeVisible(); await expect(page.getByText(/Даже если отметка не изменилась, операция могла сохраниться/)).toBeVisible();
-  await page.getByRole('button', { name: 'Обновить статус', exact: true }).click(); await expect(page.getByRole('button', { name: 'Обновить статус', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Проверить статус', exact: true }).click(); await expect(page.getByRole('button', { name: 'Проверить статус', exact: true })).toBeEnabled();
   expect(api.count('POST', paymentApi)).toBe(1); await expect(page.getByRole('button', { name: 'Продолжить без списания' })).toHaveCount(0); await shot(page, info, 'payment-unknown');
 });
 test('admin forms keep identification and confirmations without API prose', async ({ page, api }, info) => {
@@ -47,7 +47,7 @@ test('typist labels preserve two codes and limited-list guidance', async ({ page
 test('isolated batch uses product copy yet keeps partial ambiguity and local create lock', async ({ page, api }, info) => {
   api.role = 'admin'; api.batchMode = 'partial'; await login(page, api, '/staff/routes/12/checkpoints'); await page.getByRole('button', { name: 'Добавить несколько КП' }).click();
   const dialog = page.getByRole('dialog'); await expect(dialog.getByText('Партия контрольных пунктов', { exact: true })).toBeVisible(); await humanControls(page);
-  for (const index of [0, 1]) { const row = dialog.getByRole('group').nth(index); for (const [label, value] of [['Название КП', `Синтетический КП ${index + 1}`], ['Адрес', 'Синтетический адрес'], ['Координаты', ' 000 opaque '], ['Порядок', String(index)]]) await row.getByLabel(label!, { exact: true }).fill(value!); }
+  for (const index of [0, 1]) { const row = dialog.getByRole('group').nth(index); for (const [label, value] of [['Название КП', `Синтетический КП ${index + 1}`], ['Адрес', 'Синтетический адрес'], ['Координаты', ' 56.8300, 060.6000 '], ['Порядок прохождения', String(index)]]) await row.getByLabel(label!, { exact: true }).fill(value!); }
   await dialog.getByRole('button', { name: 'Проверить перед отправкой' }).click(); await expect(dialog.getByRole('region', { name: 'Проверка партии', exact: true })).toBeFocused(); await dialog.getByLabel('Введите ID маршрута 12').fill('12'); await dialog.getByRole('checkbox', { name: /Понимаю риск/ }).check(); await dialog.getByRole('button', { name: 'Создать 2 КП' }).click();
   await expect(dialog.getByText(/Частичный или противоречивый результат/)).toBeVisible(); await expect(dialog.getByText(/Из этого ответа нельзя узнать номера созданных КП/)).toBeVisible(); await expect(dialog.getByText(/Список КП обновлён/)).toBeVisible(); await shot(page, info, 'batch-partial');
   await page.keyboard.press('Escape'); await expect(page.getByRole('button', { name: 'Создать один КП' })).toBeDisabled(); expect(api.count('POST', '/api/v1/admin/checkpoints/batch')).toBe(1);

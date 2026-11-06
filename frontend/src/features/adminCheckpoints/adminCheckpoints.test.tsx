@@ -57,7 +57,7 @@ async function start(kind: 'create' | 'edit' | 'delete', user: ReturnType<typeof
   await screen.findByRole('list', { name: 'КП выбранного маршрута' });
   await user.click(screen.getByRole('button', { name: kind === 'create' ? 'Создать один КП' : kind === 'edit' ? /Изменить КП.*Исходный КП/ : /Удалить КП.*Исходный КП/ }));
   await screen.findByRole('dialog');
-  if (kind === 'create') { change('Название КП', '  Новый КП  '); change('Адрес', '  Адрес;000  '); change('Координаты', '  opaque; 0000  '); change('Порядок', '0005'); }
+  if (kind === 'create') { change('Название КП', '  Новый КП  '); change('Адрес', '  Адрес;000  '); change('Координаты', '  56.8300, 060.6000  '); change('Порядок прохождения', '0005'); }
   if (kind === 'edit') change('Название КП', 'Изменённый КП');
   if (kind === 'delete') change('Введите ID КП 201', '201');
   else { await user.click(screen.getByRole('button', { name: 'Проверить данные КП' })); await screen.findByRole('region', { name: 'Проверка КП' }); }
@@ -120,25 +120,25 @@ describe('single CRUD and fields', () => {
   it.each(['', '1.5', 'NaN', 'Infinity', '1e2', '9007199254740992', '1\n'])('invalid order %s cannot be serialized by the form', value => expect(validate({ ...pointFields(point), order: value }, 'create').order).toBeDefined());
   it('zero, negative, padded order and independent flags have no invented restrictions', () => {
     expect(emptyFields().order).toBe('');
-    for (const order of ['0', '-5', '0005']) expect(validate({ ...pointFields(point), order }, 'create')).toEqual({});
+    for (const order of ['0', '-5', '0005']) expect(validate({ ...pointFields(point), coordinates: '56.83, 60.60', order }, 'create')).toEqual({});
     const body = createBody({ ...pointFields(point), order: '0005' }, 71); expect(body.order).toBe(5); expect(body.coordinates).toBe(point.coordinates); expect(body.is_start && body.is_finish).toBe(true);
   });
   it.each(['name', 'address', 'coordinates'] as const)('rejects blank %s locally; never sends null', field => expect(validate({ ...pointFields(point), [field]: '  \n ' }, 'edit')[field]).toBeDefined());
   it('POST review, double click, exact DTO and shared public cache refresh', async () => {
     const { user, client, router } = mount(); await start('create', user); expect(calls('POST')).toHaveLength(0); await user.dblClick(confirm('create'));
     await screen.findByRole('heading', { name: 'Создание КП подтверждено' }); await screen.findByText('Список КП обновлён.'); expect(calls('POST')).toHaveLength(1);
-    expect(await calls('POST')[0]!.json()).toEqual({ route_id: 71, name: '  Новый КП  ', address: '  Адрес;000  ', coordinates: '  opaque; 0000  ', order: 5, is_start: false, is_finish: false });
+    expect(await calls('POST')[0]!.json()).toEqual({ route_id: 71, name: '  Новый КП  ', address: '  Адрес;000  ', coordinates: '  56.8300, 060.6000  ', order: 5, is_start: false, is_finish: false });
     expect(client.getQueryData(['checkpoints', 71])).toEqual(points); await user.click(screen.getByRole('button', { name: 'Закрыть' }));
     await act(() => router.navigate('/routes/71')); expect(await screen.findByRole('list', { name: 'Контрольные пункты маршрута' })).toHaveTextContent(created.name.trim());
   });
   it('PUT sends changed-only fields including false, no route_id or null', async () => {
     const { user } = mount(); await start('edit', user); await user.click(screen.getByRole('button', { name: 'Вернуться к полям КП' }));
-    change('Название КП', point.name); await user.click(screen.getByLabelText('Начальный КП')); change('Координаты', ' new opaque ');
+    change('Название КП', point.name); await user.click(screen.getByLabelText('Старт маршрута')); change('Координаты', ' -56.83, +60.60 ');
     await user.click(screen.getByRole('button', { name: 'Проверить данные КП' })); await user.click(confirm('edit')); await screen.findByRole('heading', { name: 'Изменение КП подтверждено' });
-    expect(await calls('PUT')[0]!.json()).toEqual({ is_start: false, coordinates: ' new opaque ' });
+    expect(await calls('PUT')[0]!.json()).toEqual({ is_start: false, coordinates: ' -56.83, +60.60 ' });
   });
   it('no diff means no PUT; textual order 0000 equals zero', async () => {
-    const { user } = mount(); await start('edit', user); await user.click(screen.getByRole('button', { name: 'Вернуться к полям КП' })); change('Название КП', point.name); change('Порядок', '0000');
+    const { user } = mount(); await start('edit', user); await user.click(screen.getByRole('button', { name: 'Вернуться к полям КП' })); change('Название КП', point.name); change('Порядок прохождения', '0000');
     await user.click(screen.getByRole('button', { name: 'Проверить данные КП' })); await screen.findByText('Нет изменений для отправки.'); expect(calls('PUT')).toHaveLength(0); expect(updateBody(pointFields(point), point)).toEqual({});
   });
   it('DELETE requires ID КП rather than route ID; 204 has no body or optimistic remove', async () => {

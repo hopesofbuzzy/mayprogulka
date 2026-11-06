@@ -10,7 +10,7 @@ export type RowErrors = Record<string, Errors>;
 export type Summary = { created_count: number; errors: string[] };
 export type BatchState = { rows: Row[]; visible: boolean; phase: 'edit' | 'checking' | 'review' | 'pending' | 'result';
   errors: RowErrors; message: string; snapshot?: Row[]; summary?: Summary; unknown?: boolean; resolved?: boolean;
-  refresh?: 'pending' | 'success' | 'error'; routeVersion?: number; revision: number };
+  refresh?: 'pending' | 'success' | 'error'; routeVersion?: number; revision: number; focusRevision?: number };
 let sequence = 0;
 export const newRow = (): Row => ({ key: `row-${++sequence}`, values: emptyFields() });
 export const initialBatch = (): BatchState => ({ rows: [newRow(), newRow()], visible: false, phase: 'edit', errors: {}, message: '', revision: 0 });

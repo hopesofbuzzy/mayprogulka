@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { LogoutButton } from '../auth/LogoutButton';
+import { useValidationFocus } from '../adminShared/useValidationFocus';
 import { routeFields, updateBody, labels } from './model';
 import type { Fields } from './model';
 import type { useAdminOperation } from './operation';
@@ -18,10 +18,8 @@ export function Editor({ op, current, catalog, available, restoreFocus }: { op: 
   const close = () => { if (canClose) { op.close(); restoreFocus(); } };
   useEffect(() => { dialog.current?.showModal(); }, []);
   useEffect(() => { if (editor.phase === 'review' || confirmed) review.current?.focus(); }, [editor.phase, confirmed]);
-  useEffect(() => {
-    const field = Object.keys(editor.errors)[0];
-    if (field && editor.phase === 'edit') document.getElementById(`${id}-${field}`)?.focus();
-  }, [editor.errors, editor.phase, id]);
+  const invalidField = (Object.keys(labels) as (keyof Fields)[]).find(field => Boolean(editor.errors[field]));
+  useValidationFocus(editor.focusRevision ?? 0, editor.phase === 'edit' && invalidField ? `${id}-${invalidField}` : undefined);
   const title = confirmed ? editor.kind === 'create' ? 'Создание подтверждено' : editor.kind === 'edit' ? 'Изменение подтверждено' : 'Сервер подтвердил операцию'
     : editor.kind === 'create' ? 'Новый маршрут' : editor.kind === 'edit' ? 'Редактирование маршрута' : 'Подтверждение удаления';
   const fieldNames = (Object.keys(labels) as (keyof Fields)[]).filter(field => editor.kind === 'create' || field !== 'year');
@@ -29,7 +27,7 @@ export function Editor({ op, current, catalog, available, restoreFocus }: { op: 
   const before = editor.baseline ? routeFields(editor.baseline) : undefined;
   const concurrent = current && editor.baseline && (['id', 'year', 'name', 'distance', 'description', 'is_active', 'map_url'] as const).some(field => current[field] !== editor.baseline![field]);
   return <dialog ref={dialog} aria-labelledby={`${id}-title`} className={styles.dialog} onCancel={event => { event.preventDefault(); close(); }}>
-    <div className={styles.toolbar}><p className={styles.eyebrow}>Управление маршрутами</p><button type="button" className={styles.secondary} disabled={!canClose} onClick={close}>Закрыть</button><LogoutButton className={styles.secondary} /></div>
+    <div className={styles.toolbar}><p className={styles.eyebrow}>Управление маршрутами</p><button type="button" className={styles.secondary} disabled={!canClose} onClick={close}>Закрыть</button></div>
     <h2 id={`${id}-title`}>{title}</h2>
     {editor.baseline && <p className={styles.intro}>Маршрут: {editor.baseline.name} · ID {editor.baseline.id} · {editor.baseline.year} год</p>}
     {editor.message && <div className={styles.alert} role="alert">{editor.message}</div>}
@@ -45,7 +43,7 @@ export function Editor({ op, current, catalog, available, restoreFocus }: { op: 
       {editor.kind === 'delete' && <p>Результат в публичном каталоге требует проверки. Не установлено, удалил ли сервер запись или перевёл её в архив.</p>}
       {editor.refresh === 'pending' && <p role="status">Обновляем список после подтверждённой операции…</p>}
       {editor.refresh === 'error' && <div role="alert"><p>Операция подтверждена, но обновление списка не удалось.</p><button type="button" className={styles.secondary} disabled={op.checking} onClick={() => void op.check()}>Перечитать каталог</button></div>}
-      {editor.refresh === 'success' && <><p>Каталог перечитан с сервера.</p>{editor.kind === 'create' && !available && <p>Созданный маршрут не появился в публичном каталоге. Это не опровергает подтверждённое создание.</p>}{editor.kind === 'delete' && available && <p>Удаление подтверждено, но маршрут всё ещё виден. Сверьтесь с ответственным; не удаляйте его повторно.</p>}</>}
+      {editor.refresh === 'success' && <><p>Каталог перечитан с сервера.</p>{editor.kind === 'create' && !available && <p>Созданный маршрут не появился в публичном каталоге. Это не опровергает подтверждённое создание.</p>}{editor.kind === 'delete' && available && <p>{current?.is_active === false ? 'В обновлённом каталоге маршрут неактивен. Запись остаётся в списке для работы с историей; повторное удаление не требуется.' : 'Удаление подтверждено, но маршрут всё ещё виден. Сверьтесь с ответственным; не удаляйте его повторно.'}</p>}</>}
       {editor.earlierUncertain && <p className={styles.alert}>Ранее была операция без подтверждения. Возможный дубль или повторное изменение требует отдельной проверки.</p>}
     </div> : editor.kind === 'delete' ? <div className={styles.review}>
       <p>Не известно, полностью ли сервер удаляет маршрут или переводит в архив; действие может затронуть связанные данные.</p>

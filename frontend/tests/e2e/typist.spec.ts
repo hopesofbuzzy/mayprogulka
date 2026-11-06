@@ -5,7 +5,7 @@ const urls = ['/staff/typist', '/staff/typist/new', '/staff/typist/match', '/sta
 const paperPath = '/api/v1/typist/paper-form', matchPath = '/api/v1/typist/match', unlinkedPath = '/api/v1/typist/unlinked';
 async function fillPaper(page: Page) {
   await page.getByRole('option', { name: /Тестовый городской маршрут/ }).waitFor({ state: 'attached' });
-  for (const [label, value] of [['Фамилия', 'Тестов'], ['Имя', 'Бумажный'], ['Дата рождения', '1995-05-20'], ['Email', 'paper@example.test'], ['Телефон', 'местный 123']]) await page.getByLabel(label!, { exact: true }).fill(value!);
+  for (const [label, value] of [['Фамилия', 'Тестов'], ['Имя', 'Бумажный'], ['Дата рождения', '1995-05-20'], ['Email', 'paper@example.test'], ['Телефон', '+7 (900) 123-45-67']]) await page.getByLabel(label!, { exact: true }).fill(value!);
   await page.getByLabel('Пол', { exact: true }).selectOption('male'); await page.getByLabel('Маршрут', { exact: true }).selectOption('15');
 }
 async function fillMatch(page: Page, form = '000F01') {

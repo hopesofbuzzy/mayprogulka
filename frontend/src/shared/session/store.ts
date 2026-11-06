@@ -9,6 +9,7 @@ type Snapshot = Readonly<{ session: Session | null; expired: boolean }>;
 let snapshot: Snapshot = { session: null, expired: false };
 let credentials: Credentials | null = null;
 let revision = 0;
+let abandonedLocationKey: string | undefined;
 const listeners = new Set<() => void>();
 const cleanups = new Set<() => void>();
 
@@ -43,12 +44,15 @@ export const sessionStore = {
   login(data: TokenResponse, ticket: number) {
     if (ticket !== revision) return false;
     revision++;
+    abandonedLocationKey = undefined;
     credentials = { token: data.access_token, epoch: revision };
     snapshot = { session: { userId: data.user_id, role: data.role }, expired: false };
     publish();
     return true;
   },
-  logout() { endSession(false); },
+  logout(locationKey?: string) { abandonedLocationKey = locationKey; endSession(false); },
+  // A guard reacting to logout must not recreate the page intent being abandoned.
+  isAbandonedLocation: (key: string) => key === abandonedLocationKey,
   isCurrentSession(epoch: number) { return credentials?.epoch === epoch; },
   expire(epoch: number) {
     if (credentials?.epoch === epoch) endSession(true);

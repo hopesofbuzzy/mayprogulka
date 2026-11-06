@@ -98,9 +98,9 @@ test('typist invalid fields, review/back, server errors and successful result mo
 test('admin checkbox errors receive focus; DELETE Enter is safe and modal focus can return', async ({ page, api }, info) => {
   api.role='admin'; api.checkpointWriteMode='422'; api.checkpoint422Field='is_start';
   await login(page, api, '/staff/routes/12/checkpoints'); await page.getByRole('button', { name: 'Создать один КП' }).click();
-  const dialog=page.getByRole('dialog'); for(const [name,value] of [['Название КП','Синтетический КП'],['Адрес','Синтетический адрес'],['Координаты','000 opaque'],['Порядок','1']]) await dialog.getByLabel(name!,{exact:true}).fill(value!);
+  const dialog=page.getByRole('dialog'); for(const [name,value] of [['Название КП','Синтетический КП'],['Адрес','Синтетический адрес'],['Координаты','56.83, 60.60'],['Порядок прохождения','1']]) await dialog.getByLabel(name!,{exact:true}).fill(value!);
   await dialog.getByRole('button', {name:'Проверить данные КП'}).click(); await dialog.getByRole('button',{name:'Подтвердить создание КП'}).click();
-  const checkbox=dialog.getByLabel('Начальный КП',{exact:true}); await expect(checkbox).toBeFocused(); await expect(checkbox).toHaveAttribute('aria-invalid','true'); await expect(checkbox).toHaveAccessibleDescription(/Сервер/);
+  const checkbox=dialog.getByLabel('Старт маршрута',{exact:true}); await expect(checkbox).toBeFocused(); await expect(checkbox).toHaveAttribute('aria-invalid','true'); await expect(checkbox).toHaveAccessibleDescription(/Сервер/);
   const pairs=[{control:'admin-secondary',...await contrastOf(dialog.getByRole('button',{name:'Закрыть',exact:true}))}];
   await inventory(page); await page.keyboard.press('Escape'); await expect(dialog).toHaveCount(0);
   await page.getByRole('listitem').filter({hasText:'КП ID 1201 ·'}).getByRole('button',{name:/Удалить КП/}).click();
@@ -110,5 +110,5 @@ test('admin checkbox errors receive focus; DELETE Enter is safe and modal focus 
   await info.attach('admin-contrast',{body:JSON.stringify(pairs,null,2),contentType:'application/json'});for(const pair of pairs)expect(pair.ratio,pair.control).toBeGreaterThanOrEqual(4.5);
   await shot(page,info,'checkpoint-delete'); await page.keyboard.press('Escape'); await expect(dialog).toHaveCount(0);
   await login(page,api,'/staff/routes'); await page.getByRole('button',{name:'Новый маршрут'}).click();await expect(dialog.getByLabel('Флаг активности', {exact:true})).toHaveAttribute('id',/./);await inventory(page);await page.keyboard.press('Escape');await expect(page.getByRole('button',{name:'Новый маршрут'})).toBeFocused();
-  await login(page,api,'/staff/routes/12/checkpoints'); await page.getByRole('button',{name:'Добавить несколько КП'}).click();await expect(dialog.getByRole('checkbox',{name:'Начальный КП'}).first()).toHaveAttribute('id',/./);await inventory(page);await page.keyboard.press('Escape'); await expect(dialog).toHaveCount(0);
+  await login(page,api,'/staff/routes/12/checkpoints'); await page.getByRole('button',{name:'Добавить несколько КП'}).click();await expect(dialog.getByRole('checkbox',{name:'Старт маршрута'}).first()).toHaveAttribute('id',/./);await inventory(page);await page.keyboard.press('Escape'); await expect(dialog).toHaveCount(0);
 });

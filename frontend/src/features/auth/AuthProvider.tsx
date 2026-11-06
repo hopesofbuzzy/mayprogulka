@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { sessionStore } from '../../shared/session/store';
 import type { Session } from '../../shared/session/store';
 
-type Auth = { session: Session | null; isAuthenticated: boolean; expired: boolean; logout: () => void };
+type Auth = { session: Session | null; isAuthenticated: boolean; expired: boolean; logout: (locationKey?: string) => void };
 const AuthContext = createContext<Auth | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {

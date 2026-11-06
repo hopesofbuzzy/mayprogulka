@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Checkpoint, PublicRoute } from '../routes/model';
-import { LogoutButton } from '../auth/LogoutButton';
-import { labels, names, pointFields, rebaseValues, samePoint, updateBody } from './model';
+import { useValidationFocus } from '../adminShared/useValidationFocus';
+import { labels, names, pointFields, rebaseValues, samePoint, updateBody, validCoordinates } from './model';
 import type { useCheckpointOperation } from './operation';
 import styles from '../adminRoutes/AdminRoutes.module.css';
 import local from './Checkpoints.module.css';
@@ -11,7 +11,6 @@ const show = (value: unknown) => typeof value === 'boolean' ? value ? 'Да' : '
 export function CheckpointEditor({ op, route, list, onClose }: { op: Operation; route: PublicRoute; list?: Checkpoint[]; onClose: () => void }) {
   const editor = op.editor!, id = useId();
   const dialog = useRef<HTMLDialogElement>(null), review = useRef<HTMLDivElement>(null);
-  const previousFeedback = useRef({ phase: editor.phase, message: editor.message });
   const [typed, setTyped] = useState<{ baseline?: Checkpoint; value: string }>({ value: '' });
   const typedId = typed.baseline === editor.baseline ? typed.value : '';
   const setTypedId = (value: string) => setTyped({ baseline: editor.baseline, value });
@@ -22,20 +21,17 @@ export function CheckpointEditor({ op, route, list, onClose }: { op: Operation; 
   const close = () => { if (editor.refresh !== 'pending') { op.close(); onClose(); } };
   useEffect(() => { dialog.current?.showModal(); }, []);
   useEffect(() => { if (editor.phase === 'review' || confirmed) review.current?.focus(); }, [editor.phase, confirmed]);
-  useEffect(() => {
-    const changed = previousFeedback.current.phase !== editor.phase || previousFeedback.current.message !== editor.message;
-    previousFeedback.current = { phase: editor.phase, message: editor.message };
-    const field = names.find(name => Boolean(editor.errors[name]));
-    if (changed && field && editor.phase === 'edit') document.getElementById(`${id}-${field}`)?.focus();
-  }, [editor.errors, editor.phase, editor.message, id]);
+  const invalidField = names.find(name => Boolean(editor.errors[name]));
+  useValidationFocus(editor.focusRevision ?? 0, editor.phase === 'edit' && invalidField ? `${id}-${invalidField}` : undefined);
   const title = confirmed ? editor.kind === 'create' ? 'Создание КП подтверждено' : editor.kind === 'edit' ? 'Изменение КП подтверждено' : 'Операция удаления КП подтверждена'
     : editor.kind === 'create' ? 'Новый контрольный пункт' : editor.kind === 'edit' ? 'Редактирование КП' : 'Подтверждение удаления КП';
   const changed = editor.kind === 'create' ? names : editor.baseline ? Object.keys(updateBody(editor.values, editor.baseline)) as typeof names : [];
   const before = editor.baseline ? pointFields(editor.baseline) : undefined;
   return <dialog ref={dialog} className={styles.dialog} aria-labelledby={`${id}-title`} onCancel={event => { event.preventDefault(); close(); }}>
-    <div className={styles.toolbar}><p className={styles.eyebrow}>Контрольные пункты</p><button type="button" className={styles.secondary} disabled={editor.refresh === 'pending'} onClick={close}>{editor.uncertain || pending ? 'Закрыть и разобраться позже' : 'Закрыть'}</button><LogoutButton className={styles.secondary} /></div>
+    <div className={styles.toolbar}><p className={styles.eyebrow}>Контрольные пункты</p><button type="button" className={styles.secondary} disabled={editor.refresh === 'pending'} onClick={close}>{editor.uncertain || pending ? 'Закрыть и разобраться позже' : 'Закрыть'}</button></div>
     <h2 id={`${id}-title`}>{title}</h2><p className={styles.intro}>Маршрут: {route.name} · ID маршрута {route.id}</p>
     {editor.baseline && <p className={styles.intro}>КП: {editor.baseline.name} · ID КП {editor.baseline.id}</p>}
+    {editor.kind === 'edit' && editor.baseline && !validCoordinates(editor.baseline.coordinates) && <p className={styles.hint}>Сохранённые координаты имеют прежний формат. Можно изменить другие поля, сохранив эту строку. Новые координаты вводите в формате WGS84.</p>}
     {editor.message && <p role="alert" className={styles.alert}>{editor.message}</p>}
     {editor.uncertain && <div role="alert" className={styles.alert}><strong>Исход операции неизвестен</strong><p>В списке могут быть не все КП. Запись могла сохраниться, даже если её не видно. Перед дальнейшими действиями сверьтесь с ответственным.</p>
       <button type="button" className={styles.secondary} disabled={op.checking} onClick={() => void op.check()}>Проверить список КП</button>
@@ -58,7 +54,7 @@ export function CheckpointEditor({ op, route, list, onClose }: { op: Operation; 
           : <form className={styles.form} onSubmit={event => event.preventDefault()} noValidate aria-busy={pending}><fieldset disabled={pending}><legend className={styles.srOnly}>Поля КП</legend><div className={styles.fields}>{names.map(field => <div className={field === 'coordinates' || field === 'address' ? styles.full : ''} key={field}>
             {typeof editor.values[field] === 'boolean' ? <label className={styles.checkbox}><input id={`${id}-${field}`} type="checkbox" checked={Boolean(editor.values[field])} aria-invalid={Boolean(editor.errors[field])} aria-describedby={editor.errors[field] ? `${id}-${field}-error` : undefined} onChange={event => op.change(field, event.target.checked)} />{labels[field]}</label> : <><label htmlFor={`${id}-${field}`}>{labels[field]}</label><input id={`${id}-${field}`} type="text" value={String(editor.values[field])} required autoComplete="off" spellCheck={false} aria-invalid={Boolean(editor.errors[field])} aria-describedby={editor.errors[field] ? `${id}-${field}-error` : undefined} onChange={event => op.change(field, event.target.value)} /></>}
             {editor.errors[field] && <p className={styles.error} id={`${id}-${field}-error`}>{editor.errors[field]}</p>}
-          </div>)}</div></fieldset><p className={styles.hint}>Перенесите координаты из исходных данных, сохранив все символы. Порядок задайте целым числом. Начальный и конечный КП отмечаются независимо.</p><button type="button" className="primaryButton" disabled={pending || op.checking || (editor.uncertain && !op.acknowledged)} onClick={op.review}>Проверить данные КП</button></form>}
+          </div>)}</div></fieldset><p className={styles.hint}>Координаты WGS84: широта, долгота (например, 56.83, 60.60). Порядок прохождения задайте целым числом; старт и финиш отмечаются независимо.</p><button type="button" className="primaryButton" disabled={pending || op.checking || (editor.uncertain && !op.acknowledged)} onClick={op.review}>Проверить данные КП</button></form>}
     </>}
     {pending && <p role="status" className={local.notice}>Ожидаем сервер. Закрытие прерывает ожидание на устройстве, но не отменяет возможную запись.</p>}
   </dialog>;

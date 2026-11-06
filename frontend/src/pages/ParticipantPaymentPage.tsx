@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../features/auth/AuthProvider';
 import { useMyParticipants } from '../features/participants/api';
-import { validParticipantId } from '../features/participants/model';
+import { knownPaymentStatus, validParticipantId } from '../features/participants/model';
 import { ParticipantsFailure, PaymentStatus } from '../features/participants/ParticipantsView';
 import { payParticipant, PaymentFailure } from '../features/payments/api';
 import type { PaymentMethod } from '../features/payments/api';
@@ -39,7 +39,7 @@ function PaymentPage({ epoch, id }: { epoch: number; id: number | null }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (id === null || busy.current || attempted || !mine.isSuccess || mine.isFetching || participant?.payment_status !== 'pending') return;
+    if (id === null || busy.current || attempted || !mine.isSuccess || mine.isFetching || participant?.payment_status !== 'unpaid') return;
     // Also inspect the shared marker: navigation/remount must not bypass a POST in flight.
     const current = client.getQueryData(paymentRecordOptions(epoch, id).queryKey);
     if (current && current.phase !== 'idle') return;
@@ -74,10 +74,10 @@ function PaymentPage({ epoch, id }: { epoch: number; id: number | null }) {
               : <div className={common.detail}>
                 <div className={styles.identity}><h2>{subject.surname} {subject.name}</h2><p>{subject.route_name}</p><p>Номер анкеты: {subject.form_id}</p><p>Номер участника: {subject.id}</p></div>
                 <p>Отметка оплаты: <strong>{mine.isSuccess && participant ? <PaymentStatus status={participant.payment_status} /> : 'Сейчас не подтверждена'}</strong></p>
-                {participant && !['pending', 'paid'].includes(participant.payment_status) && <p className={common.note}>Полученный статус: {participant.payment_status}</p>}
+                {participant && !knownPaymentStatus(participant.payment_status) && <p className={common.note}>Полученный статус: {participant.payment_status}</p>}
                 {mine.isError && <ParticipantsFailure error={mine.error} pending={mine.isFetching} retry={() => { if (attempted) void verifyPayment(client, epoch, subject.id); else void mine.refetch(); }} />}
                 {mine.isFetching && <p role="status" className={common.progress}>Обновляем статус участника…</p>}
-                {!attempted && participant?.payment_status === 'pending' && <form onSubmit={event => void submit(event)} aria-busy={pending} aria-describedby="payment-notice">
+                {!attempted && participant?.payment_status === 'unpaid' && <form onSubmit={event => void submit(event)} aria-busy={pending} aria-describedby="payment-notice">
                   <fieldset className={styles.methods} disabled={checking || !mine.isSuccess}>
                     <legend>Способ оплаты</legend>
                     <label><input type="radio" name="payment_method" value="card" checked={method === 'card'} onChange={() => setMethod('card')} />Карта</label>
@@ -95,9 +95,9 @@ function PaymentPage({ epoch, id }: { epoch: number; id: number | null }) {
                 </div>}
                 {(record.phase === 'uncertain' || record.phase === 'rejected') && <div className={common.alert} role="alert"><strong>{record.message}</strong>{record.phase === 'uncertain' && <p>Повторная отправка недоступна, чтобы избежать дубля. Даже если отметка не изменилась, операция могла сохраниться. Обновите статус и сверьтесь с ответственным.</p>}</div>}
                 {record.verification === 'missing' && <p role="alert" className={common.alert}>В обновлённом списке участник не найден. Результат операции по статусу не подтверждён.</p>}
-                {!pending && <div className={common.actions}><button type="button" className={common.secondary} disabled={checking} onClick={() => { if (attempted) void verifyPayment(client, epoch, subject.id); else void mine.refetch(); }}>Обновить статус</button><Link className={common.textLink} to="/account">В личный кабинет</Link></div>}
+                {!pending && <div className={common.actions}>{!mine.isError && ((attempted && !(record.phase === 'accepted' && confirmedPaid)) || (participant && !knownPaymentStatus(participant.payment_status))) && <button type="button" className={common.secondary} disabled={checking} onClick={() => { if (attempted) void verifyPayment(client, epoch, subject.id); else void mine.refetch(); }}>Проверить статус</button>}<Link className={common.textLink} to="/account">В личный кабинет</Link></div>}
                 {!attempted && participant?.payment_status === 'paid' && <p className={common.note}>Повторное изменение отметки недоступно. Ссылка на анкету здесь не восстанавливается.</p>}
-                {!attempted && participant && !['pending', 'paid'].includes(participant.payment_status) && <p className={common.note}>При этом статусе продолжить нельзя. Обновите данные или уточните статус у организаторов.</p>}
+                {!attempted && participant && !knownPaymentStatus(participant.payment_status) && <p className={common.note}>При этом статусе продолжить нельзя. Проверьте данные или уточните статус у организаторов.</p>}
                 {record.phase === 'accepted' && <div className={styles.pdf}>
                   {safePdf ? <><a className={common.textLink} href={safePdf} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Открыть анкету для печати</a><p className={common.note}>Распечатайте анкету и возьмите с собой на старт. После обновления страницы или повторного входа эта ссылка не восстанавливается.</p></>
                     : <p>{record.result?.form_pdf_url ? 'Анкета пока недоступна: ссылка требует проверки.' : 'Анкета для печати пока недоступна'}</p>}

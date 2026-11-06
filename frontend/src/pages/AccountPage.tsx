@@ -10,7 +10,7 @@ export function AccountPage() {
       <p className={styles.eyebrow}>Ваше пространство</p>
       <h1 id="account-title">Личный кабинет</h1>
       <p className="intro">У каждого участника — своя анкета и свой маршрут.</p>
-      <div className={styles.toolbar}><h2>Мои участники</h2><button type="button" className={styles.secondary} disabled={query.isFetching} onClick={() => void query.refetch()}>Обновить</button><Link className="primaryButton" to="/account/participants/new">Добавить участника <span aria-hidden="true">＋</span></Link></div>
+      <div className={styles.toolbar}><h2>Мои участники</h2><Link className="primaryButton" to="/account/participants/new">Добавить участника <span aria-hidden="true">＋</span></Link></div>
       {query.isPending && <p className={styles.state} role="status">Загружаем ваших участников…</p>}
       {query.isFetching && !query.isPending && <p className={styles.progress} role="status">Обновляем список участников…</p>}
       {query.isError && <ParticipantsFailure error={query.error} pending={query.isFetching} retry={() => void query.refetch()} />}

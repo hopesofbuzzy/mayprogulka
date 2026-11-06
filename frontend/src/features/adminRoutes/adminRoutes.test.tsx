@@ -77,8 +77,8 @@ describe('admin access and shared public list', () => {
   it.each(['/staff/routes?x=1', '/staff/routes#x', '//staff/routes', '/staff/routes/../routes', '/staff%2Froutes', '/staff/routes/new', '/staff\\routes', 'https://example.test/staff/routes', '/x/../staff/routes', '/%2573taff/routes'])('rejects unsafe admin returnTo %s', value => expect(safeReturnTo(value)).toBe('/account'));
   it('accepts only exact new staff path and does not expand arbitrary staff access', () => expect(safeReturnTo('/staff/routes')).toBe('/staff/routes'));
   it('uses public query and explicitly labels activity, optional scheme and list incompleteness', async () => {
-    const { client } = mount(); expect(await screen.findByText('Активность: Да')).toBeInTheDocument();
-    expect(screen.getByText(/Скрытые и архивные записи могут отсутствовать/)).toBeInTheDocument();
+    const { client } = mount(); expect(await screen.findByText('Активный маршрут')).toBeInTheDocument();
+    expect(screen.getByText(/Неактивные записи остаются в списке/)).toBeInTheDocument();
     expect(client.getQueryData(['routes'])).toEqual(list); expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('link', { name: /Открыть схему/ })).toHaveAttribute('target', '_blank');
   });
@@ -95,11 +95,48 @@ describe('admin access and shared public list', () => {
 });
 
 describe('route forms and confirmed operations', () => {
+  it('keeps focus while typing, deleting, pasting and tabbing after validation and server 422', async () => {
+    const { user } = mount();
+    await user.click(await screen.findByRole('button', { name: 'Новый маршрут' }));
+    const modal = screen.getByRole('dialog');
+    expect(within(modal).queryByRole('button', { name: /Выйти/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Проверить данные' }));
+    expect(screen.getByLabelText('Год')).toHaveFocus();
+    for (const label of ['Год', 'Название', 'Дистанция, км', 'Описание']) {
+      const input = screen.getByLabelText(label);
+      await user.click(input); await user.type(input, '1234567890');
+      expect(input).toHaveFocus(); expect(input).toHaveValue('1234567890');
+      await user.keyboard('{Backspace>5/}'); expect(input).toHaveFocus(); expect(input).toHaveValue('12345');
+      await user.paste('67890'); expect(input).toHaveValue('1234567890'); expect(input).toHaveFocus();
+    }
+    change('Год', '2030'); change('Дистанция, км', '12');
+    await user.click(screen.getByRole('button', { name: 'Проверить данные' }));
+    mutation = async () => json({ detail: [{ loc: ['body', 'name'] }, { loc: ['body', 'description'] }] }, 422);
+    await user.click(confirmation('create'));
+    await waitFor(() => expect(screen.getByLabelText('Название')).toHaveFocus());
+    await user.click(screen.getByLabelText('Описание')); await user.type(screen.getByLabelText('Описание'), 'ещёописание');
+    expect(screen.getByLabelText('Описание')).toHaveFocus();
+    expect(screen.getByLabelText('Название')).toHaveAttribute('aria-invalid', 'true');
+    await user.tab({ shift: true }); expect(screen.getByLabelText('Дистанция, км')).toHaveFocus();
+    expect(calls('POST')).toHaveLength(1);
+  });
+  it('retains inactive routes in the administrative list and filters without a write or public policy change', async () => {
+    list.push({ ...route, id: 13, name: 'Архивный синтетический маршрут', is_active: false });
+    const { user, client } = mount();
+    await screen.findByText('Архивный синтетический маршрут');
+    expect(screen.getByLabelText('Показывать маршруты')).toHaveValue('all');
+    await user.selectOptions(screen.getByLabelText('Показывать маршруты'), 'active');
+    expect(screen.queryByText('Архивный синтетический маршрут')).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Показывать маршруты'), 'inactive');
+    expect(screen.getByText('Архивный синтетический маршрут')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: route.name })).not.toBeInTheDocument();
+    expect(client.getQueryData(['routes'])).toEqual(list); expect(calls('PUT')).toHaveLength(0); expect(calls('DELETE')).toHaveLength(0);
+  });
   it.each(['', 'Infinity', 'NaN', '1e999', '0x12', '1\n'])('rejects invalid distance %s', value => expect(validate({ ...emptyFields(), year: '2030', name: 'Имя', distance: value }, 'create').distance).toBeDefined());
   it.each(['', '1.2', '9007199254740992', '2030\n'])('rejects invalid year %s', value => expect(validate({ ...routeFields(route), year: value }, 'create').year).toBeDefined());
-  it('preserves names/spaces, does not infer current year or invent numeric business limits', () => {
+  it('preserves names/spaces and distance without inventing additional limits; year follows the agreed range', () => {
     expect(emptyFields().year).toBe(''); const fields = { ...routeFields(route), name: '  Кириллица  ', year: '-12', distance: '-1,5' };
-    expect(validate(fields, 'create')).toEqual({}); expect(createBody(fields)).toMatchObject({ year: -12, distance: -1.5, name: '  Кириллица  ' });
+    expect(validate(fields, 'create')).toEqual({ year: 'Укажите год от 1900 до 2100' }); expect(createBody({ ...fields, year: '2030' })).toMatchObject({ year: 2030, distance: -1.5, name: '  Кириллица  ' });
     expect(validate({ ...fields, name: ' \n ' }, 'create').name).toBeDefined();
   });
   it('POST exact body, review, double click and server list refresh without optimistic records', async () => {
@@ -151,6 +188,17 @@ describe('route forms and confirmed operations', () => {
   it('DELETE 204 with record still present demands verification, not guessed archive behavior', async () => {
     mutation = async () => new Response(null, { status: 204 }); const { user } = mount(); await start('delete', user); await user.click(confirmation('delete'));
     expect(await screen.findByText('Удаление подтверждено, но маршрут всё ещё виден. Сверьтесь с ответственным; не удаляйте его повторно.')).toBeInTheDocument();
+  });
+  it('DELETE followed by GET inactive retains history and explains the actual state without offering a repeat', async () => {
+    mutation = async () => { list = list.map(item => ({ ...item, is_active: false })); return new Response(null, { status: 204 }); };
+    const { user } = mount(); await start('delete', user); await user.click(confirmation('delete'));
+    await screen.findByText(/В обновлённом каталоге маршрут неактивен/);
+    expect(screen.queryByText(/Удаление подтверждено, но маршрут всё ещё виден/)).not.toBeInTheDocument();
+    expect(calls('DELETE')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Закрыть' }));
+    expect(screen.getByRole('heading', { name: route.name })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Показывать маршруты'), 'inactive');
+    expect(screen.getByRole('heading', { name: route.name })).toBeInTheDocument();
   });
 });
 

@@ -5,6 +5,8 @@
 .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-block: 24px 16px; }
 .toolbar h2, .toolbar > p { margin-right: auto; }
 .toolbar > p { margin-bottom: 0; }
+.filter { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-weight: 700; }
+.filter select { max-width: 100%; min-height: 42px; padding: 8px 12px; border: 1px solid var(--control-border); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; }
 .list { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 16px; }
 .list > .panel > p:first-child { margin-top: 0; font-variant-numeric: tabular-nums; }
 .list > .panel { border-left: 4px solid var(--forest); }

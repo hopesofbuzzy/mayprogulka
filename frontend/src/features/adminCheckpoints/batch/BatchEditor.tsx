@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { PublicRoute } from '../../routes/model';
-import { LogoutButton } from '../../auth/LogoutButton';
+import { useValidationFocus } from '../../adminShared/useValidationFocus';
 import { labels, names } from '../model';
 import { bodyFor, unresolved } from './model';
 import type { Row } from './model';
@@ -23,7 +23,6 @@ function Confirmation({ routeId, resolving, disabled, onConfirm, count }: { rout
 }
 export function BatchEditor({ op, route, onClose }: { op: Operation; route: PublicRoute; onClose: () => void }) {
   const { state } = op, id = useId(), dialog = useRef<HTMLDialogElement>(null), region = useRef<HTMLDivElement>(null);
-  const previousMessage = useRef('');
   const previousRows = useRef(state.rows.map(row => row.key));
   const pending = state.phase === 'pending' || state.phase === 'checking', refreshing = state.refresh === 'pending';
   const result = state.phase === 'result', locked = unresolved(state), summary = state.summary;
@@ -47,16 +46,11 @@ export function BatchEditor({ op, route, onClose }: { op: Operation; route: Publ
     }
     previousRows.current = after;
   }, [state.rows, state.phase, id]);
-  useEffect(() => {
-    if (state.message && previousMessage.current !== state.message && state.phase === 'edit') {
-      const row = state.rows.find(row => names.some(field => state.errors[row.key]?.[field]));
-      const field = row && names.find(field => state.errors[row.key]?.[field]);
-      if (row && field) document.getElementById(`${id}-${row.key}-${field}`)?.focus();
-    }
-    previousMessage.current = state.message;
-  }, [state.message, state.phase, state.errors, state.rows, id]);
+  const invalidRow = state.rows.find(row => names.some(field => state.errors[row.key]?.[field]));
+  const invalidField = invalidRow && names.find(field => state.errors[invalidRow.key]?.[field]);
+  useValidationFocus(state.focusRevision ?? 0, state.phase === 'edit' && invalidRow && invalidField ? `${id}-${invalidRow.key}-${invalidField}` : undefined);
   return <dialog ref={dialog} className={`${styles.dialog} ${local.dialog}`} aria-labelledby={`${id}-title`} onCancel={event => { event.preventDefault(); close(); }}>
-    <div className={styles.toolbar}><p className={styles.eyebrow}>Партия контрольных пунктов</p><button type="button" className={styles.secondary} onClick={close}>{pending || locked ? 'Отложить разбор / закрыть' : 'Закрыть партию'}</button><LogoutButton className={styles.secondary} /></div>
+    <div className={styles.toolbar}><p className={styles.eyebrow}>Партия контрольных пунктов</p><button type="button" className={styles.secondary} onClick={close}>{pending || locked ? 'Отложить разбор / закрыть' : 'Закрыть партию'}</button></div>
     <h2 id={`${id}-title`}>{result ? 'Результат партии КП' : state.phase === 'review' ? 'Проверка партии КП' : 'Добавить несколько КП'}</h2>
     <p className={styles.intro}>Маршрут: {route.name} · ID маршрута {route.id}</p><p className={styles.alert}>Партия может сохраниться частично. Не повторяйте отправку без проверки: точные созданные строки могут быть неизвестны.</p>
     <p className={styles.hint}>Не обновляйте страницу до завершения разбора: после обновления или выхода эти данные будут потеряны.</p>
@@ -80,6 +74,6 @@ export function BatchEditor({ op, route, onClose }: { op: Operation; route: Publ
     </div> : <form className={styles.form} onSubmit={event => event.preventDefault()} noValidate aria-busy={pending}><div className={local.rows}>{state.rows.map((row, index) => <fieldset key={row.key} className={styles.panel} disabled={pending}><legend>Строка {index + 1} — номер в интерфейсе</legend><p className={styles.hint}>ID маршрута {route.id} · фиксирован для строки</p><div className={styles.fields}>{names.map(field => <div key={field} className={field === 'coordinates' || field === 'address' ? styles.full : ''}>
       {typeof row.values[field] === 'boolean' ? <label className={styles.checkbox}><input id={`${id}-${row.key}-${field}`} type="checkbox" aria-invalid={Boolean(state.errors[row.key]?.[field])} aria-describedby={state.errors[row.key]?.[field] ? `${id}-${row.key}-${field}-error` : undefined} checked={Boolean(row.values[field])} onChange={event => op.change(row.key, field, event.target.checked)} />{labels[field]}</label> : <><label htmlFor={`${id}-${row.key}-${field}`}>{labels[field]}</label><input type="text" id={`${id}-${row.key}-${field}`} value={String(row.values[field])} required autoComplete="off" spellCheck={false} aria-invalid={Boolean(state.errors[row.key]?.[field])} aria-describedby={state.errors[row.key]?.[field] ? `${id}-${row.key}-${field}-error` : undefined} onChange={event => op.change(row.key, field, event.target.value)} /></>}
       {state.errors[row.key]?.[field] && <p className={styles.error} id={`${id}-${row.key}-${field}-error`}>{state.errors[row.key]?.[field]}</p>}
-    </div>)}</div><button type="button" className={styles.secondary} disabled={state.rows.length <= 1} onClick={() => op.remove(row.key)}>Удалить строку {index + 1}</button></fieldset>)}</div><p className={styles.hint}>Сохраните все символы координат. Порядок введите целым числом; начальный и конечный КП отмечаются независимо.</p><div className={styles.actions}><button type="button" className={styles.secondary} disabled={pending} onClick={op.add}>Добавить строку</button><button type="button" className="primaryButton" disabled={pending} onClick={() => void op.review()}>Проверить перед отправкой</button></div></form>}
+    </div>)}</div><button type="button" className={styles.secondary} disabled={state.rows.length <= 1} onClick={() => op.remove(row.key)}>Удалить строку {index + 1}</button></fieldset>)}</div><p className={styles.hint}>Координаты WGS84: широта, долгота (например, 56.83, 60.60). Порядок прохождения введите целым числом; старт и финиш отмечаются независимо.</p><div className={styles.actions}><button type="button" className={styles.secondary} disabled={pending} onClick={op.add}>Добавить строку</button><button type="button" className="primaryButton" disabled={pending} onClick={() => void op.review()}>Проверить перед отправкой</button></div></form>}
   </dialog>;
 }

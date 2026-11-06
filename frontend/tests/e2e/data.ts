@@ -7,8 +7,8 @@ export const routes = [
   { id: 17, name: 'Неактивный тестовый маршрут', year: 2024, distance: 33, is_active: false },
 ] satisfies components['schemas']['RouteResponse'][];
 export const participants = [
-  { id: 42, form_id: '00042', surname: 'Тестов', name: 'Первый', route_name: routes[0]!.name, payment_status: 'pending', has_started: false, has_finished: false, map_barcode: '000777' },
-  { id: 77, form_id: '00077', surname: 'Тестова', name: 'Вторая', route_name: routes[1]!.name, payment_status: 'pending', has_started: false, has_finished: false, map_barcode: null },
+  { id: 42, form_id: '00042', surname: 'Тестов', name: 'Первый', route_name: routes[0]!.name, payment_status: 'unpaid', has_started: false, has_finished: false, map_barcode: '000777' },
+  { id: 77, form_id: '00077', surname: 'Тестова', name: 'Вторая', route_name: routes[1]!.name, payment_status: 'unpaid', has_started: false, has_finished: false, map_barcode: null },
 ] satisfies components['schemas']['ParticipantListItem'][];
 export const otherParticipants = [{ ...participants[0], id: 99, surname: 'Другой', name: 'Аккаунт', form_id: '00099', map_barcode: null }];
 export const registration = {

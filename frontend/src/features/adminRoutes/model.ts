@@ -14,7 +14,7 @@ export function validate(values: Fields, kind: Kind): Errors {
   const errors: Errors = {};
   if (kind === 'delete') return errors;
   if (!values.name.trim()) errors.name = 'Введите название маршрута.';
-  if (kind === 'create' && (!/^[+-]?\d+$/.test(values.year) || /\s/.test(values.year) || !Number.isSafeInteger(Number(values.year)))) errors.year = 'Введите безопасное целое число года.';
+  if (kind === 'create' && (!/^\d{4}$/.test(values.year) || Number(values.year) < 1900 || Number(values.year) > 2100)) errors.year = 'Укажите год от 1900 до 2100';
   if (!Number.isFinite(decimal(values.distance))) errors.distance = 'Введите конечное число дистанции.';
   return errors;
 }

@@ -47,6 +47,7 @@ export class MockApi {
   private checkpointCompleted = deferred<void>();
   adminMode: 'success' | '422' | '408' | '409' | '403' | 'network' = 'success';
   adminReadFailure = false;
+  adminDeleteArchives = false;
   private adminGate: ReturnType<typeof deferred<Reply>> | null = null;
   private adminSeen = deferred<void>();
   private adminCompleted = deferred<void>();
@@ -227,7 +228,7 @@ export class MockApi {
       if (this.adminMode === '422') return reply({ detail: [{ loc: ['body', 'name'], msg: 'untrusted admin detail', input: 'not for rendering' }] }, 422);
       if (this.adminMode !== 'success') return reply({}, Number(this.adminMode));
       if (this.adminReadFailure) this.routeMode = '500';
-      if (method === 'DELETE') { this.publicRoutes = this.publicRoutes.filter(item => item.id !== id); return route.fulfill({ status: 204, body: '' }); }
+      if (method === 'DELETE') { this.publicRoutes = this.adminDeleteArchives ? this.publicRoutes.map(item => item.id === id ? { ...item, is_active: false } : item) : this.publicRoutes.filter(item => item.id !== id); return route.fulfill({ status: 204, body: '' }); }
       const result = method === 'POST' ? { ...body, id } as components['schemas']['RouteResponse'] : { ...this.publicRoutes.find(item => item.id === id)!, ...body };
       if (method === 'POST') this.publicRoutes.push(result); else this.publicRoutes = this.publicRoutes.map(item => item.id === id ? result : item);
       return reply(result, method === 'POST' ? 201 : 200);
@@ -331,6 +332,15 @@ export { expect };
 export async function login(page: Page, api: MockApi, destination = '/account') {
   await page.goto(destination);
   await signIn(page, api);
+  const foreignAdmin = destination.startsWith('/staff/routes') && api.role !== 'admin';
+  const foreignTypist = destination.startsWith('/staff/typist') && api.role !== 'typist';
+  if (foreignAdmin || foreignTypist) {
+    const home = api.role === 'admin' ? '/staff/routes' : api.role === 'typist' ? '/staff/typist' : api.role === 'participant' ? '/account' : '/';
+    await expect(page).toHaveURL(new URL(home, page.url()).href);
+    // An incompatible login intent must land safely first. Then exercise the
+    // authenticated route guard through browser history (no reload of memory-only auth).
+    await page.evaluate(path => { history.pushState(null, '', path); dispatchEvent(new PopStateEvent('popstate')); }, destination);
+  }
   await expect(page).toHaveURL(new RegExp(destination.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));
 }
 export async function signIn(page: Page, api: MockApi) {
@@ -342,7 +352,7 @@ export async function signIn(page: Page, api: MockApi) {
 }
 export async function logout(page: Page) {
   if (page.viewportSize()!.width < 768) await page.getByRole('button', { name: 'Открыть меню' }).click();
-  await page.getByRole('button', { name: 'Выйти', exact: true }).filter({ visible: true }).click();
+  await page.getByRole('button', { name: 'Выйти из аккаунта', exact: true }).filter({ visible: true }).click();
   await expect(page.getByRole('heading', { name: 'Вход', exact: true })).toBeVisible();
 }
 export async function familyForm(page: Page, api: MockApi) {
@@ -357,7 +367,7 @@ export async function fillFamily(page: Page) {
   await expect(page.getByRole('group', { name: 'Участник 2', exact: true }).getByLabel('Фамилия', { exact: true })).toBeFocused();
   for (const index of [1, 2]) {
     const row = page.getByRole('group', { name: `Участник ${index}`, exact: true });
-    for (const [label, value] of [['Фамилия', index === 1 ? 'Тестов' : 'Тестова'], ['Имя', index === 1 ? 'Первый' : 'Вторая'], ['Дата рождения', '1995-05-20'], ['Email', 'family@example.test'], ['Телефон', 'местный 123']]) await row.getByLabel(label!, { exact: true }).fill(value!);
+    for (const [label, value] of [['Фамилия', index === 1 ? 'Тестов' : 'Тестова'], ['Имя', index === 1 ? 'Первый' : 'Вторая'], ['Дата рождения', '1995-05-20'], ['Email', 'family@example.test'], ['Телефон', '+7 (900) 123-45-67']]) await row.getByLabel(label!, { exact: true }).fill(value!);
     await row.getByLabel('Пол', { exact: true }).selectOption(index === 1 ? 'male' : 'female');
     await row.getByLabel('Маршрут', { exact: true }).selectOption(index === 1 ? '12' : '15');
   }

@@ -7,7 +7,7 @@ import type { Payment } from './api';
 
 export type PaymentRecord = {
   phase: 'idle' | 'pending' | 'accepted' | 'uncertain' | 'rejected';
-  verification: 'none' | 'checking' | 'paid' | 'pending' | 'unknown' | 'missing' | 'error';
+  verification: 'none' | 'checking' | 'paid' | 'unpaid' | 'unknown' | 'missing' | 'error';
   subject?: Pick<Participant, 'id' | 'surname' | 'name' | 'route_name' | 'form_id'>;
   result?: Payment;
   message?: string;
@@ -34,7 +34,7 @@ export async function verifyPayment(client: QueryClient, epoch: number, id: numb
   try {
     const participants = await client.fetchQuery({ ...options, staleTime: 0 });
     const participant = participants.find(item => item.id === id);
-    const verification = !participant ? 'missing' : participant.payment_status === 'paid' ? 'paid' : participant.payment_status === 'pending' ? 'pending' : 'unknown';
+    const verification = !participant ? 'missing' : participant.payment_status === 'paid' ? 'paid' : participant.payment_status === 'unpaid' ? 'unpaid' : 'unknown';
     updatePaymentRecord(client, epoch, id, record => ({ ...record, verification }));
   } catch {
     updatePaymentRecord(client, epoch, id, record => ({ ...record, verification: 'error' }));

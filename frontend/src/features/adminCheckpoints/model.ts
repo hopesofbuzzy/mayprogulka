@@ -6,15 +6,23 @@ export type Fields = { name: string; address: string; coordinates: string; order
 export type Errors = Partial<Record<keyof Fields, string>>;
 export type Create = components['schemas']['CheckpointCreateRequest'];
 export type Patch = { [K in keyof components['schemas']['CheckpointUpdateRequest']]?: NonNullable<components['schemas']['CheckpointUpdateRequest'][K]> };
-export const labels = { name: 'Название КП', address: 'Адрес', coordinates: 'Координаты', order: 'Порядок', is_start: 'Начальный КП', is_finish: 'Конечный КП' };
+export const labels = { name: 'Название КП', address: 'Адрес', coordinates: 'Координаты', order: 'Порядок прохождения', is_start: 'Старт маршрута', is_finish: 'Финиш маршрута' };
 export const names = Object.keys(labels) as (keyof Fields)[];
 export const emptyFields = (): Fields => ({ name: '', address: '', coordinates: '', order: '', is_start: false, is_finish: false });
 export const pointFields = (point: Checkpoint): Fields => ({ name: point.name, address: point.address, coordinates: point.coordinates, order: String(point.order), is_start: point.is_start, is_finish: point.is_finish });
 const orderNumber = (value: string) => !/\s/.test(value) && /^[+-]?\d+$/.test(value) ? Number(value) : NaN;
-export function validate(values: Fields, kind: Kind): Errors {
+export function validCoordinates(value: string): boolean {
+  const decimal = '[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)';
+  if (!new RegExp(`^${decimal}\\s*,\\s*${decimal}$`).test(value.trim())) return false;
+  const [latitude, longitude] = value.split(',').map(Number);
+  return latitude !== undefined && longitude !== undefined && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
+}
+export function validate(values: Fields, kind: Kind, baseline?: Checkpoint): Errors {
   if (kind === 'delete') return {};
   const errors: Errors = {};
-  for (const field of ['name', 'address', 'coordinates'] as const) if (!values[field].trim()) errors[field] = 'Введите непробельный текст.';
+  for (const field of ['name', 'address'] as const) if (!values[field].trim()) errors[field] = 'Введите непробельный текст.';
+  // A partial PUT must not rewrite or block an untouched legacy coordinate string.
+  if (!(kind === 'edit' && baseline && values.coordinates === baseline.coordinates) && !validCoordinates(values.coordinates)) errors.coordinates = 'Укажите широту и долготу WGS84 через запятую: например, 56.83, 60.60. Широта от −90 до 90, долгота от −180 до 180.';
   if (!Number.isSafeInteger(orderNumber(values.order))) errors.order = 'Введите целое число порядка. Слишком большие значения не поддерживаются.';
   return errors;
 }
