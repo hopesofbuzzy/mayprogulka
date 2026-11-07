@@ -1,0 +1,31 @@
+.page { padding-block: 64px 80px; overflow-wrap: anywhere; }
+.intro { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; padding-bottom: 64px; }
+.eyebrow { font-size: 11px; line-height: 1.6; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 18px; }
+.page h1 { color: var(--forest-deep); font-size: clamp(36px, 5vw, 58px); line-height: 1.05; letter-spacing: -1.5px; }
+.lead { max-width: 440px; font-size: 21px; line-height: 1.6; margin-top: 24px; }
+.art { padding: 36px 24px 0; background: #e8eedf; border-radius: 50% 50% 16px 16px; }
+.art svg { display: block; width: 100%; }
+.page h2 { color: var(--forest-deep); font-size: clamp(28px, 3.5vw, 38px); line-height: 1.15; letter-spacing: -.6px; }
+.idea { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; border-top: 1px solid var(--border); padding-block: 48px 64px; }
+.idea p { font-size: 17px; line-height: 1.8; }
+.idea p + p { margin-top: 20px; }
+.next { background: #e8eedf; border-radius: 20px; padding: 40px; }
+.links { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 28px; }
+.links a { display: grid; gap: 12px; padding-block: 20px; border-top: 1px solid #aabca7; text-decoration: none; line-height: 1.6; }
+.links a:hover strong { text-decoration: underline; text-underline-offset: 4px; }
+.links strong { font-size: 18px; }
+.links strong span { margin-left: 8px; }
+.links a > span { font-size: 15px; }
+.faqLink { display: inline-block; font-size: 14px; line-height: 1.6; font-weight: 700; margin-top: 16px; padding-block: 12px; text-underline-offset: 4px; }
+@media (max-width: 899px) { .intro { gap: 28px; } .idea { gap: 32px; } }
+@media (max-width: 600px) {
+  .page { padding-block: 38px 48px; }
+  .intro, .idea, .links { grid-template-columns: minmax(0, 1fr); }
+  .intro { gap: 32px; padding-bottom: 36px; }
+  .lead { font-size: 19px; }
+  .art { max-width: 400px; padding: 24px 16px 0; }
+  .idea { padding-block: 32px 40px; gap: 24px; }
+  .idea p { font-size: 16px; }
+  .next { padding: 28px 20px; }
+  .links { gap: 4px; }
+}

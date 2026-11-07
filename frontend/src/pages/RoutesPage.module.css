@@ -1,0 +1,24 @@
+.eyebrow { text-transform: uppercase; letter-spacing: 1.6px; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 14px; }
+.disclaimer { margin-top: 14px; font-size: 13px; line-height: 1.6; color: var(--muted); max-width: 680px; }
+.state { margin-top: 32px; padding: 32px; background: #fffdf8; border: 1px solid var(--border); border-radius: 16px; }
+.state h2 { font-size: 24px; }
+.state p { margin-top: 12px; line-height: 1.6; max-width: 600px; }
+.state button { margin-top: 24px; }
+.list { padding: 0; margin: 32px 0 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.card { padding: 24px; display: flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--border); border-radius: 18px; background: #fffdf8; overflow-wrap: anywhere; border-top: 5px solid var(--forest); }
+.cardTop { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.active, .inactive { padding: 5px 9px; border-radius: 20px; }
+.active { background: #e2edda; color: var(--forest-deep); }
+.inactive { background: #eae9e2; color: #586156; }
+.distance { margin-block: 26px 18px; padding: 16px 20px; border-radius: 32px 32px 12px 12px; background: #e8eedf; font-size: 48px; font-weight: 800; letter-spacing: -1px; color: var(--forest); font-variant-numeric: tabular-nums; }
+.distance > span { font-size: 20px; font-weight: 500; }
+.card h2 { font-size: 22px; line-height: 1.25; }
+.description { line-height: 1.6; margin-top: 14px; white-space: pre-line; }
+.unavailable { margin-top: 18px; font-size: 13px; color: var(--muted); }
+.mapLink { display: inline-block; margin-top: 12px; font-size: 14px; font-weight: 700; text-underline-offset: 4px; }
+.mapNote { margin-top: 12px; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.cardFooter { width: 100%; margin-top: auto; padding-top: 24px; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+.detailsLink { display: flex; justify-content: space-between; gap: 12px; padding-block: 14px; border-block: 1px solid var(--border); font-size: 14px; font-weight: 700; text-underline-offset: 4px; }
+@media (max-width: 950px) { .list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .list { grid-template-columns: minmax(0, 1fr); } .state { padding: 24px; } }

@@ -8,3 +8,11 @@ uv run <файл>
 # Для добавления библиотеки
 uv add <библиотека>
 ```
+
+`src\` - модули бэкенда.
+
+`frontend\` - фронтенд.
+
+`src\mayprogulka\openapi.json` - структура API.
+
+`src\mayprogulka\entrypoint.py` - вход в бэкенд-приложение.

@@ -1,0 +1,26 @@
+import { Link } from 'react-router';
+import styles from './PublicContent.module.css';
+import guide from './HowToPage.module.css';
+import { ParticipationIcon } from '../shared/assets/ParticipationIcon';
+
+export function HowToPage() {
+  return <article className={`contentPage container ${styles.page}`}>
+    <div className={guide.reading}>
+      <div className={guide.intro}><div>
+      <p className={styles.eyebrow}>От выбора пути до старта</p><h1>Как участвовать</h1>
+      <p className="intro">Выберите маршрут, зарегистрируйте участников и подготовьтесь к старту.</p>
+      </div><div className={guide.journey} aria-label="От маршрута к карте"><div><ParticipationIcon step={1} /><span>Маршрут</span></div><span aria-hidden="true">→</span><div><ParticipationIcon step={5} /><span>Анкета</span></div><span aria-hidden="true">→</span><div><ParticipationIcon step={6} /><span>Карта</span></div></div></div>
+      <ol className={guide.steps} aria-label="Шаги участия">
+        <li><ParticipationIcon step={1} /><h2>Выберите маршрут</h2><p>Сравните дистанции, описания и контрольные пункты. Условия участия и открытие регистрации уточните у организаторов.</p><Link className={styles.textLink} to="/routes">Посмотреть маршруты →</Link></li>
+        <li><ParticipationIcon step={2} /><h2>Создайте аккаунт или войдите</h2><p>Аккаунт нужен для личного кабинета. Один аккаунт может зарегистрировать нескольких участников.</p><div className={styles.actions}><Link to="/signup">Создать аккаунт</Link><Link to="/login">Войти</Link></div></li>
+        <li><ParticipationIcon step={3} /><h2>Зарегистрируйте каждого участника</h2><p>Заполните отдельную анкету на каждого, в том числе на членов семьи. У каждого участника свой выбор маршрута — можно выбрать разные маршруты.</p><Link className={styles.textLink} to="/account/participants/new">Перейти к регистрации участников →</Link></li>
+        <li><ParticipationIcon step={4} /><h2>Откройте раздел оплаты</h2><p>Оплата пока не подключена: деньги не списываются. В личном кабинете можно изменить отметку оплаты отдельно для каждого участника.</p></li>
+        <li><ParticipationIcon step={5} /><h2>Подготовьте анкету, если файл доступен</h2><p>Если в разделе оплаты появилась ссылка на анкету, откройте её, распечатайте и возьмите на старт. Анкета не отправляется по электронной почте.</p><p>Если ссылки нет, уточните у организаторов, как оформить анкету на месте.</p></li>
+        <li><ParticipationIcon step={6} /><h2>На старте получите физическую карту</h2><p>Если вы смогли распечатать анкету, возьмите её с собой. Иначе заранее уточните оформление на месте. Физическую карту получают отдельно: онлайн-регистрация её не заменяет.</p><p>Обычно одинаковые стикеры с номером карты размещают на карте и анкете, а анкету передают сотрудникам для последующего сопоставления. Порядок выдачи и оформления на вашем старте уточните у организаторов.</p></li>
+      </ol>
+      <aside className={styles.notice} aria-labelledby="identifiers-title"><h2 id="identifiers-title">Анкета и карта имеют разные номера</h2><p>Номер анкеты и штрихкод физической карты не заменяют друг друга. Схема маршрута на сайте нужна для ознакомления и не заменяет карту, которую получают на старте.</p></aside>
+      <p className={styles.muted}>Дату, место, время старта и стоимость уточните у организаторов. Год в каталоге маршрутов не определяет дату прогулки.</p>
+      <div className={styles.actions}><Link className="primaryButton" to="/account">В личный кабинет</Link><Link to="/faq">Вопросы и ответы →</Link></div>
+    </div>
+  </article>;
+}
