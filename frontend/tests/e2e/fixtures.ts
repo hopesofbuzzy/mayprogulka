@@ -47,7 +47,6 @@ export class MockApi {
   private checkpointCompleted = deferred<void>();
   adminMode: 'success' | '422' | '408' | '409' | '403' | 'network' = 'success';
   adminReadFailure = false;
-  adminDeleteArchives = false;
   private adminGate: ReturnType<typeof deferred<Reply>> | null = null;
   private adminSeen = deferred<void>();
   private adminCompleted = deferred<void>();
@@ -199,6 +198,7 @@ export class MockApi {
       return reply(result, method === 'POST' ? 201 : 200);
     }
     if ((method === 'POST' && path === '/api/v1/admin/routes') || (['PUT', 'DELETE'].includes(method) && /^\/api\/v1\/admin\/routes\/\d+$/.test(path))) {
+      if (method === 'DELETE') { this.violations.push('Route DELETE must never be sent by this interface'); return route.abort('blockedbyclient'); }
       expect(authenticated && this.role === 'admin', 'Admin mutations require exact current admin synthetic credentials').toBe(true);
       expect(url.search).toBe('');
       const id = method === 'POST' ? 101 : Number(path.split('/').at(-1));
@@ -228,7 +228,6 @@ export class MockApi {
       if (this.adminMode === '422') return reply({ detail: [{ loc: ['body', 'name'], msg: 'untrusted admin detail', input: 'not for rendering' }] }, 422);
       if (this.adminMode !== 'success') return reply({}, Number(this.adminMode));
       if (this.adminReadFailure) this.routeMode = '500';
-      if (method === 'DELETE') { this.publicRoutes = this.adminDeleteArchives ? this.publicRoutes.map(item => item.id === id ? { ...item, is_active: false } : item) : this.publicRoutes.filter(item => item.id !== id); return route.fulfill({ status: 204, body: '' }); }
       const result = method === 'POST' ? { ...body, id } as components['schemas']['RouteResponse'] : { ...this.publicRoutes.find(item => item.id === id)!, ...body };
       if (method === 'POST') this.publicRoutes.push(result); else this.publicRoutes = this.publicRoutes.map(item => item.id === id ? result : item);
       return reply(result, method === 'POST' ? 201 : 200);

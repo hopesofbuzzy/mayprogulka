@@ -79,20 +79,6 @@ test('administrative inactive filter keeps history and leaves the source list in
   await noOverflow(page); await page.screenshot({ path: info.outputPath('inactive-route-filter.png'), fullPage: true });
 });
 
-test('DELETE followed by authoritative inactive GET explains retained history without repeating the operation', async ({ page, api }, info) => {
-  api.role = 'admin'; api.adminDeleteArchives = true; await login(page, api, '/staff/routes');
-  await page.getByRole('button', { name: /Удалить.*Тестовая лесная тропа/ }).click();
-  const modal = page.getByRole('dialog'); await modal.getByLabel('Для подтверждения введите ID 12').fill('12');
-  await modal.getByRole('button', { name: 'Подтвердить удаление', exact: true }).dblclick();
-  await expect(modal.getByText(/В обновлённом каталоге маршрут неактивен/)).toBeVisible();
-  await expect(modal.getByText(/Удаление подтверждено, но маршрут всё ещё виден/)).toHaveCount(0);
-  await expect(modal.getByRole('button', { name: 'Подтвердить удаление', exact: true })).toHaveCount(0);
-  expect(api.count('DELETE', '/api/v1/admin/routes/12')).toBe(1);
-  await modal.getByRole('button', { name: 'Закрыть', exact: true }).click();
-  await page.getByLabel('Показывать маршруты').selectOption('inactive');
-  await expect(page.getByRole('heading', { name: 'Тестовая лесная тропа', exact: true })).toBeVisible();
-  await noOverflow(page); await page.screenshot({ path: info.outputPath('inactive-after-delete.png'), fullPage: true });
-});
 
 test('invalid participant fields block registration and allow shared family contacts after correction', async ({ page, api }, info) => {
   await login(page, api, '/account/participants/new');

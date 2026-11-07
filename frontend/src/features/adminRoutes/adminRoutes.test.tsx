@@ -49,21 +49,21 @@ function mount(path = '/staff/routes', state?: unknown) {
 }
 const calls = (method: string) => fetchMock.mock.calls.map(call => call[0] as Request).filter(request => request.method === method && new URL(request.url).pathname.startsWith('/api/v1/admin/routes'));
 const change = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
-async function start(kind: 'create' | 'edit' | 'delete', user: ReturnType<typeof userEvent.setup>) {
+async function start(kind: 'create' | 'edit' | 'archive', user: ReturnType<typeof userEvent.setup>) {
   await screen.findByRole('list', { name: 'Маршруты из публичного каталога' });
-  await user.click(screen.getByRole('button', { name: kind === 'create' ? 'Новый маршрут' : kind === 'edit' ? /Изменить.*Тестовая тропа/ : /Удалить.*Тестовая тропа/ }));
+  await user.click(screen.getByRole('button', { name: kind === 'create' ? 'Новый маршрут' : kind === 'edit' ? /Изменить.*Тестовая тропа/ : /Архивировать.*Тестовая тропа/ }));
   await screen.findByRole('dialog');
   if (kind === 'create') { change('Год', '2030'); change('Название', '  Новый путь  '); change('Дистанция, км', '12,5'); }
   if (kind === 'edit') change('Название', 'Новое название');
-  if (kind !== 'delete') { await user.click(screen.getByRole('button', { name: 'Проверить данные' })); await screen.findByRole('region', { name: 'Проверка маршрута' }); }
-  else change('Для подтверждения введите ID 12', '12');
+  if (kind !== 'archive') { await user.click(screen.getByRole('button', { name: 'Проверить данные' })); await screen.findByRole('region', { name: 'Проверка маршрута' }); }
+
 }
-const confirmation = (kind: 'create' | 'edit' | 'delete') => screen.getByRole('button', { name: kind === 'create' ? 'Подтвердить создание' : kind === 'edit' ? 'Подтвердить изменения' : 'Подтвердить удаление' });
+const confirmation = (kind: 'create' | 'edit' | 'archive') => screen.getByRole('button', { name: kind === 'create' ? 'Подтвердить создание' : kind === 'edit' ? 'Подтвердить изменения' : 'Подтвердить архивацию' });
 
 describe('admin access and shared public list', () => {
   it.each(['participant', 'typist', 'organizer', 'unknown', 'Admin', ''])('rejects exact non-admin role %s before all reads and writes', async role => {
     login(role); mount(); expect(await screen.findByRole('heading', { name: 'Нет доступа' })).toBeInTheDocument(); expect(fetchMock).not.toHaveBeenCalled();
-    await expect(mutateRoute('delete', {}, 12, sessionStore.getCredentials()!.epoch, new AbortController().signal)).rejects.toThrow();
+    await expect(mutateRoute('edit', {}, 12, sessionStore.getCredentials()!.epoch, new AbortController().signal)).rejects.toThrow();
     expect(fetchMock).not.toHaveBeenCalled();
   });
   it('guest returns safely to admin after UI login; ordinary admin login defaults to workspace', async () => {
@@ -78,7 +78,7 @@ describe('admin access and shared public list', () => {
   it('accepts only exact new staff path and does not expand arbitrary staff access', () => expect(safeReturnTo('/staff/routes')).toBe('/staff/routes'));
   it('uses public query and explicitly labels activity, optional scheme and list incompleteness', async () => {
     const { client } = mount(); expect(await screen.findByText('Активный маршрут')).toBeInTheDocument();
-    expect(screen.getByText(/Неактивные записи остаются в списке/)).toBeInTheDocument();
+    expect(screen.getByText(/Архив сохраняет историю/)).toBeInTheDocument();
     expect(client.getQueryData(['routes'])).toEqual(list); expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('link', { name: /Открыть схему/ })).toHaveAttribute('target', '_blank');
   });
@@ -95,6 +95,68 @@ describe('admin access and shared public list', () => {
 });
 
 describe('route forms and confirmed operations', () => {
+  it('blocks the ambiguous physical DELETE even for admin before any HTTP call', async () => {
+    await expect(mutateRoute('delete', {}, 12, sessionStore.getCredentials()!.epoch, new AbortController().signal)).rejects.toThrow('Безопасное физическое удаление');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it('archives and restores with exact partial PUT, refreshes both views and leaves participants/checkpoints untouched', async () => {
+    const { user, client, router } = mount(); await screen.findByRole('heading', { name: route.name });
+    const epoch = sessionStore.getCredentials()!.epoch;
+    client.setQueryData(['checkpoints', 12], [{ id: 1, route_id: 12 }]);
+    client.setQueryData(['private', 'participants', epoch], [{ id: 77, route_name: route.name }]);
+    await user.dblClick(screen.getByRole('button', { name: /Архивировать.*Тестовая тропа/ }));
+    expect(screen.queryByRole('button', { name: /Удалить/ })).not.toBeInTheDocument();
+    expect(calls('PUT')).toHaveLength(0);
+    await user.dblClick(screen.getByRole('button', { name: 'Подтвердить архивацию' }));
+    await screen.findByRole('heading', { name: 'Маршрут перемещён в архив' });
+    expect(await calls('PUT')[0]!.clone().json()).toEqual({ is_active: false });
+    await user.click(screen.getByRole('button', { name: 'Закрыть' }));
+    expect(screen.getByText('В архиве')).toBeInTheDocument();
+    await act(() => router.navigate('/routes')); await screen.findByRole('heading', { name: 'Маршрутов пока нет' });
+    expect(screen.queryByRole('heading', { name: route.name })).not.toBeInTheDocument();
+    await act(() => router.navigate('/staff/routes'));
+    await user.click(await screen.findByRole('button', { name: /Восстановить.*Тестовая тропа/ }));
+    await user.dblClick(screen.getByRole('button', { name: 'Подтвердить восстановление' }));
+    await screen.findByRole('heading', { name: 'Маршрут восстановлен' });
+    expect(await calls('PUT')[1]!.clone().json()).toEqual({ is_active: true });
+    await user.click(screen.getByRole('button', { name: 'Закрыть' }));
+    await act(() => router.navigate('/routes')); expect(await screen.findByRole('heading', { name: route.name })).toBeInTheDocument();
+    expect(client.getQueryData(['checkpoints', 12])).toEqual([{ id: 1, route_id: 12 }]);
+    expect(client.getQueryData(['private', 'participants', epoch])).toEqual([{ id: 77, route_name: route.name }]);
+    expect(calls('PUT')).toHaveLength(2); expect(calls('DELETE')).toHaveLength(0);
+  });
+  it('reconciles an unknown archive through explicit fresh GET and acknowledgment without another PUT', async () => {
+    mutation = async () => { list = [{ ...route, is_active: false }]; throw new TypeError('Synthetic lost response'); };
+    const { user } = mount(); await start('archive', user); await user.click(confirmation('archive'));
+    await screen.findByText('Исход предыдущей операции неизвестен.');
+    await user.click(screen.getByRole('button', { name: 'Проверить состояние в каталоге' }));
+    const reconcile = await screen.findByRole('button', { name: 'Завершить сверку статуса' }); expect(reconcile).toBeDisabled();
+    await user.click(screen.getByRole('checkbox', { name: /Я сверил ситуацию/ })); await user.click(reconcile);
+    await screen.findByRole('heading', { name: 'Маршрут перемещён в архив' });
+    expect(screen.getByText(/Исход прежнего запроса остаётся неизвестным/)).toBeInTheDocument();
+    expect(calls('PUT')).toHaveLength(1); expect(calls('DELETE')).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Закрыть' })); expect(screen.getByRole('button', { name: /Восстановить.*Тестовая тропа/ })).toBeEnabled();
+  });
+  it('defers an interrupted archive and blocks new writes across navigation without a replay', async () => {
+    mutation = () => new Promise(() => {});
+    const { user, router } = mount(); await start('archive', user); await user.click(confirmation('archive'));
+    await user.click(screen.getByRole('button', { name: 'Закрыть и проверить позже' }));
+    await screen.findByText(/Отложена операция с неизвестным исходом/);
+    expect(calls('PUT')[0]!.signal.aborted).toBe(true);
+    expect(screen.getByRole('button', { name: /Архивировать.*Тестовая тропа/ })).toBeDisabled();
+    await act(() => router.navigate('/routes')); await act(() => router.navigate('/staff/routes'));
+    await user.click(await screen.findByRole('button', { name: 'Открыть проверку отложенной операции 1' }));
+    await screen.findByText('Исход предыдущей операции неизвестен.'); expect(calls('PUT')).toHaveLength(1);
+  });
+  it.each(['wrong-response', 'stale-get', 'missing-get'])('does not claim archive success for %s', async mode => {
+    mutation = async () => {
+      if (mode === 'missing-get') list = [];
+      return json({ ...route, is_active: mode === 'wrong-response' });
+    };
+    const { user } = mount(); await start('archive', user); await user.click(confirmation('archive'));
+    await screen.findByText(mode === 'wrong-response' ? 'Исход предыдущей операции неизвестен.' : /Полученный каталог не подтверждает/);
+    expect(screen.queryByRole('heading', { name: 'Маршрут перемещён в архив' })).not.toBeInTheDocument(); expect(calls('PUT')).toHaveLength(1);
+  });
   it('keeps focus while typing, deleting, pasting and tabbing after validation and server 422', async () => {
     const { user } = mount();
     await user.click(await screen.findByRole('button', { name: 'Новый маршрут' }));
@@ -151,12 +213,12 @@ describe('route forms and confirmed operations', () => {
   });
   it('PUT contains only changed fields including false and deliberate description null; year/map remain untouched', async () => {
     const { user } = mount(); await start('edit', user); await user.click(screen.getByRole('button', { name: 'Вернуться к вводу' }));
-    change('Название', route.name); change('Описание', ''); await user.click(screen.getByLabelText('Флаг активности'));
+    change('Название', route.name); change('Описание', '');
     expect(screen.queryByLabelText('Год')).not.toBeInTheDocument(); expect(screen.queryByLabelText('map_url')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Проверить данные' }));
     expect(screen.getByRole('region', { name: 'Проверка маршрута' })).toHaveTextContent('Было:');
     await user.click(confirmation('edit')); await screen.findByRole('heading', { name: 'Изменение подтверждено' });
-    expect(await calls('PUT')[0]!.json()).toEqual({ description: null, is_active: false });
+    expect(await calls('PUT')[0]!.json()).toEqual({ description: null });
     expect(list[0]!.year).toBe(route.year); expect(list[0]!.map_url).toBe(route.map_url);
   });
   it('untouched values and equivalent distance representation produce no PUT', async () => {
@@ -165,16 +227,9 @@ describe('route forms and confirmed operations', () => {
     expect(await screen.findByText('Нет изменений для отправки.')).toBeInTheDocument(); expect(calls('PUT')).toHaveLength(0);
     expect(updateBody(routeFields(route), route)).toEqual({});
   });
-  it('DELETE requires ID and warns about unknown semantics; only 204 succeeds without JSON', async () => {
-    const { user, client } = mount(); await start('delete', user); change('Для подтверждения введите ID 12', '');
-    expect(confirmation('delete')).toBeDisabled(); expect(screen.getByText(/действие может затронуть связанные данные/)).toBeInTheDocument();
-    expect(client.getQueryData(['routes'])).toEqual([route]); expect(calls('DELETE')).toHaveLength(0);
-    change('Для подтверждения введите ID 12', '12'); await user.dblClick(confirmation('delete'));
-    await screen.findByRole('heading', { name: 'Сервер подтвердил операцию' }); await screen.findByText('Каталог перечитан с сервера.');
-    expect(calls('DELETE')).toHaveLength(1); expect(await calls('DELETE')[0]!.text()).toBe(''); expect(client.getQueryData(['routes'])).toEqual([]);
-  });
-  it.each(['create', 'edit', 'delete'] as const)('%s confirmed result remains confirmed when subsequent GET fails', async kind => {
-    mutation = async () => { get = async () => json({}, 500); return kind === 'delete' ? new Response(null, { status: 204 }) : json(kind === 'create' ? created : route, kind === 'create' ? 201 : 200); };
+
+  it.each(['create', 'edit', 'archive'] as const)('%s confirmed result remains confirmed when subsequent GET fails', async kind => {
+    mutation = async () => { get = async () => json({}, 500); return json(kind === 'create' ? created : { ...route, is_active: kind !== 'archive' }, kind === 'create' ? 201 : 200); };
     const { user } = mount(); await start(kind, user); await user.click(confirmation(kind));
     expect(await screen.findByText('Операция подтверждена, но обновление списка не удалось.')).toBeInTheDocument();
     expect(screen.queryByText('Исход предыдущей операции неизвестен.')).not.toBeInTheDocument();
@@ -185,32 +240,19 @@ describe('route forms and confirmed operations', () => {
     mutation = async () => json(created, 201); const { user } = mount(); await start('create', user); await user.click(confirmation('create'));
     expect(await screen.findByText(/Созданный маршрут не появился/)).toBeInTheDocument();
   });
-  it('DELETE 204 with record still present demands verification, not guessed archive behavior', async () => {
-    mutation = async () => new Response(null, { status: 204 }); const { user } = mount(); await start('delete', user); await user.click(confirmation('delete'));
-    expect(await screen.findByText('Удаление подтверждено, но маршрут всё ещё виден. Сверьтесь с ответственным; не удаляйте его повторно.')).toBeInTheDocument();
-  });
-  it('DELETE followed by GET inactive retains history and explains the actual state without offering a repeat', async () => {
-    mutation = async () => { list = list.map(item => ({ ...item, is_active: false })); return new Response(null, { status: 204 }); };
-    const { user } = mount(); await start('delete', user); await user.click(confirmation('delete'));
-    await screen.findByText(/В обновлённом каталоге маршрут неактивен/);
-    expect(screen.queryByText(/Удаление подтверждено, но маршрут всё ещё виден/)).not.toBeInTheDocument();
-    expect(calls('DELETE')).toHaveLength(1);
-    await user.click(screen.getByRole('button', { name: 'Закрыть' }));
-    expect(screen.getByRole('heading', { name: route.name })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Показывать маршруты'), 'inactive');
-    expect(screen.getByRole('heading', { name: route.name })).toBeInTheDocument();
-  });
+
+
 });
 
 describe('operation failures and uncertainty', () => {
-  for (const kind of ['create', 'edit', 'delete'] as const) {
+  for (const kind of ['create', 'edit', 'archive'] as const) {
     it.each([400, 403, 404, 409, 422])(`${kind} HTTP %i is a safe refusal and keeps input/record`, async status => {
       mutation = async () => json({ detail: [{ loc: ['body', 'name'], msg: '<script>private-input</script>', input: 'sensitive' }] }, status);
       const { user, client } = mount(); await start(kind, user); await user.click(confirmation(kind));
       expect(await screen.findByRole('alert')).toHaveTextContent(`(${status})`);
       expect(screen.queryByText('Исход предыдущей операции неизвестен.')).not.toBeInTheDocument();
       expect(screen.queryByText(/private-input/)).not.toBeInTheDocument(); expect(client.getQueryData(['routes'])).toEqual([route]);
-      if (kind !== 'delete') { expect(screen.getByLabelText('Название')).toHaveValue(kind === 'create' ? '  Новый путь  ' : 'Новое название'); if (status === 422) expect(screen.getByLabelText('Название')).toHaveAttribute('aria-invalid', 'true'); }
+      if (kind !== 'archive') { expect(screen.getByLabelText('Название')).toHaveValue(kind === 'create' ? '  Новый путь  ' : 'Новое название'); if (status === 422) expect(screen.getByLabelText('Название')).toHaveAttribute('aria-invalid', 'true'); }
     });
     it.each(['408', '500', 'network', 'timeout', 'abort', 'malformed', 'wrong-status', 'wrong-dto'])(`${kind} %s is uncertain and never auto-retries`, async mode => {
       mutation = async () => {
@@ -222,11 +264,11 @@ describe('operation failures and uncertainty', () => {
       };
       const { user, client, router } = mount(); await start(kind, user); await user.click(confirmation(kind));
       expect(await screen.findByText('Исход предыдущей операции неизвестен.')).toBeInTheDocument();
-      const method = kind === 'create' ? 'POST' : kind === 'edit' ? 'PUT' : 'DELETE'; expect(calls(method)).toHaveLength(1); expect(client.getQueryData(['routes'])).toEqual([route]);
+      const method = kind === 'create' ? 'POST' : 'PUT'; expect(calls(method)).toHaveLength(1); expect(client.getQueryData(['routes'])).toEqual([route]);
       window.dispatchEvent(new Event('online')); window.dispatchEvent(new Event('focus'));
       await user.click(screen.getByRole('button', { name: 'Проверить состояние в каталоге' })); await screen.findByText('Список обновлён, но результат операции нужно сверить с ответственным.');
       expect(calls(method)).toHaveLength(1);
-      if (kind === 'delete') expect(screen.queryByRole('button', { name: 'Подтвердить удаление' })).not.toBeInTheDocument();
+      if (kind === 'archive') expect(screen.queryByRole('button', { name: 'Подтвердить архивацию' })).not.toBeInTheDocument();
       else expect(screen.getByRole('button', { name: 'Проверить данные' })).toBeDisabled();
       await act(() => router.navigate('/routes')); await act(() => router.navigate('/staff/routes'));
       expect(await screen.findByText('Исход предыдущей операции неизвестен.')).toBeInTheDocument(); expect(calls(method)).toHaveLength(1);
@@ -286,25 +328,25 @@ describe('session, cancellation and escaping', () => {
     const malformed: Record<string, unknown> = { ...created }; delete malformed[field]; mutation = async () => json(malformed, 201);
     const { user } = mount(); await start('create', user); await user.click(confirmation('create')); expect(await screen.findByText('Исход предыдущей операции неизвестен.')).toBeInTheDocument();
   });
-  for (const kind of ['create', 'edit', 'delete'] as const) {
+  for (const kind of ['create', 'edit', 'archive'] as const) {
     it.each([{ status: 200, role: 'admin' }, { status: 401, role: 'admin' }, { status: 200, role: 'participant' }, { status: 401, role: 'participant' }])(`${kind} late $status from admin A cannot affect new $role`, async ({ status, role }) => {
       let release!: (response: Response) => void; mutation = () => new Promise(resolve => { release = resolve; });
       const { user, client } = mount(); await start(kind, user); await user.click(confirmation(kind));
-      await waitFor(() => expect(calls(kind === 'create' ? 'POST' : kind === 'edit' ? 'PUT' : 'DELETE')).toHaveLength(1));
+      await waitFor(() => expect(calls(kind === 'create' ? 'POST' : 'PUT')).toHaveLength(1));
       await act(async () => { sessionStore.logout(); login(role, 9); });
       if (role === 'admin') expect(await screen.findByRole('button', { name: 'Новый маршрут' })).toBeInTheDocument();
       else expect(await screen.findByRole('heading', { name: 'Нет доступа' })).toBeInTheDocument();
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-      await act(async () => release(status === 401 ? json({}, 401) : kind === 'delete' ? new Response(null, { status: 204 }) : json(created, kind === 'create' ? 201 : 200)));
+      await act(async () => release(status === 401 ? json({}, 401) : json(created, kind === 'create' ? 201 : 200)));
       expect(sessionStore.getSnapshot().session?.userId).toBe(9); expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(client.getQueryCache().findAll({ queryKey: ['private', 'adminRoutes'] }).some(query => JSON.stringify(query.state.data).includes('Новый путь'))).toBe(false);
     });
     it(`${kind} unmount aborts locally and leaves a persistent uncertainty marker without replay`, async () => {
       mutation = () => new Promise(() => {}); const { user, router } = mount(); await start(kind, user); await user.click(confirmation(kind));
-      const request = calls(kind === 'create' ? 'POST' : kind === 'edit' ? 'PUT' : 'DELETE')[0]!;
+      const request = calls(kind === 'create' ? 'POST' : 'PUT')[0]!;
       await act(() => router.navigate('/routes')); expect(request.signal.aborted).toBe(true);
       await act(() => router.navigate('/staff/routes')); expect(await screen.findByText('Исход предыдущей операции неизвестен.')).toBeInTheDocument();
-      expect(calls(kind === 'create' ? 'POST' : kind === 'edit' ? 'PUT' : 'DELETE')).toHaveLength(1);
+      expect(calls(kind === 'create' ? 'POST' : 'PUT')).toHaveLength(1);
     });
   }
   it('admin draft is removed immediately on switch to participant B while a public GET is slow', async () => {

@@ -147,15 +147,11 @@ describe('routes HTTP integration with controlled test responses', () => {
     mount('/routes');
     const list = await screen.findByRole('list', { name: 'Список маршрутов' });
     const cards = within(list).getAllByRole('listitem');
-    expect(cards).toHaveLength(2);
+    expect(cards).toHaveLength(1);
     expect(cards[0]).toHaveTextContent('12,5 км');
     expect(cards[0]).toHaveTextContent('2025 год');
     expect(cards[0]).toHaveTextContent('Описание из тестового ответа');
-    expect(cards[1]).toHaveTextContent('27 км');
-    expect(cards[1]).toHaveTextContent('2024 год');
-    expect(cards[1]).toHaveTextContent('Неактивный');
-    expect(cards[1]).toHaveTextContent('Недоступен для регистрации');
-    expect(cards[1]).toHaveTextContent('Карта пока не предоставлена');
+    expect(list).not.toHaveTextContent(fixtures[1]!.name);
     expect(within(cards[0]!).getByRole('link', { name: /Открыть карту/ })).toHaveAttribute('href', `${window.location.origin}/test-assets/map.pdf`);
     const request = fetchMock.mock.calls[0]![0] as Request;
     expect(new URL(request.url).pathname).toBe('/api/v1/routes');

@@ -4,7 +4,8 @@ import type { PublicRoute } from '../routes/model';
 export type CreateRoute = components['schemas']['RouteCreateRequest'];
 export type UpdateRoute = Pick<components['schemas']['RouteUpdateRequest'], 'name' | 'distance' | 'description' | 'is_active'>;
 export type Kind = 'create' | 'edit' | 'delete';
-export type Fields = { year: string; name: string; distance: string; description: string; is_active: boolean };
+// activityAction is private editor intent, never a field in an API request.
+export type Fields = { year: string; name: string; distance: string; description: string; is_active: boolean; activityAction?: 'archive' | 'restore' };
 export type Errors = Partial<Record<keyof Fields, string>>;
 export const labels = { year: 'Год', name: 'Название', distance: 'Дистанция, км', description: 'Описание', is_active: 'Флаг активности' };
 export const emptyFields = (): Fields => ({ year: '', name: '', distance: '', description: '', is_active: true });
@@ -13,6 +14,7 @@ const decimal = (value: string) => !/\s/.test(value) && /^[+-]?(?:\d+(?:[.,]\d*)
 export function validate(values: Fields, kind: Kind): Errors {
   const errors: Errors = {};
   if (kind === 'delete') return errors;
+  if (values.activityAction) return errors;
   if (!values.name.trim()) errors.name = 'Введите название маршрута.';
   if (kind === 'create' && (!/^\d{4}$/.test(values.year) || Number(values.year) < 1900 || Number(values.year) > 2100)) errors.year = 'Укажите год от 1900 до 2100';
   if (!Number.isFinite(decimal(values.distance))) errors.distance = 'Введите конечное число дистанции.';

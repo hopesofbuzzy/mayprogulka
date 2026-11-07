@@ -10,8 +10,8 @@ test('public pages: routes, inactive route, API/HTML errors and UI 404', async (
   await page.goto('/'); await expect(page.getByRole('heading', { level: 1 })).toContainText(/Город становится\s*ближе/);
   await noOverflow(page); await representativeScreenshot(page, info, 'public');
   await page.goto('/routes');
-  await expect(page.getByRole('list', { name: 'Список маршрутов' }).getByRole('listitem')).toHaveCount(3);
-  await expect(page.getByText('Недоступен для регистрации', { exact: true })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Список маршрутов' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: 'Неактивный тестовый маршрут' })).toHaveCount(0);
   await noOverflow(page);
   for (const error of ['500', 'html'] as const) {
     api.routeMode = error; await page.reload();

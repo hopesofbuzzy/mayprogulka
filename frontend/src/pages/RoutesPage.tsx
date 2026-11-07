@@ -6,6 +6,7 @@ import styles from './RoutesPage.module.css';
 
 export function RoutesPage() {
   const query = useQuery(routesQuery);
+  const activeRoutes = query.data?.filter(route => route.is_active);
   return (
     <section className="contentPage container" aria-labelledby="routes-title">
       <p className={styles.eyebrow}>Навстречу прогулке</p>
@@ -20,10 +21,10 @@ export function RoutesPage() {
           <button className="primaryButton" onClick={() => void query.refetch()} disabled={query.isFetching}>{query.isFetching ? 'Повторяем запрос…' : 'Повторить'}</button>
         </div>
       )}
-      {query.isSuccess && query.data.length === 0 && <div className={styles.state} role="status"><h2>Маршрутов пока нет</h2><p>Когда организаторы добавят маршруты, они появятся здесь.</p></div>}
-      {query.data && query.data.length > 0 && (
+      {query.isSuccess && activeRoutes?.length === 0 && <div className={styles.state} role="status"><h2>Маршрутов пока нет</h2><p>Когда организаторы откроют маршруты, они появятся здесь.</p></div>}
+      {query.isSuccess && activeRoutes && activeRoutes.length > 0 && (
         <ul className={styles.list} aria-label="Список маршрутов">
-          {query.data.map((route) => {
+          {activeRoutes.map((route) => {
             const mapUrl = safeMapUrl(route.map_url);
             return (
               <li key={route.id} className={styles.card}>

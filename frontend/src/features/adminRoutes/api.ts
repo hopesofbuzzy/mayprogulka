@@ -9,15 +9,10 @@ import type { CreateRoute, Kind, UpdateRoute } from './model';
 function authorize(epoch: number) { if (!currentAdmin(epoch)) throw new StaleSessionError(); }
 export async function mutateRoute(kind: Kind, body: CreateRoute | UpdateRoute, id: number | undefined, epoch: number, signal: AbortSignal): Promise<PublicRoute | null> {
   authorize(epoch);
+  if (kind === 'delete') throw new AdminFailure('Безопасное физическое удаление маршрута через текущий API недоступно. Используйте архивацию.');
   if (kind !== 'create' && (id === undefined || !Number.isSafeInteger(id))) throw new AdminFailure('Откройте достоверный маршрут из списка.');
   try {
     const options = { signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) };
-    if (kind === 'delete') {
-      const { response } = await api.DELETE('/api/v1/admin/routes/{route_id}', { ...options, params: { path: { route_id: id! } } });
-      authorize(epoch);
-      if (signal.aborted || response.status !== 204) throw new Error('Unconfirmed delete response');
-      return null;
-    }
     const result = kind === 'create' ? await api.POST('/api/v1/admin/routes', { ...options, body: body as CreateRoute })
       : await api.PUT('/api/v1/admin/routes/{route_id}', { ...options, params: { path: { route_id: id! } }, body });
     authorize(epoch);

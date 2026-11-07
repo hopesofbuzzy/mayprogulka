@@ -40,9 +40,10 @@ export function useAdminWorkflow<V, B extends { id: number }>(epoch: number, def
     return (read()?.paused ?? []).some(item => item.kind !== 'delete' || (kind !== 'create' && item.baseline?.id === baseline?.id));
   }
   function open(kind: Kind, baseline?: B) {
-    if (read()?.editor || blocked(kind, baseline)) return;
+    if (read()?.editor || blocked(kind, baseline)) return false;
     resetAcknowledgement();
     update(state => ({ ...state, editor: { kind, baseline, values: definition.values(baseline), phase: 'edit', uncertain: false, earlierUncertain: false, errors: {}, message: '' } }));
+    return true;
   }
   function change<K extends keyof V>(field: K, value: V[K]) {
     resetAcknowledgement();
