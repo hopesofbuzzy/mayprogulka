@@ -1,0 +1,14 @@
+{
+  "event_name": "МАЙСКАЯ ПРОГУЛКА",
+  "year": 2026,
+  "event_date": "2026-05-17",
+  "event_date_display": "17 мая 2026 г.",
+  "distances": [
+    {"id": "d1", "label": "50 км (Классика)", "distance_km": 50},
+    {"id": "d2", "label": "33 км (Лесной)", "distance_km": 33},
+    {"id": "d3", "label": "18 км (Шарташ)", "distance_km": 18},
+    {"id": "d4", "label": "15 км (Городской)", "distance_km": 15}
+  ],
+  "organizer": "Оргкомитет «Майская прогулка» / УрФУ",
+  "age_calculation_base_year": 2026
+}
