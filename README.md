@@ -9,10 +9,10 @@ uv run <файл>
 uv add <библиотека>
 ```
 
-`src\` - модули бэкенда.
+`src\mayprogulka\` - модули бэкенда.
 
 `frontend\` - фронтенд.
 
-`src\mayprogulka\openapi.json` - структура API.
+`src\contracts\` - контракты и схемы.
 
 `src\mayprogulka\entrypoint.py` - вход в бэкенд-приложение.
