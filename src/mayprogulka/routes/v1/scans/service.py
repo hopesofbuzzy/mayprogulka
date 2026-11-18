@@ -3,7 +3,7 @@ from sqlalchemy import select, and_
 from fastapi import HTTPException
 from datetime import datetime
 
-from database.models import Map, Participant, Checkpoint, CheckpointPass, Route
+from mayprogulka.database.models import Map, Participant, Checkpoint, CheckpointPass, Route
 from mayprogulka.models.scans import (
     ScanResponse,
     BatchScanRequest,

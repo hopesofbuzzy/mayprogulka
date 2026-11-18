@@ -1002,6 +1002,205 @@
           }
         }
       }
+    },
+    "/api/v1/scans": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Scan Single",
+        "description": "Одиночное сканирование участника на КП организатором.\nОсновной эндпоинт для волонтёров на контрольных пунктах.",
+        "operationId": "scan_single_api_v1_scans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/scans/batch": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Scan Batch",
+        "description": "Пакетное сканирование (массовое чтение).\nКритически важен для скорости: обрабатывает массив barcode'ов одной транзакцией.",
+        "operationId": "scan_batch_api_v1_scans_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/scans/upload-file": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Upload Scan File",
+        "description": "Загрузка файла со списком штрих-кодов (офлайн-синхронизация).\nФайл должен быть текстовым, по одному barcode на строку.",
+        "operationId": "upload_scan_file_api_v1_scans_upload_file_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checkpoint_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Checkpoint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_scan_file_api_v1_scans_upload_file_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadFileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scans/self": {
+      "post": {
+        "tags": [
+          "scans"
+        ],
+        "summary": "Scan Self",
+        "description": "Самостоятельная отметка участника на КП по общему QR-коду.\nУчастник сканирует QR-код на КП (который содержит checkpoint_id),\nприложение отправляет запрос с токеном участника.",
+        "operationId": "scan_self_api_v1_scans_self_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelfScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1078,6 +1277,100 @@
         ],
         "title": "BatchMapResponse"
       },
+      "BatchScanError": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode",
+          "error"
+        ],
+        "title": "BatchScanError",
+        "description": "Ошибка обработки одного сканирования."
+      },
+      "BatchScanItem": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "title": "BatchScanItem",
+        "description": "Элемент пакетного сканирования."
+      },
+      "BatchScanRequest": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          },
+          "scans": {
+            "items": {
+              "$ref": "#/components/schemas/BatchScanItem"
+            },
+            "type": "array",
+            "title": "Scans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_id",
+          "scans"
+        ],
+        "title": "BatchScanRequest",
+        "description": "Пакетное сканирование."
+      },
+      "BatchScanResponse": {
+        "properties": {
+          "processed": {
+            "type": "integer",
+            "title": "Processed"
+          },
+          "already_passed": {
+            "type": "integer",
+            "title": "Already Passed"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/BatchScanError"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processed",
+          "already_passed",
+          "errors"
+        ],
+        "title": "BatchScanResponse",
+        "description": "Результат пакетного сканирования."
+      },
       "Body_upload_route_map_api_v1_routes__route_id__map_post": {
         "properties": {
           "file": {
@@ -1091,6 +1384,20 @@
           "file"
         ],
         "title": "Body_upload_route_map_api_v1_routes__route_id__map_post"
+      },
+      "Body_upload_scan_file_api_v1_scans_upload_file_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_scan_file_api_v1_scans_upload_file_post"
       },
       "CheckpointCreateRequest": {
         "properties": {
@@ -2047,6 +2354,139 @@
         "type": "object",
         "title": "RouteUpdateRequest"
       },
+      "ScanRequest": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode",
+          "checkpoint_id"
+        ],
+        "title": "ScanRequest",
+        "description": "Одиночное сканирование на КП."
+      },
+      "ScanResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "participant_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Name"
+          },
+          "checkpoint_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Name"
+          },
+          "passed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "barcode",
+          "message"
+        ],
+        "title": "ScanResponse",
+        "description": "Результат одиночного сканирования."
+      },
+      "SelfScanRequest": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_id"
+        ],
+        "title": "SelfScanRequest",
+        "description": "Самостоятельная отметка участника."
+      },
+      "SelfScanResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "checkpoint_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Name"
+          },
+          "passed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "SelfScanResponse",
+        "description": "Результат самостоятельной отметки."
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -2121,6 +2561,33 @@
         ],
         "title": "UnlinkedMapResponse",
         "description": "Непривязанная карта."
+      },
+      "UploadFileResponse": {
+        "properties": {
+          "processed": {
+            "type": "integer",
+            "title": "Processed"
+          },
+          "already_passed": {
+            "type": "integer",
+            "title": "Already Passed"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/BatchScanError"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processed",
+          "already_passed",
+          "errors"
+        ],
+        "title": "UploadFileResponse",
+        "description": "Результат загрузки файла со сканированиями."
       },
       "ValidationError": {
         "properties": {

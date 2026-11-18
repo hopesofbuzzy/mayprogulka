@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.database import get_db
-from database.models import User
+from mayprogulka.database.database import get_db
+from mayprogulka.database.models import User
 from mayprogulka.routes.v1.auth.service import require_role, get_current_user
 from mayprogulka.models.scans import (
     ScanRequest,
@@ -95,7 +95,7 @@ async def scan_self(
     """
     # Находим участника текущего пользователя на нужном маршруте
     from sqlalchemy import select
-    from database.models import Participant, Checkpoint
+    from mayprogulka.database.models import Participant, Checkpoint
     
     # Получаем checkpoint
     result = await db.execute(

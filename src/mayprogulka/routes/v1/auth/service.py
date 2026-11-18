@@ -7,8 +7,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from database.database import get_db
-from database.models import User
+from mayprogulka.database.database import get_db
+from mayprogulka.database.models import User
 
 # Настройки (в реальном проекте бери из .env!)
 SECRET_KEY = "super-secret-key-change-me-in-production"

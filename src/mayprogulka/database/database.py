@@ -43,7 +43,7 @@ class Base(DeclarativeBase):
 # Создание таблиц.
 async def create_db():
     # Импортируем модели, чтобы SQLAlchemy узнал о таблицах.
-    import database.models
+    import mayprogulka.database.models
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
@@ -62,7 +62,7 @@ async def close_db():
 # Создание учётной записи админа
 async def create_default_admin():
     """Создание администратора по умолчанию, если его нет."""
-    from database.models import User
+    from mayprogulka.database.models import User
     from mayprogulka.routes.v1.auth.service import get_password_hash
 
     async with AsyncSessionLocal() as session:

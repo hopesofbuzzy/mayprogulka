@@ -7,7 +7,7 @@ from mayprogulka.routes.v1.maps.router import router as maps_router
 from mayprogulka.routes.v1.typist.router import router as typist_router
 from mayprogulka.routes.v1.scans.router import router as scans_router
 from contextlib import asynccontextmanager
-from database.database import create_db, create_default_admin
+from mayprogulka.database.database import create_db, create_default_admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

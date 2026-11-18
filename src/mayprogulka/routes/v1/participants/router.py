@@ -4,8 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 import uuid
 
-from database.database import get_db
-from database.models import User, Participant, Route
+from mayprogulka.database.database import get_db
+from mayprogulka.database.models import User, Participant, Route
 from mayprogulka.models.participants import (
     ParticipantRegisterRequest,
     ParticipantRegisterResponse,

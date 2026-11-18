@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from database.models import Route
+from mayprogulka.database.models import Route
 
 
 class RouteService:
@@ -73,7 +73,7 @@ class RouteService:
         
         # Проверяем, есть ли участники на этом маршруте
         from sqlalchemy import func
-        from database.models import Participant
+        from mayprogulka.database.models import Participant
         
         result = await db.execute(
             select(func.count(Participant.id)).where(Participant.route_id == route_id)

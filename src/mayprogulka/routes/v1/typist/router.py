@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.database import get_db
-from database.models import User
+from mayprogulka.database.database import get_db
+from mayprogulka.database.models import User
 from mayprogulka.routes.v1.auth.service import require_role
 from mayprogulka.models.typist import (
     PaperFormRequest,

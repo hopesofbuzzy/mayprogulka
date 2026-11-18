@@ -4,8 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 
-from database.database import get_db
-from database.models import User
+from mayprogulka.database.database import get_db
+from mayprogulka.database.models import User
 from .service import get_password_hash, verify_password, create_access_token, get_current_user
 from ....models.auth import RegisterRequest, LoginRequest, TokenResponse
 

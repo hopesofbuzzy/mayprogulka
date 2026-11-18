@@ -3,7 +3,7 @@ from sqlalchemy import select
 from fastapi import HTTPException
 import uuid
 
-from database.models import Participant, Route, Map
+from mayprogulka.database.models import Participant, Route, Map
 from mayprogulka.models.typist import (
     PaperFormRequest,
     PaperFormResponse,

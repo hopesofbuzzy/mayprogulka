@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.database import get_db
+from mayprogulka.database.database import get_db
 from mayprogulka.routes.v1.auth.service import require_admin
 from mayprogulka.models.maps import (
     MapCreateRequest,

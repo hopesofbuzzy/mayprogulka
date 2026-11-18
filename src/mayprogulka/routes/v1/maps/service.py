@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException
 
-from database.models import Map, Participant, Route
+from mayprogulka.database.models import Map, Participant, Route
 from mayprogulka.models.maps import (
     MapCreateRequest,
     MapResponse,

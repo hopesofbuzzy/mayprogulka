@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from fastapi import HTTPException
 
-from database.models import Checkpoint, CheckpointPass
+from mayprogulka.database.models import Checkpoint, CheckpointPass
 from mayprogulka.models.checkpoints import (
     CheckpointCreateRequest,
     CheckpointUpdateRequest,
