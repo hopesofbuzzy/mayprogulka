@@ -15,6 +15,12 @@ uv add <библиотека>
 ## Структура
 `src\mayprogulka\` - модули бэкенда.
 
+`src\mayprogulka\routes\v1\` - эндпоинты.
+
+`src\mayprogulka\database` - база данных.
+
+`src\mayprogulka\models` - pydantic-модели
+
 `frontend\` - фронтенд.
 
 `src\contracts\` - контракты и схемы.
