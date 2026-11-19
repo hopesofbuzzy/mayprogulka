@@ -1,0 +1,182 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Страница-1" id="DwdZVnNLrcCHQPI6F3M8">
+    <mxGraphModel dx="1776" dy="1076" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-2" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.home;" value="Главная" vertex="1">
+          <mxGeometry height="70" width="120" x="50" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-26" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-3" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.profile;" value="Личный кабинет" vertex="1">
+          <mxGeometry height="70" width="120" x="740" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-4" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.info;" value="Как участвовать" vertex="1">
+          <mxGeometry height="70" width="120" x="330" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-5" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.page;" value="Маршруты" vertex="1">
+          <mxGeometry height="70" width="120" x="190" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-7" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.faq;" value="Вопросы" vertex="1">
+          <mxGeometry height="70" width="120" x="465" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-11" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.page;" value="Страница организатора (organizer)" vertex="1">
+          <mxGeometry height="70" width="120" x="640" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-12" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-13" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.page;" value="Страница администратора (admin)" vertex="1">
+          <mxGeometry height="70" width="120" x="640" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-14" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-16" connectable="0" parent="kYnmxQODFk6_FKAPMlr6-14" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="Расширение функционала по иерархии" vertex="1">
+          <mxGeometry relative="1" x="-0.1722" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-17" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.page;" value="Страница registrar" vertex="1">
+          <mxGeometry height="70" width="120" x="840" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-18" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.about_us;" value="О прогулке" vertex="1">
+          <mxGeometry height="70" width="120" x="600" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-19" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Изменение ролей (назначение marker, typist,registrar ролей, назначение КП для marker)" vertex="1">
+          <mxGeometry height="70" width="120" x="414" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-20" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-22" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.chart;" value="Статистика мероприятия" vertex="1">
+          <mxGeometry height="70" width="120" x="414" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-23" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-24" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Создание маршрутов и КП" vertex="1">
+          <mxGeometry height="70" width="120" x="414" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-25" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-27" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Форма одноразового сканирования для отметки присутствия участника" vertex="1">
+          <mxGeometry height="70" width="120" x="840" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-28" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-29" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Форма многоразового сканирования с кэшированием, если оффлайн" vertex="1">
+          <mxGeometry height="70" width="120" x="980" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-31" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" target="kYnmxQODFk6_FKAPMlr6-29">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="420" />
+              <mxPoint x="1040" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-32" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.page;" value="Страница typist" vertex="1">
+          <mxGeometry height="70" width="120" x="1210" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-35" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-32">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="250" />
+              <mxPoint x="1270" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-36" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Форма сопоставления скана анкеты (участника) и скана его карты" vertex="1">
+          <mxGeometry height="70" width="120" x="1210" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-37" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-36">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-38" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.page;" value="Страница marker" vertex="1">
+          <mxGeometry height="70" width="120" x="1400" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-39" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Формы сканирования как у registrar, но для отметок на КП" vertex="1">
+          <mxGeometry height="70" width="120" x="1400" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-40" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-39">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-41" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-38">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="250" />
+              <mxPoint x="1460" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-57" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-55">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-42" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.profile;" value="Страница пользователя" vertex="1">
+          <mxGeometry height="70" width="120" x="1580" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-45" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-42">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="250" />
+              <mxPoint x="1640" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-47" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Форма добавления участников (заполнение анкеты)" vertex="1">
+          <mxGeometry height="70" width="120" x="1580" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-48" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-47">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-66" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-50" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1640" y="670" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-67" connectable="0" parent="kYnmxQODFk6_FKAPMlr6-66" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="Отправка анкеты на почту" vertex="1">
+          <mxGeometry relative="1" x="-0.184" y="-4" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-50" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.payment;" value="Payment" vertex="1">
+          <mxGeometry height="70" width="120" x="1580" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-51" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-55" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.page;" value="Список участников" vertex="1">
+          <mxGeometry height="70" width="120" x="1730" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-61" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-59">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-63" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1930" y="670" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-58" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.user;" value="Страница участника" vertex="1">
+          <mxGeometry height="70" width="120" x="1730" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-59" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.text;" value="Номер для скана (QR)" vertex="1">
+          <mxGeometry height="70" width="120" x="1730" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-60" edge="1" parent="1" source="kYnmxQODFk6_FKAPMlr6-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="kYnmxQODFk6_FKAPMlr6-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-62" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.form;" value="Самосканирование" vertex="1">
+          <mxGeometry height="70" width="120" x="1870" y="671" as="geometry" />
+        </mxCell>
+        <mxCell id="kYnmxQODFk6_FKAPMlr6-64" parent="1" style="html=1;whiteSpace=wrap;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=12;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;sketch=0;shape=mxgraph.sitemap.success;" value="Success" vertex="1">
+          <mxGeometry height="70" width="120" x="1580" y="671" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
