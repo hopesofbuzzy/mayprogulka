@@ -5,13 +5,16 @@ from sqlalchemy.orm import selectinload
 import uuid
 
 from mayprogulka.database.database import get_db
-from mayprogulka.database.models import User, Participant, Route
+from mayprogulka.database.models import User, Participant, Route, Checkpoint, CheckpointPass
+from mayprogulka.database.enums import Role, role_value
 from mayprogulka.models.participants import (
     ParticipantRegisterRequest,
     ParticipantRegisterResponse,
     ParticipantItem,
     ParticipantListResponse,
     ParticipantListItem,
+    ParticipantPassItem,
+    ParticipantPassListResponse,
     PaymentRequest,
     PaymentResponse,
 )
@@ -120,6 +123,53 @@ async def get_my_participants(
         )
     
     return ParticipantListResponse(participants=participants)
+
+
+@router.get("/{participant_id}/passes", response_model=ParticipantPassListResponse)
+async def get_my_participant_passes(
+    participant_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Отметки о прохождении КП для своей записи участника.
+
+    Участник видит только свои отметки. Администратор видит любые.
+    """
+    result = await db.execute(
+        select(Participant).where(Participant.id == participant_id)
+    )
+    participant = result.scalar_one_or_none()
+
+    is_admin = role_value(current_user.role) == Role.ADMIN.value
+    if participant is None or (
+        participant.user_id != current_user.id and not is_admin
+    ):
+        raise HTTPException(status_code=404, detail="Участник не найден")
+
+    result = await db.execute(
+        select(CheckpointPass, Checkpoint)
+        .join(Checkpoint, CheckpointPass.checkpoint_id == Checkpoint.id)
+        .where(CheckpointPass.participant_id == participant.id)
+        .order_by(CheckpointPass.passed_at)
+    )
+
+    return ParticipantPassListResponse(
+        participant_id=participant.id,
+        passes=[
+            ParticipantPassItem(
+                checkpoint_id=checkpoint.id,
+                checkpoint_name=checkpoint.name,
+                checkpoint_order=checkpoint.order,
+                route_id=checkpoint.route_id,
+                address=checkpoint.address,
+                is_start=checkpoint.is_start,
+                is_finish=checkpoint.is_finish,
+                passed_at=checkpoint_pass.passed_at,
+            )
+            for checkpoint_pass, checkpoint in result.all()
+        ],
+    )
 
 
 @router.post("/{participant_id}/pay", response_model=PaymentResponse)

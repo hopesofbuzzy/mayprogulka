@@ -48,7 +48,7 @@ class TypistService:
         
         # Создаём участника с оплаченным статусом
         participant = Participant(
-            user_id=0,  # Временный пользователь для бумажных анкет
+            user_id=None,  # Бумажная анкета может не иметь аккаунта
             route_id=data.route_id,
             form_id=form_id,
             surname=data.surname,

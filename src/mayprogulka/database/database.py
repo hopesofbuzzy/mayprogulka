@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
 )
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import DeclarativeBase
+
+from .enums import ALL_ROLES, Role
 
 
 # Путь к файлу базы данных.
@@ -43,10 +45,21 @@ class Base(DeclarativeBase):
 # Создание таблиц.
 async def create_db():
     # Импортируем модели, чтобы SQLAlchemy узнал о таблицах.
-    import mayprogulka.database.models
+    import mayprogulka.database.models  # noqa: F401
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        # Мягкая миграция: раньше новым пользователям выдавалась роль
+        # "participant". Теперь participant — это запись в таблице
+        # participants, а базовая роль аккаунта называется "user".
+        allowed = ", ".join(f"'{role}'" for role in ALL_ROLES)
+        await connection.execute(
+            text(
+                f"UPDATE users SET role = :user_role "
+                f"WHERE role IS NULL OR role NOT IN ({allowed})"
+            ),
+            {"user_role": Role.USER.value},
+        )
 
 
 # Получение сессии для работы с БД.
@@ -81,7 +94,7 @@ async def create_default_admin():
             username=ADMIN_USERNAME,
             email=ADMIN_EMAIL,
             hashed_password=get_password_hash(ADMIN_PASSWORD),
-            role="admin",
+            role=Role.ADMIN.value,
             is_active=True,
         )
         session.add(admin)

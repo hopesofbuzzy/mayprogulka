@@ -91,8 +91,9 @@ async def delete_route(
 async def upload_route_map(
     route_id: int,
     file: UploadFile = File(...),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Загрузить файл карты маршрута."""
+    """Загрузить файл карты маршрута (только администратор)."""
     map_url = await RouteService.upload_map_file(db, route_id, file)
     return MapUploadResponse(map_url=map_url)

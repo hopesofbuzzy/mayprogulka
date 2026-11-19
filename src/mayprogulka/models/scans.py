@@ -45,8 +45,14 @@ class BatchScanResponse(BaseModel):
 
 
 class SelfScanRequest(BaseModel):
-    """Самостоятельная отметка участника."""
+    """Самостоятельная отметка участника.
+
+    ``participant_id``/``form_id`` нужны, если на аккаунте несколько
+    участников на одном маршруте (например, семья).
+    """
     checkpoint_id: int
+    participant_id: Optional[int] = None
+    form_id: Optional[str] = None
 
 
 class SelfScanResponse(BaseModel):

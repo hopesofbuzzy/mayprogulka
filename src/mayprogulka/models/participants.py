@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 
@@ -61,3 +61,21 @@ class PaymentResponse(BaseModel):
     status: str  # success, pending, failed
     payment_id: str
     form_pdf_url: Optional[str] = None
+
+
+class ParticipantPassItem(BaseModel):
+    """Отметка о прохождении КП, видимая участнику в личном кабинете."""
+
+    checkpoint_id: int
+    checkpoint_name: str
+    checkpoint_order: int
+    route_id: int
+    address: str
+    is_start: bool
+    is_finish: bool
+    passed_at: datetime
+
+
+class ParticipantPassListResponse(BaseModel):
+    participant_id: int
+    passes: list[ParticipantPassItem]

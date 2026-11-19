@@ -3,7 +3,7 @@ from sqlalchemy import select, and_
 from fastapi import HTTPException
 from datetime import datetime
 
-from mayprogulka.database.models import Map, Participant, Checkpoint, CheckpointPass, Route
+from mayprogulka.database.models import Map, Participant, Checkpoint, CheckpointPass, Route, User
 from mayprogulka.models.scans import (
     ScanResponse,
     BatchScanRequest,
@@ -12,6 +12,7 @@ from mayprogulka.models.scans import (
     BatchScanItem,
     SelfScanResponse,
 )
+from mayprogulka.routes.v1.marker.service import MarkerService
 
 
 class ScanService:
@@ -75,6 +76,7 @@ class ScanService:
         barcode: str,
         checkpoint_id: int,
         scanned_at: datetime | None = None,
+        actor: User | None = None,
     ) -> ScanResponse:
         """
         Одиночное сканирование на КП.
@@ -87,6 +89,10 @@ class ScanService:
         checkpoint = result.scalar_one_or_none()
         if not checkpoint:
             raise HTTPException(status_code=404, detail="КП не найден")
+
+        # 1.1. Маркер может сканировать только назначенные ему КП.
+        if actor is not None:
+            await MarkerService.ensure_can_scan(db, actor, checkpoint_id)
         
         # 2. Ищем участника по barcode
         map_obj, participant = await ScanService._find_participant_by_barcode(db, barcode)
@@ -128,6 +134,7 @@ class ScanService:
     async def scan_batch(
         db: AsyncSession,
         data: BatchScanRequest,
+        actor: User | None = None,
     ) -> BatchScanResponse:
         """
         Пакетное сканирование. Обрабатывает массив barcode'ов одной транзакцией.
@@ -144,6 +151,10 @@ class ScanService:
         checkpoint = result.scalar_one_or_none()
         if not checkpoint:
             raise HTTPException(status_code=404, detail="КП не найден")
+
+        # Маркер может сканировать только назначенные ему КП.
+        if actor is not None:
+            await MarkerService.ensure_can_scan(db, actor, data.checkpoint_id)
         
         # Обрабатываем каждый barcode
         for scan_item in data.scans:
@@ -261,6 +272,7 @@ class ScanService:
         db: AsyncSession,
         checkpoint_id: int,
         barcodes: list[str],
+        actor: User | None = None,
     ) -> dict:
         """
         Обработка файла со списком штрих-кодов (офлайн-синхронизация).
@@ -270,7 +282,7 @@ class ScanService:
             checkpoint_id=checkpoint_id,
             scans=[BatchScanItem(barcode=b) for b in barcodes],
         )
-        result = await ScanService.scan_batch(db, batch_data)
+        result = await ScanService.scan_batch(db, batch_data, actor=actor)
         return {
             "processed": result.processed,
             "already_passed": result.already_passed,

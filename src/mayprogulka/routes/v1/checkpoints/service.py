@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from fastapi import HTTPException
 
-from mayprogulka.database.models import Checkpoint, CheckpointPass
+from mayprogulka.database.models import Checkpoint, CheckpointPass, MarkerAssignment
 from mayprogulka.models.checkpoints import (
     CheckpointCreateRequest,
     CheckpointUpdateRequest,
@@ -82,17 +82,20 @@ class CheckpointService:
             select(func.count(CheckpointPass.id))
             .where(CheckpointPass.checkpoint_id == checkpoint_id)
         )
-        passes_count = passes_count_result.scalar()
+        passes_count = passes_count_result.scalar() or 0
 
-        if not passes_count:
-            raise HTTPException(status_code=404, detail="Количество пропусков не обнаружено")
-        
         if passes_count > 0:
             raise HTTPException(
                 status_code=403,
                 detail="Нельзя удалить КП, по которому уже есть отметки участников"
             )
-        
+
+        # Снимаем назначения маркерам, чтобы не оставлять висячие записи.
+        await db.execute(
+            delete(MarkerAssignment).where(
+                MarkerAssignment.checkpoint_id == checkpoint_id
+            )
+        )
         await db.delete(checkpoint)
         await db.commit()
     

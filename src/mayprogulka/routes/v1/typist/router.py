@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mayprogulka.database.database import get_db
 from mayprogulka.database.models import User
-from mayprogulka.routes.v1.auth.service import require_role
+from mayprogulka.routes.v1.auth.service import require_typist
 from mayprogulka.models.typist import (
     PaperFormRequest,
     PaperFormResponse,
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/typist", tags=["typist"])
 @router.post("/paper-form", response_model=PaperFormResponse, status_code=201)
 async def create_from_paper_form(
     data: PaperFormRequest,
-    current_user: User = Depends(require_role("typist", "admin")),
+    current_user: User = Depends(require_typist),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -32,7 +32,7 @@ async def create_from_paper_form(
 @router.post("/match", response_model=MatchResponse)
 async def match_map_to_participant(
     data: MatchRequest,
-    current_user: User = Depends(require_role("typist", "admin")),
+    current_user: User = Depends(require_typist),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -45,7 +45,7 @@ async def match_map_to_participant(
 @router.get("/unlinked", response_model=UnlinkedMapListResponse)
 async def get_unlinked_maps(
     limit: int = 100,
-    current_user: User = Depends(require_role("typist", "admin")),
+    current_user: User = Depends(require_typist),
     db: AsyncSession = Depends(get_db),
 ):
     """
