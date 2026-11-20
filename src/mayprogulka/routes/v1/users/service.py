@@ -101,6 +101,12 @@ class UserService:
         if target is None:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
 
+        if target.id == actor.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Нельзя изменить собственную роль",
+            )
+
         target_role = role_value(target.role)
         new_role_value = role_value(new_role)
 

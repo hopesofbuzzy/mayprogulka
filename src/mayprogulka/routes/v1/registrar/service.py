@@ -1,10 +1,16 @@
+from datetime import datetime
+
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from mayprogulka.database.models import Participant, Route
-from mayprogulka.models.registrar import RegistrarFormItem, RegistrarFormListResponse
+from mayprogulka.database.models import Map, Participant, Route
+from mayprogulka.models.registrar import (
+    IssueCardResponse,
+    RegistrarFormItem,
+    RegistrarFormListResponse,
+)
 
 
 class RegistrarService:
@@ -54,6 +60,7 @@ class RegistrarService:
         query: str | None = None,
         route_id: int | None = None,
         limit: int = 50,
+        offset: int = 0,
     ) -> RegistrarFormListResponse:
         """Поиск анкет на экране старта по номеру, ФИО, телефону или email."""
         conditions = []
@@ -83,7 +90,9 @@ class RegistrarService:
 
         total = (await db.execute(count_query)).scalar_one()
         result = await db.execute(
-            data_query.order_by(Participant.surname, Participant.name).limit(limit)
+            data_query.order_by(Participant.surname, Participant.name)
+            .limit(limit)
+            .offset(offset)
         )
 
         return RegistrarFormListResponse(
@@ -93,4 +102,83 @@ class RegistrarService:
             ],
             total=total,
             limit=limit,
+            offset=offset,
+        )
+
+    @staticmethod
+    async def issue_card(
+        db: AsyncSession,
+        participant_id: int,
+        barcode: str | None = None,
+    ) -> IssueCardResponse:
+        """Выдать карту и стартовать участника одной транзакцией.
+
+        Повторный вызов для уже стартовавшего участника идемпотентен:
+        200 ``already_started``.
+        """
+        result = await db.execute(
+            select(Participant)
+            .options(selectinload(Participant.maps))
+            .where(Participant.id == participant_id)
+        )
+        participant = result.scalar_one_or_none()
+        if participant is None:
+            raise HTTPException(status_code=404, detail="Участник не найден")
+
+        if participant.payment_status != "paid":
+            raise HTTPException(
+                status_code=409,
+                detail="Участие не оплачено: выдача карты запрещена",
+            )
+
+        current_map = participant.maps[0] if participant.maps else None
+        if participant.has_started:
+            return IssueCardResponse(
+                status="already_started",
+                participant_id=participant.id,
+                form_id=participant.form_id,
+                barcode=current_map.barcode if current_map else None,
+                started_at=participant.started_at,
+                message="Участник уже стартовал",
+            )
+
+        map_obj: Map | None = None
+        if barcode is not None:
+            if current_map is not None and current_map.barcode != barcode:
+                raise HTTPException(
+                    status_code=409,
+                    detail="У участника уже есть другая карта",
+                )
+            result = await db.execute(select(Map).where(Map.barcode == barcode))
+            map_obj = result.scalar_one_or_none()
+            if map_obj is None:
+                raise HTTPException(status_code=404, detail="Карта не найдена")
+            if map_obj.participant_id is not None and map_obj.participant_id != participant.id:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Карта уже привязана к другому участнику",
+                )
+        elif current_map is not None:
+            map_obj = current_map
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail="У участника нет карты: передайте barcode",
+            )
+
+        map_obj.participant_id = participant.id
+        participant.has_started = True
+        participant.started_at = datetime.utcnow()
+
+        # Привязка карты и старт — одна транзакция.
+        await db.commit()
+        await db.refresh(participant)
+
+        return IssueCardResponse(
+            status="issued",
+            participant_id=participant.id,
+            form_id=participant.form_id,
+            barcode=map_obj.barcode,
+            started_at=participant.started_at,
+            message="Карта выдана, участник стартовал",
         )

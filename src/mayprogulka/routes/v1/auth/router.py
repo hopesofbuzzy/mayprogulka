@@ -13,7 +13,12 @@ from ....models.auth import RegisterRequest, LoginRequest, TokenResponse, MeResp
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=201,
+    openapi_extra={"x-roles": ["public"]},
+)
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     # 1. Проверяем, нет ли уже такого юзера
     result = await db.execute(
@@ -37,7 +42,11 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     token = create_access_token({"user_id": new_user.id})
     return TokenResponse(access_token=token, user_id=new_user.id, role=new_user.role)
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    openapi_extra={"x-roles": ["public"]},
+)
 async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     # 1. Ищем юзера
     result = await db.execute(select(User).where(User.username == data.username))
@@ -51,7 +60,20 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     token = create_access_token({"user_id": user.id})
     return TokenResponse(access_token=token, user_id=user.id, role=user.role)
 
-@router.get("/me", response_model=MeResponse)
+@router.get(
+    "/me",
+    response_model=MeResponse,
+    openapi_extra={
+        "x-roles": [
+            "user",
+            "typist",
+            "registrar",
+            "marker",
+            "organizer",
+            "admin",
+        ]
+    },
+)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Проверка: работает ли защита. Доступно только с токеном."""
     return MeResponse(

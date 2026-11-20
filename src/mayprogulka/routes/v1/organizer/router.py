@@ -9,6 +9,8 @@ from mayprogulka.models.marker import (
     MarkerListResponse,
 )
 from mayprogulka.models.organizer import (
+    CheckpointAssignRequest,
+    CheckpointAssignmentResponse,
     EventStatsResponse,
     OrganizerParticipantListResponse,
 )
@@ -19,9 +21,14 @@ from .service import OrganizerService
 router = APIRouter(prefix="/organizer", tags=["organizer"])
 
 
-@router.get("/stats", response_model=EventStatsResponse)
+@router.get(
+    "/stats",
+    response_model=EventStatsResponse,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
 async def get_event_stats(
     route_id: int | None = None,
+    year: int | None = None,
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
 ):
@@ -29,17 +36,21 @@ async def get_event_stats(
     Статистика мероприятия: зарегистрированы, оплатили, стартовали,
     финишировали, находятся на маршруте. Плюс разбивка по маршрутам и КП.
     """
-    return await OrganizerService.get_stats(db, route_id=route_id)
+    return await OrganizerService.get_stats(db, route_id=route_id, year=year)
 
 
-@router.get("/participants", response_model=OrganizerParticipantListResponse)
+@router.get(
+    "/participants",
+    response_model=OrganizerParticipantListResponse,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
 async def list_participants(
     route_id: int | None = None,
     payment_status: str | None = Query(default=None, pattern="^(paid|unpaid)$"),
     has_started: bool | None = None,
     has_finished: bool | None = None,
     search: str | None = Query(default=None, max_length=100),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
@@ -57,7 +68,11 @@ async def list_participants(
     )
 
 
-@router.get("/markers", response_model=MarkerListResponse)
+@router.get(
+    "/markers",
+    response_model=MarkerListResponse,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
 async def list_markers(
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
@@ -69,6 +84,7 @@ async def list_markers(
 @router.get(
     "/markers/{marker_id}/assignments",
     response_model=MarkerAssignmentsResponse,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
 )
 async def get_marker_assignments(
     marker_id: int,
@@ -82,6 +98,7 @@ async def get_marker_assignments(
 @router.put(
     "/markers/{marker_id}/assignments",
     response_model=MarkerAssignmentsResponse,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
 )
 async def replace_marker_assignments(
     marker_id: int,
@@ -100,3 +117,43 @@ async def replace_marker_assignments(
         marker_id=marker_id,
         checkpoint_ids=data.checkpoint_ids,
     )
+
+
+@router.post(
+    "/checkpoints/{checkpoint_id}/assign",
+    response_model=CheckpointAssignmentResponse,
+    status_code=201,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
+async def assign_checkpoint(
+    checkpoint_id: int,
+    data: CheckpointAssignRequest,
+    current_user: User = Depends(require_organizer),
+    db: AsyncSession = Depends(get_db),
+):
+    """Назначить маркера на КП: 201 / 404 / 422 / 409."""
+    return await OrganizerService.assign_checkpoint(
+        db,
+        checkpoint_id=checkpoint_id,
+        user_id=data.user_id,
+    )
+
+
+@router.delete(
+    "/checkpoints/{checkpoint_id}/assign/{user_id}",
+    status_code=204,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
+async def unassign_checkpoint(
+    checkpoint_id: int,
+    user_id: int,
+    current_user: User = Depends(require_organizer),
+    db: AsyncSession = Depends(get_db),
+):
+    """Снять назначение: 204 / 404."""
+    await OrganizerService.unassign_checkpoint(
+        db,
+        checkpoint_id=checkpoint_id,
+        user_id=user_id,
+    )
+    return None

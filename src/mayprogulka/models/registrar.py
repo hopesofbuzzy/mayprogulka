@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -31,3 +31,20 @@ class RegistrarFormListResponse(BaseModel):
     forms: list[RegistrarFormItem]
     total: int
     limit: int
+    offset: int = 0
+
+
+class IssueCardRequest(BaseModel):
+    """Выдача карты и старт участника."""
+
+    participant_id: int
+    barcode: Optional[str] = None
+
+
+class IssueCardResponse(BaseModel):
+    status: str
+    participant_id: int
+    form_id: str
+    barcode: Optional[str] = None
+    started_at: Optional[datetime] = None
+    message: str

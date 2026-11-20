@@ -19,7 +19,11 @@ router = APIRouter(tags=["checkpoints"])
 
 # ==================== ПУБЛИЧНЫЕ ЭНДПОИНТЫ ====================
 
-@router.get("/checkpoints", response_model=CheckpointListResponse)
+@router.get(
+    "/checkpoints",
+    response_model=CheckpointListResponse,
+    openapi_extra={"x-roles": ["public"]},
+)
 async def get_checkpoints(
     route_id: int,
     db: AsyncSession = Depends(get_db),
@@ -36,6 +40,7 @@ async def get_checkpoints(
     response_model=CheckpointResponse,
     status_code=201,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def create_checkpoint(
     data: CheckpointCreateRequest,
@@ -49,6 +54,7 @@ async def create_checkpoint(
     "/admin/checkpoints/{checkpoint_id}",
     response_model=CheckpointResponse,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def update_checkpoint(
     checkpoint_id: int,
@@ -63,6 +69,7 @@ async def update_checkpoint(
     "/admin/checkpoints/{checkpoint_id}",
     status_code=204,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def delete_checkpoint(
     checkpoint_id: int,
@@ -78,6 +85,7 @@ async def delete_checkpoint(
     response_model=BatchCheckpointResponse,
     status_code=201,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def create_checkpoints_batch(
     data: BatchCheckpointCreateRequest,

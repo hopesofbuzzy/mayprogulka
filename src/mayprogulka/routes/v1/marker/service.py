@@ -52,6 +52,51 @@ class MarkerService:
         )
 
     @staticmethod
+    async def list_checkpoints(
+        db: AsyncSession,
+        actor: User,
+        route_id: int | None = None,
+    ) -> MarkerAssignmentsResponse:
+        """КП, доступные актору.
+
+        Маркер видит только назначенные ему КП. Организатор и
+        администратор видят все КП (с необязательным фильтром route_id).
+        """
+        query = (
+            select(Checkpoint, Route.name)
+            .join(Route, Checkpoint.route_id == Route.id)
+        )
+
+        if role_value(actor.role) == Role.MARKER.value:
+            query = query.join(
+                MarkerAssignment,
+                MarkerAssignment.checkpoint_id == Checkpoint.id,
+            ).where(MarkerAssignment.user_id == actor.id)
+
+        if route_id is not None:
+            query = query.where(Checkpoint.route_id == route_id)
+
+        result = await db.execute(query.order_by(Route.name, Checkpoint.order))
+
+        return MarkerAssignmentsResponse(
+            marker_id=actor.id,
+            checkpoints=[
+                MarkerCheckpointItem(
+                    checkpoint_id=checkpoint.id,
+                    route_id=checkpoint.route_id,
+                    route_name=route_name,
+                    name=checkpoint.name,
+                    address=checkpoint.address,
+                    coordinates=checkpoint.coordinates,
+                    order=checkpoint.order,
+                    is_start=checkpoint.is_start,
+                    is_finish=checkpoint.is_finish,
+                )
+                for checkpoint, route_name in result.all()
+            ],
+        )
+
+    @staticmethod
     async def list_markers(db: AsyncSession) -> MarkerListResponse:
         """Список пользователей с ролью marker и числом назначенных КП."""
         result = await db.execute(
@@ -126,13 +171,17 @@ class MarkerService:
         return await MarkerService.get_assignments(db, marker_id)
 
     @staticmethod
-    async def ensure_can_scan(
+    async def ensure_checkpoint_access(
         db: AsyncSession,
         user: User,
         checkpoint_id: int,
     ) -> None:
-        """Проверить, что маркеру назначен этот КП. Администратор может всё."""
-        if role_value(user.role) == Role.ADMIN.value:
+        """Проверить доступ к КП.
+
+        Маркер — только назначенные КП (иначе 403). Организатор и
+        администратор сканируют на любом КП.
+        """
+        if role_value(user.role) in {Role.ADMIN.value, Role.ORGANIZER.value}:
             return
 
         result = await db.execute(
@@ -146,3 +195,6 @@ class MarkerService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Этот контрольный пункт не назначен вам",
             )
+
+    # Старое имя оставлено для совместимости с существующим кодом.
+    ensure_can_scan = ensure_checkpoint_access

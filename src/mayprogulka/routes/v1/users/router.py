@@ -14,10 +14,14 @@ from mayprogulka.models.users import (
 from mayprogulka.routes.v1.auth.service import require_admin, require_organizer
 from .service import UserService
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/admin/users", tags=["users"])
 
 
-@router.get("", response_model=UserListResponse)
+@router.get(
+    "",
+    response_model=UserListResponse,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
 async def list_users(
     role: Role | None = None,
     search: str | None = Query(default=None, max_length=100),
@@ -42,7 +46,11 @@ async def list_users(
     )
 
 
-@router.get("/roles", response_model=RolesResponse)
+@router.get(
+    "/roles",
+    response_model=RolesResponse,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
 async def list_available_roles(
     current_user: User = Depends(require_organizer),
 ):
@@ -50,7 +58,11 @@ async def list_available_roles(
     return RolesResponse(roles=UserService.assignable_roles(current_user))
 
 
-@router.patch("/{user_id}/role", response_model=UserItem)
+@router.patch(
+    "/{user_id}/role",
+    response_model=UserItem,
+    openapi_extra={"x-roles": ["organizer", "admin"]},
+)
 async def assign_role(
     user_id: int,
     data: RoleUpdateRequest,
@@ -73,7 +85,11 @@ async def assign_role(
     return UserItem.model_validate(user)
 
 
-@router.patch("/{user_id}/status", response_model=UserItem)
+@router.patch(
+    "/{user_id}/status",
+    response_model=UserItem,
+    openapi_extra={"x-roles": ["admin"]},
+)
 async def set_user_status(
     user_id: int,
     data: UserStatusUpdateRequest,

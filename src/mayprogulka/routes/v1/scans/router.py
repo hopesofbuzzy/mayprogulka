@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mayprogulka.database.database import get_db
 from mayprogulka.database.models import Checkpoint, Participant, User
-from mayprogulka.routes.v1.auth.service import get_current_user, require_marker
+from mayprogulka.database.enums import Role, role_value
+from mayprogulka.routes.v1.auth.service import require_marker, require_user
 from mayprogulka.models.scans import (
     ScanRequest,
     ScanResponse,
@@ -21,7 +22,11 @@ router = APIRouter(prefix="/scans", tags=["scans"])
 
 # ==================== СКАНИРОВАНИЕ МАРКЕРОМ ====================
 
-@router.post("", response_model=ScanResponse)
+@router.post(
+    "",
+    response_model=ScanResponse,
+    openapi_extra={"x-roles": ["marker", "organizer", "admin"]},
+)
 async def scan_single(
     data: ScanRequest,
     current_user: User = Depends(require_marker),
@@ -37,7 +42,11 @@ async def scan_single(
     )
 
 
-@router.post("/batch", response_model=BatchScanResponse)
+@router.post(
+    "/batch",
+    response_model=BatchScanResponse,
+    openapi_extra={"x-roles": ["marker", "organizer", "admin"]},
+)
 async def scan_batch(
     data: BatchScanRequest,
     current_user: User = Depends(require_marker),
@@ -51,7 +60,11 @@ async def scan_batch(
     return await ScanService.scan_batch(db, data, actor=current_user)
 
 
-@router.post("/upload-file", response_model=UploadFileResponse)
+@router.post(
+    "/upload-file",
+    response_model=UploadFileResponse,
+    openapi_extra={"x-roles": ["marker", "organizer", "admin"]},
+)
 async def upload_scan_file(
     checkpoint_id: int,
     file: UploadFile = File(...),
@@ -89,19 +102,22 @@ async def upload_scan_file(
 
 # ==================== САМОСТОЯТЕЛЬНАЯ ОТМЕТКА ====================
 
-@router.post("/self", response_model=SelfScanResponse)
+@router.post(
+    "/self",
+    response_model=SelfScanResponse,
+    openapi_extra={"x-roles": ["user", "admin"]},
+)
 async def scan_self(
     data: SelfScanRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Самостоятельная отметка участника на КП по общему QR-коду.
 
-    Отметить можно только собственную запись участника (или запись
-    близкого, зарегистрированного этим же аккаунтом). Чужие карты
-    сканировать нельзя. Если на маршруте несколько записей аккаунта,
-    нужно указать participant_id или form_id.
+    ``participant_id`` обязателен. Отметить можно только собственную
+    запись участника; чужая запись — 403. До старта отметка запрещена
+    (409). Администратор может отметить любую запись.
     """
     result = await db.execute(
         select(Checkpoint).where(Checkpoint.id == data.checkpoint_id)
@@ -110,29 +126,23 @@ async def scan_self(
     if not checkpoint:
         raise HTTPException(status_code=404, detail="КП не найден")
 
-    conditions = [
-        Participant.user_id == current_user.id,
-        Participant.route_id == checkpoint.route_id,
-    ]
-    if data.participant_id is not None:
-        conditions.append(Participant.id == data.participant_id)
-    if data.form_id is not None:
-        conditions.append(Participant.form_id == data.form_id)
+    result = await db.execute(
+        select(Participant).where(Participant.id == data.participant_id)
+    )
+    participant = result.scalar_one_or_none()
+    if participant is None:
+        raise HTTPException(status_code=404, detail="Участник не найден")
 
-    result = await db.execute(select(Participant).where(*conditions))
-    participants = result.scalars().all()
+    is_admin = role_value(current_user.role) == Role.ADMIN.value
+    if participant.user_id != current_user.id and not is_admin:
+        raise HTTPException(status_code=403, detail="Это чужая запись участника")
 
-    if not participants:
+    if not participant.has_started:
         raise HTTPException(
-            status_code=404,
-            detail="Вы не зарегистрированы на маршрут этого КП",
-        )
-    if len(participants) > 1:
-        raise HTTPException(
-            status_code=400,
-            detail="На этом маршруте несколько ваших участников. Укажите participant_id или form_id",
+            status_code=409,
+            detail="Участник ещё не стартовал на маршруте",
         )
 
     return await ScanService.scan_self(
-        db, participants[0].id, data.checkpoint_id
+        db, participant.id, data.checkpoint_id
     )

@@ -86,7 +86,7 @@ async def create_default_admin():
         existing_admin = result.scalar_one_or_none()
         
         if existing_admin:
-            print(f"✓ Админ '{ADMIN_USERNAME}' уже существует")
+            print(f"OK: админ '{ADMIN_USERNAME}' уже существует")
             return
         
         # Создаем админа
@@ -101,4 +101,4 @@ async def create_default_admin():
         await session.commit()
         await session.refresh(admin)
         
-        print(f"✓ Создан админ по умолчанию: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
+        print(f"OK: создан админ по умолчанию: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")

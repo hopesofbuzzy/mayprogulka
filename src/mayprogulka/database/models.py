@@ -9,7 +9,9 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     CheckConstraint,
+    Index,
     UniqueConstraint,
+    text,
 )
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -45,7 +47,7 @@ class User(Base):
     participants: Mapped[list["Participant"]] = relationship(back_populates="user")
 
     # Контрольные пункты, назначенные маркеру.
-    marker_assignments: Mapped[list["MarkerAssignment"]] = relationship(
+    marker_assignments: Mapped[list["CheckpointAssignment"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -164,7 +166,7 @@ class Checkpoint(Base):
     )
 
     # Назначения КП маркерам.
-    marker_assignments: Mapped[list["MarkerAssignment"]] = relationship(
+    marker_assignments: Mapped[list["CheckpointAssignment"]] = relationship(
         back_populates="checkpoint",
         cascade="all, delete-orphan",
     )
@@ -174,6 +176,11 @@ class Participant(Base):
     """Данные участника конкретного маршрута."""
 
     __tablename__ = "participants"
+    __table_args__ = (
+        Index("uq_participants_form_id", "form_id", unique=True),
+        Index("ix_participants_route_id", "route_id"),
+        Index("ix_participants_started_finished", "has_started", "has_finished"),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -210,6 +217,17 @@ class Participant(Base):
         Boolean,
         default=False,
         nullable=False,
+    )
+
+    # Фактическое время первого старта и финиша (NULL — ещё не было).
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
     )
 
     surname: Mapped[str] = mapped_column(
@@ -323,6 +341,15 @@ class Map(Base):
     """Карта, связанная с участником."""
 
     __tablename__ = "maps"
+    __table_args__ = (
+        # Одна карта на участника. NULL (непривязанные карты) не считаются.
+        Index(
+            "uq_maps_participant_id",
+            "participant_id",
+            unique=True,
+            sqlite_where=text("participant_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -349,13 +376,14 @@ class Map(Base):
     )
 
 
-class MarkerAssignment(Base):
+class CheckpointAssignment(Base):
     """Назначение контрольного пункта маркеру.
 
     Маркер (роль ``marker``) может сканировать карты только на тех КП,
     которые ему назначил организатор или администратор.
     """
 
+    # Историческое имя таблицы сохранено для совместимости с миграцией.
     __tablename__ = "marker_assignments"
     __table_args__ = (
         UniqueConstraint("user_id", "checkpoint_id", name="uq_marker_checkpoint"),
@@ -381,3 +409,7 @@ class MarkerAssignment(Base):
 
     user: Mapped["User"] = relationship(back_populates="marker_assignments")
     checkpoint: Mapped["Checkpoint"] = relationship(back_populates="marker_assignments")
+
+
+# Совместимый алиас: старые импорты MarkerAssignment продолжают работать.
+MarkerAssignment = CheckpointAssignment

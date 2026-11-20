@@ -53,3 +53,15 @@ class OrganizerParticipantListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class CheckpointAssignRequest(BaseModel):
+    """Назначение маркера на контрольный пункт."""
+
+    user_id: int
+
+
+class CheckpointAssignmentResponse(BaseModel):
+    id: int
+    checkpoint_id: int
+    user_id: int

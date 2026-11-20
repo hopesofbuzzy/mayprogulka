@@ -64,11 +64,14 @@ class ScanService:
         participant: Participant,
         checkpoint: Checkpoint
     ) -> None:
-        """Обновление статусов has_started и has_finished."""
+        """Обновление статусов и времени первого старта/финиша."""
+        now = datetime.utcnow()
         if checkpoint.is_start and not participant.has_started:
             participant.has_started = True
+            participant.started_at = now
         if checkpoint.is_finish and not participant.has_finished:
             participant.has_finished = True
+            participant.finished_at = now
     
     @staticmethod
     async def scan_single(
@@ -92,7 +95,7 @@ class ScanService:
 
         # 1.1. Маркер может сканировать только назначенные ему КП.
         if actor is not None:
-            await MarkerService.ensure_can_scan(db, actor, checkpoint_id)
+            await MarkerService.ensure_checkpoint_access(db, actor, checkpoint_id)
         
         # 2. Ищем участника по barcode
         map_obj, participant = await ScanService._find_participant_by_barcode(db, barcode)
@@ -154,7 +157,7 @@ class ScanService:
 
         # Маркер может сканировать только назначенные ему КП.
         if actor is not None:
-            await MarkerService.ensure_can_scan(db, actor, data.checkpoint_id)
+            await MarkerService.ensure_checkpoint_access(db, actor, data.checkpoint_id)
         
         # Обрабатываем каждый barcode
         for scan_item in data.scans:

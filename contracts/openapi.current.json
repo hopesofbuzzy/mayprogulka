@@ -34,16 +34,39 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "public"
+        ]
       }
     },
     "/api/v1/auth/login": {
@@ -75,16 +98,39 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "public"
+        ]
       }
     },
     "/api/v1/auth/me": {
@@ -101,7 +147,57 @@
             "content": {
               "application/json": {
                 "schema": {
-
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -111,6 +207,14 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "user",
+          "typist",
+          "registrar",
+          "marker",
+          "organizer",
+          "admin"
         ]
       }
     },
@@ -144,11 +248,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -158,6 +302,10 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "user",
+          "admin"
         ]
       }
     },
@@ -167,7 +315,7 @@
           "participants"
         ],
         "summary": "Get My Participants",
-        "description": "Получить список своих участников.",
+        "description": "Получить список своих участников (с пагинацией).",
         "operationId": "get_my_participants_api_v1_participants_my_get",
         "security": [
           {
@@ -190,6 +338,29 @@
               ],
               "title": "Route Id"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
           }
         ],
         "responses": {
@@ -204,16 +375,345 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "user",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/participants/{participant_id}": {
+      "get": {
+        "tags": [
+          "participants"
+        ],
+        "summary": "Get Participant",
+        "description": "Карточка участника.\n\nВладелец видит свою запись, организатор и администратор — любую.\nЧужая запись для обычного пользователя — 403.",
+        "operationId": "get_participant_api_v1_participants__participant_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Participant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "user",
+          "organizer",
+          "admin"
+        ]
+      },
+      "put": {
+        "tags": [
+          "participants"
+        ],
+        "summary": "Update Participant",
+        "description": "Правка анкеты владельцем или администратором.\n\nПосле старта правка запрещена (409).",
+        "operationId": "update_participant_api_v1_participants__participant_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Participant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParticipantUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "user",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/participants/{participant_id}/passes": {
+      "get": {
+        "tags": [
+          "participants"
+        ],
+        "summary": "Get My Participant Passes",
+        "description": "Отметки о прохождении КП для своей записи участника.\n\nУчастник видит только свои отметки. Администратор видит любые.",
+        "operationId": "get_my_participant_passes_api_v1_participants__participant_id__passes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Participant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantPassListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "user",
+          "admin"
+        ]
       }
     },
     "/api/v1/participants/{participant_id}/pay": {
@@ -262,16 +762,60 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "user",
+          "admin"
+        ]
       }
     },
     "/api/v1/routes": {
@@ -292,8 +836,41 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
           }
-        }
+        },
+        "x-roles": [
+          "public"
+        ]
       }
     },
     "/api/v1/admin/routes": {
@@ -327,11 +904,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -341,6 +958,9 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "admin"
         ]
       }
     },
@@ -391,16 +1011,59 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "admin"
+        ]
       },
       "delete": {
         "tags": [
@@ -431,16 +1094,59 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "admin"
+        ]
       }
     },
     "/api/v1/routes/{route_id}/map": {
@@ -449,8 +1155,13 @@
           "routes"
         ],
         "summary": "Upload Route Map",
-        "description": "Загрузить файл карты маршрута.",
+        "description": "Загрузить файл карты маршрута (только администратор).",
         "operationId": "upload_route_map_api_v1_routes__route_id__map_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "route_id",
@@ -484,16 +1195,59 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "admin"
+        ]
       }
     },
     "/api/v1/checkpoints": {
@@ -527,16 +1281,39 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "public"
+        ]
       }
     },
     "/api/v1/admin/checkpoints": {
@@ -569,11 +1346,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -583,6 +1400,9 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "admin"
         ]
       }
     },
@@ -632,16 +1452,59 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "admin"
+        ]
       },
       "delete": {
         "tags": [
@@ -671,16 +1534,59 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/checkpoints/batch": {
@@ -713,11 +1619,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -727,6 +1673,9 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "admin"
         ]
       }
     },
@@ -737,7 +1686,7 @@
           "maps"
         ],
         "summary": "Create Map",
-        "description": "Создать карту (participant_id опционален).",
+        "description": "Создать карту (participant_id опционален). Только администратор.",
         "operationId": "create_map_api_v1_admin_maps_post",
         "requestBody": {
           "content": {
@@ -761,16 +1710,64 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/maps/batch": {
@@ -780,7 +1777,7 @@
           "maps"
         ],
         "summary": "Create Maps Batch",
-        "description": "Массовое создание карт (только barcode, без привязки).",
+        "description": "Массовое создание карт (только barcode, без привязки). Только администратор.",
         "operationId": "create_maps_batch_api_v1_admin_maps_batch_post",
         "requestBody": {
           "content": {
@@ -804,16 +1801,64 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "x-roles": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/maps/{barcode}": {
@@ -823,8 +1868,13 @@
           "maps"
         ],
         "summary": "Get Map Info",
-        "description": "Получить информацию о карте (работает даже если не привязана).",
+        "description": "Получить информацию о карте (admin, organizer, registrar).",
         "operationId": "get_map_info_api_v1_admin_maps__barcode__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "barcode",
@@ -848,16 +1898,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "admin",
+          "organizer",
+          "registrar"
+        ]
       }
     },
     "/api/v1/typist/paper-form": {
@@ -890,11 +1985,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -904,6 +2039,112 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "typist",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/typist/paper-form/{participant_id}": {
+      "put": {
+        "tags": [
+          "typist"
+        ],
+        "summary": "Update Paper Form",
+        "description": "Правка бумажной анкеты до старта (после старта — 409).",
+        "operationId": "update_paper_form_api_v1_typist_paper_form__participant_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Participant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaperFormUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperFormResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "typist",
+          "admin"
         ]
       }
     },
@@ -937,11 +2178,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -951,6 +2232,10 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "typist",
+          "admin"
         ]
       }
     },
@@ -974,8 +2259,21 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
               "default": 100,
               "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
             }
           }
         ],
@@ -991,16 +2289,60 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "typist",
+          "admin"
+        ]
       }
     },
     "/api/v1/scans": {
@@ -1009,7 +2351,7 @@
           "scans"
         ],
         "summary": "Scan Single",
-        "description": "Одиночное сканирование участника на КП организатором.\nОсновной эндпоинт для волонтёров на контрольных пунктах.",
+        "description": "Одиночное сканирование карты на КП.\n\nДоступно маркеру (только на назначенных ему КП) и администратору.",
         "operationId": "scan_single_api_v1_scans_post",
         "requestBody": {
           "content": {
@@ -1033,11 +2375,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -1047,6 +2429,11 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "marker",
+          "organizer",
+          "admin"
         ]
       }
     },
@@ -1056,7 +2443,7 @@
           "scans"
         ],
         "summary": "Scan Batch",
-        "description": "Пакетное сканирование (массовое чтение).\nКритически важен для скорости: обрабатывает массив barcode'ов одной транзакцией.",
+        "description": "Пакетное сканирование (массовое чтение).\n\nМаркер может передавать пачки штрих-кодов только со своего КП.",
         "operationId": "scan_batch_api_v1_scans_batch_post",
         "requestBody": {
           "content": {
@@ -1080,11 +2467,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -1094,6 +2521,11 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "marker",
+          "organizer",
+          "admin"
         ]
       }
     },
@@ -1143,16 +2575,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
           }
-        }
+        },
+        "x-roles": [
+          "marker",
+          "organizer",
+          "admin"
+        ]
       }
     },
     "/api/v1/scans/self": {
@@ -1161,7 +2638,7 @@
           "scans"
         ],
         "summary": "Scan Self",
-        "description": "Самостоятельная отметка участника на КП по общему QR-коду.\nУчастник сканирует QR-код на КП (который содержит checkpoint_id),\nприложение отправляет запрос с токеном участника.",
+        "description": "Самостоятельная отметка участника на КП по общему QR-коду.\n\n``participant_id`` обязателен. Отметить можно только собственную\nзапись участника; чужая запись — 403. До старта отметка запрещена\n(409). Администратор может отметить любую запись.",
         "operationId": "scan_self_api_v1_scans_self_post",
         "requestBody": {
           "content": {
@@ -1185,11 +2662,51 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Validation Failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
                 }
               }
             }
@@ -1199,6 +2716,1630 @@
           {
             "HTTPBearer": []
           }
+        ],
+        "x-roles": [
+          "user",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List Users",
+        "description": "Список аккаунтов.\n\nОрганизатор видит всех, кроме администраторов, и не может ими управлять.\nАдминистратор видит все аккаунты.",
+        "operationId": "list_users_api_v1_admin_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/UserRole"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/roles": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List Available Roles",
+        "description": "Роли, которые текущий организатор/администратор вправе назначать.",
+        "operationId": "list_available_roles_api_v1_admin_users_roles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/role": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Assign Role",
+        "description": "Назначить роль пользователю.\n\nОрганизатор может назначать любые роли, кроме admin.\nАдминистратор может назначать любые роли, включая admin.\nНельзя только убрать последнего активного администратора.",
+        "operationId": "assign_role_api_v1_admin_users__user_id__role_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/status": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Set User Status",
+        "description": "Заблокировать или разблокировать аккаунт (только администратор).",
+        "operationId": "set_user_status_api_v1_admin_users__user_id__status_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/registrar/search": {
+      "get": {
+        "tags": [
+          "registrar"
+        ],
+        "summary": "Search Forms",
+        "description": "Поиск анкет на старте: по номеру анкеты, ФИО, телефону или email.\n\nРегистратор только читает данные и выдаёт карту. Изменять анкеты,\nвыдавать карты в системе и видеть статистику он не может.",
+        "operationId": "search_forms_api_v1_registrar_search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Query"
+            }
+          },
+          {
+            "name": "route_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Route Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrarFormListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "registrar",
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/registrar/issue-card": {
+      "post": {
+        "tags": [
+          "registrar"
+        ],
+        "summary": "Issue Card",
+        "description": "Выдать карту и стартовать участника (идемпотентно).",
+        "operationId": "issue_card_api_v1_registrar_issue_card_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueCardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueCardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "x-roles": [
+          "registrar",
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/registrar/forms/{form_id}": {
+      "get": {
+        "tags": [
+          "registrar"
+        ],
+        "summary": "Get Form",
+        "description": "Получить анкету по номеру (например, после сканирования штрих-кода).",
+        "operationId": "get_form_api_v1_registrar_forms__form_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "form_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Form Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrarFormItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "registrar",
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/marker/checkpoints": {
+      "get": {
+        "tags": [
+          "marker"
+        ],
+        "summary": "Get My Checkpoints",
+        "description": "Контрольные пункты, доступные текущему пользователю.\n\nМаркер видит только назначенные ему КП; организатор и администратор —\nвсе КП. Необязательный ``route_id`` ограничивает список маршрутом.",
+        "operationId": "get_my_checkpoints_api_v1_marker_checkpoints_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Route Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkerAssignmentsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "marker",
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/organizer/stats": {
+      "get": {
+        "tags": [
+          "organizer"
+        ],
+        "summary": "Get Event Stats",
+        "description": "Статистика мероприятия: зарегистрированы, оплатили, стартовали,\nфинишировали, находятся на маршруте. Плюс разбивка по маршрутам и КП.",
+        "operationId": "get_event_stats_api_v1_organizer_stats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Route Id"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventStatsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/organizer/participants": {
+      "get": {
+        "tags": [
+          "organizer"
+        ],
+        "summary": "List Participants",
+        "description": "Список участников с фильтрами — для организатора мероприятия.",
+        "operationId": "list_participants_api_v1_organizer_participants_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Route Id"
+            }
+          },
+          {
+            "name": "payment_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(paid|unpaid)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payment Status"
+            }
+          },
+          {
+            "name": "has_started",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Has Started"
+            }
+          },
+          {
+            "name": "has_finished",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Has Finished"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerParticipantListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/organizer/markers": {
+      "get": {
+        "tags": [
+          "organizer"
+        ],
+        "summary": "List Markers",
+        "description": "Пользователи с ролью marker и количество назначенных им КП.",
+        "operationId": "list_markers_api_v1_organizer_markers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkerListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/organizer/markers/{marker_id}/assignments": {
+      "get": {
+        "tags": [
+          "organizer"
+        ],
+        "summary": "Get Marker Assignments",
+        "description": "Какие КП назначены конкретному маркеру.",
+        "operationId": "get_marker_assignments_api_v1_organizer_markers__marker_id__assignments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "marker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Marker Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkerAssignmentsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      },
+      "put": {
+        "tags": [
+          "organizer"
+        ],
+        "summary": "Replace Marker Assignments",
+        "description": "Полностью заменить набор КП, назначенных маркеру.\n\nОрганизатор может назначить маркеру только существующие КП.\nПользователь должен уже иметь роль marker.",
+        "operationId": "replace_marker_assignments_api_v1_organizer_markers__marker_id__assignments_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "marker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Marker Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkerAssignmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkerAssignmentsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/organizer/checkpoints/{checkpoint_id}/assign": {
+      "post": {
+        "tags": [
+          "organizer"
+        ],
+        "summary": "Assign Checkpoint",
+        "description": "Назначить маркера на КП: 201 / 404 / 422 / 409.",
+        "operationId": "assign_checkpoint_api_v1_organizer_checkpoints__checkpoint_id__assign_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checkpoint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Checkpoint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckpointAssignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckpointAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/organizer/checkpoints/{checkpoint_id}/assign/{user_id}": {
+      "delete": {
+        "tags": [
+          "organizer"
+        ],
+        "summary": "Unassign Checkpoint",
+        "description": "Снять назначение: 204 / 404.",
+        "operationId": "unassign_checkpoint_api_v1_organizer_checkpoints__checkpoint_id__assign__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checkpoint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Checkpoint Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conflict"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "organizer",
+          "admin"
         ]
       }
     }
@@ -1399,6 +4540,43 @@
         ],
         "title": "Body_upload_scan_file_api_v1_scans_upload_file_post"
       },
+      "CheckpointAssignRequest": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "CheckpointAssignRequest",
+        "description": "Назначение маркера на контрольный пункт."
+      },
+      "CheckpointAssignmentResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "checkpoint_id",
+          "user_id"
+        ],
+        "title": "CheckpointAssignmentResponse"
+      },
       "CheckpointCreateRequest": {
         "properties": {
           "route_id": {
@@ -1506,6 +4684,44 @@
         ],
         "title": "CheckpointResponse"
       },
+      "CheckpointStats": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "route_name": {
+            "type": "string",
+            "title": "Route Name"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order"
+          },
+          "passed": {
+            "type": "integer",
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_id",
+          "route_id",
+          "route_name",
+          "name",
+          "order",
+          "passed"
+        ],
+        "title": "CheckpointStats"
+      },
       "CheckpointUpdateRequest": {
         "properties": {
           "name": {
@@ -1578,6 +4794,34 @@
         "type": "object",
         "title": "CheckpointUpdateRequest"
       },
+      "EventStatsResponse": {
+        "properties": {
+          "totals": {
+            "$ref": "#/components/schemas/StatsTotals"
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/RouteStats"
+            },
+            "type": "array",
+            "title": "Routes"
+          },
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/CheckpointStats"
+            },
+            "type": "array",
+            "title": "Checkpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "totals",
+          "routes",
+          "checkpoints"
+        ],
+        "title": "EventStatsResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1590,6 +4834,82 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "IssueCardRequest": {
+        "properties": {
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
+          },
+          "barcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "participant_id"
+        ],
+        "title": "IssueCardRequest",
+        "description": "Выдача карты и старт участника."
+      },
+      "IssueCardResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
+          },
+          "form_id": {
+            "type": "string",
+            "title": "Form Id"
+          },
+          "barcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "participant_id",
+          "form_id",
+          "message"
+        ],
+        "title": "IssueCardResponse"
       },
       "LoginRequest": {
         "properties": {
@@ -1782,6 +5102,149 @@
         ],
         "title": "MapUploadResponse"
       },
+      "MarkerAssignmentUpdate": {
+        "properties": {
+          "checkpoint_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Checkpoint Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_ids"
+        ],
+        "title": "MarkerAssignmentUpdate",
+        "description": "Полная замена набора КП, назначенных маркеру."
+      },
+      "MarkerAssignmentsResponse": {
+        "properties": {
+          "marker_id": {
+            "type": "integer",
+            "title": "Marker Id"
+          },
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/MarkerCheckpointItem"
+            },
+            "type": "array",
+            "title": "Checkpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "marker_id",
+          "checkpoints"
+        ],
+        "title": "MarkerAssignmentsResponse",
+        "description": "Список КП, доступных маркеру."
+      },
+      "MarkerCheckpointItem": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "route_name": {
+            "type": "string",
+            "title": "Route Name"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "coordinates": {
+            "type": "string",
+            "title": "Coordinates"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order"
+          },
+          "is_start": {
+            "type": "boolean",
+            "title": "Is Start"
+          },
+          "is_finish": {
+            "type": "boolean",
+            "title": "Is Finish"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_id",
+          "route_id",
+          "route_name",
+          "name",
+          "address",
+          "coordinates",
+          "order",
+          "is_start",
+          "is_finish"
+        ],
+        "title": "MarkerCheckpointItem",
+        "description": "Назначенный маркеру контрольный пункт."
+      },
+      "MarkerListItem": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "checkpoints_count": {
+            "type": "integer",
+            "title": "Checkpoints Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "username",
+          "email",
+          "is_active",
+          "checkpoints_count"
+        ],
+        "title": "MarkerListItem",
+        "description": "Маркер в списке организатора."
+      },
+      "MarkerListResponse": {
+        "properties": {
+          "markers": {
+            "items": {
+              "$ref": "#/components/schemas/MarkerListItem"
+            },
+            "type": "array",
+            "title": "Markers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "markers"
+        ],
+        "title": "MarkerListResponse"
+      },
       "MatchRequest": {
         "properties": {
           "barcode": {
@@ -1834,6 +5297,166 @@
         ],
         "title": "MatchResponse",
         "description": "Результат сопоставления."
+      },
+      "MeResponse": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "username",
+          "email",
+          "role",
+          "is_active"
+        ],
+        "title": "MeResponse"
+      },
+      "OrganizerParticipantItem": {
+        "properties": {
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
+          },
+          "form_id": {
+            "type": "string",
+            "title": "Form Id"
+          },
+          "surname": {
+            "type": "string",
+            "title": "Surname"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "middle_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Middle Name"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "route_name": {
+            "type": "string",
+            "title": "Route Name"
+          },
+          "payment_status": {
+            "type": "string",
+            "title": "Payment Status"
+          },
+          "has_started": {
+            "type": "boolean",
+            "title": "Has Started"
+          },
+          "has_finished": {
+            "type": "boolean",
+            "title": "Has Finished"
+          },
+          "map_barcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Barcode"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "participant_id",
+          "form_id",
+          "surname",
+          "name",
+          "route_id",
+          "route_name",
+          "payment_status",
+          "has_started",
+          "has_finished",
+          "phone_number",
+          "email"
+        ],
+        "title": "OrganizerParticipantItem"
+      },
+      "OrganizerParticipantListResponse": {
+        "properties": {
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizerParticipantItem"
+            },
+            "type": "array",
+            "title": "Participants"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "participants",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "OrganizerParticipantListResponse"
       },
       "PaperFormRequest": {
         "properties": {
@@ -1915,6 +5538,102 @@
         "title": "PaperFormResponse",
         "description": "Результат создания участника с бумажной анкеты."
       },
+      "PaperFormUpdateRequest": {
+        "properties": {
+          "route_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Id"
+          },
+          "surname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surname"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "middle_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Middle Name"
+          },
+          "date_of_birth": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Of Birth"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "phone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "title": "PaperFormUpdateRequest",
+        "description": "Правка бумажной анкеты до старта."
+      },
       "ParticipantData": {
         "properties": {
           "surname": {
@@ -1970,6 +5689,149 @@
           "phone_number"
         ],
         "title": "ParticipantData"
+      },
+      "ParticipantDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "form_id": {
+            "type": "string",
+            "title": "Form Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "route_name": {
+            "type": "string",
+            "title": "Route Name"
+          },
+          "surname": {
+            "type": "string",
+            "title": "Surname"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "middle_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Middle Name"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date",
+            "title": "Date Of Birth"
+          },
+          "gender": {
+            "type": "string",
+            "title": "Gender"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "payment_status": {
+            "type": "string",
+            "title": "Payment Status"
+          },
+          "has_started": {
+            "type": "boolean",
+            "title": "Has Started"
+          },
+          "has_finished": {
+            "type": "boolean",
+            "title": "Has Finished"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "map_barcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Barcode"
+          },
+          "form_pdf_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Form Pdf Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "form_id",
+          "route_id",
+          "route_name",
+          "surname",
+          "name",
+          "date_of_birth",
+          "gender",
+          "phone_number",
+          "email",
+          "payment_status",
+          "has_started",
+          "has_finished"
+        ],
+        "title": "ParticipantDetail",
+        "description": "Полная карточка участника для владельца/организатора/админа."
       },
       "ParticipantItem": {
         "properties": {
@@ -2071,6 +5933,21 @@
             },
             "type": "array",
             "title": "Participants"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 50
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "default": 0
           }
         },
         "type": "object",
@@ -2078,6 +5955,77 @@
           "participants"
         ],
         "title": "ParticipantListResponse"
+      },
+      "ParticipantPassItem": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "integer",
+            "title": "Checkpoint Id"
+          },
+          "checkpoint_name": {
+            "type": "string",
+            "title": "Checkpoint Name"
+          },
+          "checkpoint_order": {
+            "type": "integer",
+            "title": "Checkpoint Order"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "is_start": {
+            "type": "boolean",
+            "title": "Is Start"
+          },
+          "is_finish": {
+            "type": "boolean",
+            "title": "Is Finish"
+          },
+          "passed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Passed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checkpoint_id",
+          "checkpoint_name",
+          "checkpoint_order",
+          "route_id",
+          "address",
+          "is_start",
+          "is_finish",
+          "passed_at"
+        ],
+        "title": "ParticipantPassItem",
+        "description": "Отметка о прохождении КП, видимая участнику в личном кабинете."
+      },
+      "ParticipantPassListResponse": {
+        "properties": {
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
+          },
+          "passes": {
+            "items": {
+              "$ref": "#/components/schemas/ParticipantPassItem"
+            },
+            "type": "array",
+            "title": "Passes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "participant_id",
+          "passes"
+        ],
+        "title": "ParticipantPassListResponse"
       },
       "ParticipantRegisterRequest": {
         "properties": {
@@ -2115,6 +6063,103 @@
           "participants"
         ],
         "title": "ParticipantRegisterResponse"
+      },
+      "ParticipantUpdateRequest": {
+        "properties": {
+          "surname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surname"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "middle_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Middle Name"
+          },
+          "date_of_birth": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Of Birth"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(male|female)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "phone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "route_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Id"
+          }
+        },
+        "type": "object",
+        "title": "ParticipantUpdateRequest",
+        "description": "Правка анкеты участника. После старта правка запрещена (409)."
       },
       "PaymentRequest": {
         "properties": {
@@ -2182,6 +6227,186 @@
           "password"
         ],
         "title": "RegisterRequest"
+      },
+      "RegistrarFormItem": {
+        "properties": {
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
+          },
+          "form_id": {
+            "type": "string",
+            "title": "Form Id"
+          },
+          "surname": {
+            "type": "string",
+            "title": "Surname"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "middle_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Middle Name"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date",
+            "title": "Date Of Birth"
+          },
+          "gender": {
+            "type": "string",
+            "title": "Gender"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "route_name": {
+            "type": "string",
+            "title": "Route Name"
+          },
+          "route_year": {
+            "type": "integer",
+            "title": "Route Year"
+          },
+          "payment_status": {
+            "type": "string",
+            "title": "Payment Status"
+          },
+          "has_started": {
+            "type": "boolean",
+            "title": "Has Started"
+          },
+          "has_finished": {
+            "type": "boolean",
+            "title": "Has Finished"
+          },
+          "map_barcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Barcode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "participant_id",
+          "form_id",
+          "surname",
+          "name",
+          "date_of_birth",
+          "gender",
+          "phone_number",
+          "email",
+          "route_id",
+          "route_name",
+          "route_year",
+          "payment_status",
+          "has_started",
+          "has_finished"
+        ],
+        "title": "RegistrarFormItem",
+        "description": "Анкета участника на экране регистратора."
+      },
+      "RegistrarFormListResponse": {
+        "properties": {
+          "forms": {
+            "items": {
+              "$ref": "#/components/schemas/RegistrarFormItem"
+            },
+            "type": "array",
+            "title": "Forms"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "forms",
+          "total",
+          "limit"
+        ],
+        "title": "RegistrarFormListResponse"
+      },
+      "RoleOption": {
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "title"
+        ],
+        "title": "RoleOption",
+        "description": "Вариант роли для выпадающего списка в интерфейсе."
+      },
+      "RoleUpdateRequest": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "RoleUpdateRequest",
+        "description": "Назначение роли пользователю."
+      },
+      "RolesResponse": {
+        "properties": {
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/RoleOption"
+            },
+            "type": "array",
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "roles"
+        ],
+        "title": "RolesResponse"
       },
       "RouteCreateRequest": {
         "properties": {
@@ -2292,6 +6517,49 @@
           "is_active"
         ],
         "title": "RouteResponse"
+      },
+      "RouteStats": {
+        "properties": {
+          "registered": {
+            "type": "integer",
+            "title": "Registered"
+          },
+          "paid": {
+            "type": "integer",
+            "title": "Paid"
+          },
+          "started": {
+            "type": "integer",
+            "title": "Started"
+          },
+          "finished": {
+            "type": "integer",
+            "title": "Finished"
+          },
+          "on_route": {
+            "type": "integer",
+            "title": "On Route"
+          },
+          "route_id": {
+            "type": "integer",
+            "title": "Route Id"
+          },
+          "route_name": {
+            "type": "string",
+            "title": "Route Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "registered",
+          "paid",
+          "started",
+          "finished",
+          "on_route",
+          "route_id",
+          "route_name"
+        ],
+        "title": "RouteStats"
       },
       "RouteUpdateRequest": {
         "properties": {
@@ -2436,14 +6704,19 @@
           "checkpoint_id": {
             "type": "integer",
             "title": "Checkpoint Id"
+          },
+          "participant_id": {
+            "type": "integer",
+            "title": "Participant Id"
           }
         },
         "type": "object",
         "required": [
-          "checkpoint_id"
+          "checkpoint_id",
+          "participant_id"
         ],
         "title": "SelfScanRequest",
-        "description": "Самостоятельная отметка участника."
+        "description": "Самостоятельная отметка участника.\n\n``participant_id`` обязателен: отметка всегда относится к конкретной\nзаписи участника, а не выбирается по маршруту."
       },
       "SelfScanResponse": {
         "properties": {
@@ -2487,6 +6760,39 @@
         "title": "SelfScanResponse",
         "description": "Результат самостоятельной отметки."
       },
+      "StatsTotals": {
+        "properties": {
+          "registered": {
+            "type": "integer",
+            "title": "Registered"
+          },
+          "paid": {
+            "type": "integer",
+            "title": "Paid"
+          },
+          "started": {
+            "type": "integer",
+            "title": "Started"
+          },
+          "finished": {
+            "type": "integer",
+            "title": "Finished"
+          },
+          "on_route": {
+            "type": "integer",
+            "title": "On Route"
+          }
+        },
+        "type": "object",
+        "required": [
+          "registered",
+          "paid",
+          "started",
+          "finished",
+          "on_route"
+        ],
+        "title": "StatsTotals"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -2503,8 +6809,7 @@
             "title": "User Id"
           },
           "role": {
-            "type": "string",
-            "title": "Role"
+            "$ref": "#/components/schemas/UserRole"
           }
         },
         "type": "object",
@@ -2523,6 +6828,21 @@
             },
             "type": "array",
             "title": "Maps"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 100
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "default": 0
           }
         },
         "type": "object",
@@ -2589,6 +6909,84 @@
         "title": "UploadFileResponse",
         "description": "Результат загрузки файла со сканированиями."
       },
+      "UserItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "email",
+          "role",
+          "is_active"
+        ],
+        "title": "UserItem"
+      },
+      "UserListResponse": {
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/UserItem"
+            },
+            "type": "array",
+            "title": "Users"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "users",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "UserListResponse"
+      },
+      "UserStatusUpdateRequest": {
+        "properties": {
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_active"
+        ],
+        "title": "UserStatusUpdateRequest",
+        "description": "Блокировка/разблокировка аккаунта (только администратор)."
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -2628,6 +7026,96 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "user",
+          "typist",
+          "registrar",
+          "marker",
+          "organizer",
+          "admin"
+        ],
+        "title": "Role",
+        "description": "Шесть ролей системы.\n\n``participant`` не является ролью: участник мероприятия — это запись\nв таблице participants, которая принадлежит пользователю (user)."
+      },
+      "Unauthorized": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "Unauthorized"
+      },
+      "Forbidden": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "Forbidden"
+      },
+      "NotFound": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "NotFound"
+      },
+      "Conflict": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "Conflict"
+      },
+      "ValidationFailed": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "loc": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "msg": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ValidationFailed"
       }
     },
     "securitySchemes": {
@@ -2635,6 +7123,48 @@
         "type": "http",
         "scheme": "bearer"
       }
+    }
+  },
+  "x-rbac": {
+    "roles": [
+      "user",
+      "typist",
+      "registrar",
+      "marker",
+      "organizer",
+      "admin"
+    ],
+    "hierarchy": {
+      "admin": [
+        "organizer"
+      ]
+    },
+    "dependencies": {
+      "user": [
+        "user",
+        "admin"
+      ],
+      "typist": [
+        "typist",
+        "admin"
+      ],
+      "registrar": [
+        "registrar",
+        "organizer",
+        "admin"
+      ],
+      "marker": [
+        "marker",
+        "organizer",
+        "admin"
+      ],
+      "organizer": [
+        "organizer",
+        "admin"
+      ],
+      "admin": [
+        "admin"
+      ]
     }
   }
 }
