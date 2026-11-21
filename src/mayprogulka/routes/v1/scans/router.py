@@ -120,7 +120,7 @@ async def scan_self(
     (409). Администратор может отметить любую запись.
     """
     result = await db.execute(
-        select(Checkpoint).where(Checkpoint.id == data.checkpoint_id)
+        select(Checkpoint).where(Checkpoint.barcode == data.checkpoint_barcode)
     )
     checkpoint = result.scalar_one_or_none()
     if not checkpoint:
@@ -144,5 +144,5 @@ async def scan_self(
         )
 
     return await ScanService.scan_self(
-        db, participant.id, data.checkpoint_id
+        db, participant.id, checkpoint.id
     )

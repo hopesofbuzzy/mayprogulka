@@ -26,6 +26,7 @@ class CheckpointResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
     id: int
+    barcode: str
     route_id: int
     name: str
     address: str
@@ -47,3 +48,6 @@ class BatchCheckpointCreateRequest(BaseModel):
 class BatchCheckpointResponse(BaseModel):
     created_count: int
     errors: list[dict]
+
+class CheckpointBarcodeResponse(BaseModel):
+    ...

@@ -11,6 +11,7 @@ from mayprogulka.models.maps import (
     MapMatchResponse,
     MapInfoResponse,
 )
+from mayprogulka.utils.map_barcode import generate_map_barcode
 
 
 class MapService:
@@ -22,13 +23,14 @@ class MapService:
     ) -> MapResponse:
         """Создать карту. participant_id опционален."""
         # Проверяем уникальность barcode
+        barcode: str = generate_map_barcode();
         existing_map = await db.execute(
-            select(Map).where(Map.barcode == data.barcode)
+            select(Map).where(Map.barcode == barcode)
         )
         if existing_map.scalar_one_or_none():
             raise HTTPException(
                 status_code=400,
-                detail=f"Карта с barcode '{data.barcode}' уже существует"
+                detail=f"Коллизия! Карта с barcode '{barcode}' уже существует. Попробуйте ещё раз!"
             )
         
         # Если participant_id указан, проверяем существование участника
@@ -40,7 +42,7 @@ class MapService:
                 raise HTTPException(status_code=404, detail="Участник не найден")
         
         # Создаем карту
-        map_obj = Map(**data.model_dump())
+        map_obj = Map(**data.model_dump(), barcode=barcode)
         db.add(map_obj)
         await db.commit()
         await db.refresh(map_obj)
@@ -53,20 +55,21 @@ class MapService:
         data: BatchMapCreateRequest
     ) -> dict:
         """
-        Массовое создание карт (только barcode, без привязки к участникам).
-        Это типичный сценарий: напечатали 1000 стикеров, загрузили их в систему.
+        Массовое создание карт нужного количества в базе.
+        Затем можно распечатать qr-коды.
         """
         created_count = 0
         valid_maps = []
         
-        for idx, barcode in enumerate(data.barcodes):
+        for idx in range(data.amount):
             try:
                 # Проверяем уникальность
+                barcode: str = generate_map_barcode();
                 existing_map = await db.execute(
                     select(Map).where(Map.barcode == barcode)
                 )
                 if existing_map.scalar_one_or_none():
-                    raise HTTPException(status_code=400, detail=f"Карта с barcode '{barcode}' уже существует")
+                    continue
                     # errors.append({
                     #     "index": idx,
                     #     "barcode": barcode,

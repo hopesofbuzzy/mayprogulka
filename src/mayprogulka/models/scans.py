@@ -50,7 +50,7 @@ class SelfScanRequest(BaseModel):
     ``participant_id`` обязателен: отметка всегда относится к конкретной
     записи участника, а не выбирается по маршруту.
     """
-    checkpoint_id: int
+    checkpoint_barcode: str
     participant_id: int
 
 

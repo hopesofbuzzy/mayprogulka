@@ -62,8 +62,7 @@ async def issue_card(
     """Выдать карту и стартовать участника (идемпотентно)."""
     return await RegistrarService.issue_card(
         db,
-        participant_id=data.participant_id,
-        barcode=data.barcode,
+        form_id=data.form_id
     )
 
 

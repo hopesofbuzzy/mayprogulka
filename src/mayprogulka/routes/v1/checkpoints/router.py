@@ -11,6 +11,7 @@ from mayprogulka.models.checkpoints import (
     CheckpointListResponse,
     BatchCheckpointCreateRequest,
     BatchCheckpointResponse,
+    CheckpointBarcodeResponse
 )
 from mayprogulka.routes.v1.checkpoints.service import CheckpointService
 
@@ -32,6 +33,18 @@ async def get_checkpoints(
     checkpoints = await CheckpointService.get_by_route(db, route_id)
     return CheckpointListResponse(checkpoints=checkpoints)
 
+# @router.get(
+#     "/admin/checkpoints/{checkpoint_id}/image",
+#     response_model=CheckpointBarcodeResponse,
+#     openapi_extra={"x-roles": ["public"]},
+# )
+# async def get_barcode_image(
+#     route_id: int,
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     """Получить список контрольных пунктов маршрута."""
+#     image = ...
+#     return CheckpointBarcodeResponse(image)
 
 # ==================== АДМИНСКИЕ ЭНДПОИНТЫ ====================
 

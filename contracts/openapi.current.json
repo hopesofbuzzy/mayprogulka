@@ -1777,7 +1777,7 @@
           "maps"
         ],
         "summary": "Create Maps Batch",
-        "description": "Массовое создание карт (только barcode, без привязки). Только администратор.",
+        "description": "Массовое создание карт (количество). Только администратор.",
         "operationId": "create_maps_batch_api_v1_admin_maps_batch_post",
         "requestBody": {
           "content": {
@@ -4391,17 +4391,14 @@
       },
       "BatchMapCreateRequest": {
         "properties": {
-          "barcodes": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Barcodes"
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
           }
         },
         "type": "object",
         "required": [
-          "barcodes"
+          "amount"
         ],
         "title": "BatchMapCreateRequest"
       },
@@ -4642,6 +4639,10 @@
             "type": "integer",
             "title": "Id"
           },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
           "route_id": {
             "type": "integer",
             "title": "Route Id"
@@ -4674,6 +4675,7 @@
         "type": "object",
         "required": [
           "id",
+          "barcode",
           "route_id",
           "name",
           "address",
@@ -4837,25 +4839,14 @@
       },
       "IssueCardRequest": {
         "properties": {
-          "participant_id": {
-            "type": "integer",
-            "title": "Participant Id"
-          },
-          "barcode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Barcode"
+          "form_id": {
+            "type": "string",
+            "title": "Form Id"
           }
         },
         "type": "object",
         "required": [
-          "participant_id"
+          "form_id"
         ],
         "title": "IssueCardRequest",
         "description": "Выдача карты и старт участника."
@@ -4931,10 +4922,6 @@
       },
       "MapCreateRequest": {
         "properties": {
-          "barcode": {
-            "type": "string",
-            "title": "Barcode"
-          },
           "participant_id": {
             "anyOf": [
               {
@@ -4948,9 +4935,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "barcode"
-        ],
         "title": "MapCreateRequest",
         "description": "Создание карты. participant_id опционален (привязка происходит позже)."
       },
@@ -6701,9 +6685,9 @@
       },
       "SelfScanRequest": {
         "properties": {
-          "checkpoint_id": {
-            "type": "integer",
-            "title": "Checkpoint Id"
+          "checkpoint_barcode": {
+            "type": "string",
+            "title": "Checkpoint Barcode"
           },
           "participant_id": {
             "type": "integer",
@@ -6712,7 +6696,7 @@
         },
         "type": "object",
         "required": [
-          "checkpoint_id",
+          "checkpoint_barcode",
           "participant_id"
         ],
         "title": "SelfScanRequest",

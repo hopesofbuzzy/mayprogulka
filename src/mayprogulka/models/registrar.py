@@ -36,9 +36,7 @@ class RegistrarFormListResponse(BaseModel):
 
 class IssueCardRequest(BaseModel):
     """Выдача карты и старт участника."""
-
-    participant_id: int
-    barcode: Optional[str] = None
+    form_id: str
 
 
 class IssueCardResponse(BaseModel):

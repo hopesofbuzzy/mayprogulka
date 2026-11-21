@@ -53,7 +53,7 @@ class TypistService:
             phone_number=data.phone_number,
             email=data.email,
             payment_status="paid",  # Сразу оплачено!
-            has_started=False,
+            has_started=True,
             has_finished=False,
         )
         

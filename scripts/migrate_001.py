@@ -86,6 +86,9 @@ def migrate(db_path: Path) -> int:
             add_column_if_missing(
                 connection, "participants", "finished_at", "DATETIME"
             )
+            add_column_if_missing(
+                connection, "checkpoints", "barcode", "TEXT"
+            )
 
             updated = connection.execute(
                 "UPDATE users SET role = 'user' WHERE role = 'participant'"

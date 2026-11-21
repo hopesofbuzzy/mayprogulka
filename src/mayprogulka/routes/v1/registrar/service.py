@@ -108,8 +108,7 @@ class RegistrarService:
     @staticmethod
     async def issue_card(
         db: AsyncSession,
-        participant_id: int,
-        barcode: str | None = None,
+        form_id: str
     ) -> IssueCardResponse:
         """Выдать карту и стартовать участника одной транзакцией.
 
@@ -119,7 +118,7 @@ class RegistrarService:
         result = await db.execute(
             select(Participant)
             .options(selectinload(Participant.maps))
-            .where(Participant.id == participant_id)
+            .where(Participant.form_id == form_id)
         )
         participant = result.scalar_one_or_none()
         if participant is None:
@@ -142,31 +141,6 @@ class RegistrarService:
                 message="Участник уже стартовал",
             )
 
-        map_obj: Map | None = None
-        if barcode is not None:
-            if current_map is not None and current_map.barcode != barcode:
-                raise HTTPException(
-                    status_code=409,
-                    detail="У участника уже есть другая карта",
-                )
-            result = await db.execute(select(Map).where(Map.barcode == barcode))
-            map_obj = result.scalar_one_or_none()
-            if map_obj is None:
-                raise HTTPException(status_code=404, detail="Карта не найдена")
-            if map_obj.participant_id is not None and map_obj.participant_id != participant.id:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Карта уже привязана к другому участнику",
-                )
-        elif current_map is not None:
-            map_obj = current_map
-        else:
-            raise HTTPException(
-                status_code=409,
-                detail="У участника нет карты: передайте barcode",
-            )
-
-        map_obj.participant_id = participant.id
         participant.has_started = True
         participant.started_at = datetime.utcnow()
 
@@ -178,7 +152,7 @@ class RegistrarService:
             status="issued",
             participant_id=participant.id,
             form_id=participant.form_id,
-            barcode=map_obj.barcode,
+            barcode=None,
             started_at=participant.started_at,
             message="Карта выдана, участник стартовал",
         )

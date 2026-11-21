@@ -9,6 +9,7 @@ from mayprogulka.models.checkpoints import (
     CheckpointResponse,
     BatchCheckpointCreateRequest,
 )
+from mayprogulka.utils.checkpoint_barcode import generate_checkpoint_barcode
 
 
 class CheckpointService:
@@ -33,7 +34,7 @@ class CheckpointService:
         data: CheckpointCreateRequest
     ) -> CheckpointResponse:
         """Создать один контрольный пункт."""
-        checkpoint = Checkpoint(**data.model_dump())
+        checkpoint = Checkpoint(**data.model_dump(), barcode=generate_checkpoint_barcode())
         db.add(checkpoint)
         await db.commit()
         await db.refresh(checkpoint)
@@ -116,7 +117,7 @@ class CheckpointService:
             try:
                 # Исключаем route_id из cp_data, так как он берётся из data.route_id
                 cp_dict = cp_data.model_dump(exclude={'route_id'})
-                checkpoint = Checkpoint(route_id=data.route_id, **cp_dict)
+                checkpoint = Checkpoint(route_id=data.route_id, barcode=generate_checkpoint_barcode(), **cp_dict)
                 valid_checkpoints.append(checkpoint)
             except Exception as e:
                 errors.append({"index": idx, "error": f"Ошибка валидации: {str(e)}"})

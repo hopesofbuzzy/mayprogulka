@@ -123,6 +123,11 @@ class Checkpoint(Base):
         nullable=False,
     )
 
+    barcode: Mapped[String] = mapped_column(
+        String,
+        nullable=False,
+    )
+
     name: Mapped[str] = mapped_column(
         String,
         nullable=False,

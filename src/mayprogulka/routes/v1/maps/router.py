@@ -45,7 +45,7 @@ async def create_maps_batch(
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Массовое создание карт (только barcode, без привязки). Только администратор."""
+    """Массовое создание карт (количество). Только администратор."""
     return await MapService.create_batch(db, data)
 
 
