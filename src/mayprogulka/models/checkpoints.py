@@ -8,7 +8,6 @@ class CheckpointCreateRequest(BaseModel):
     name: str
     address: str
     coordinates: str
-    position: int
 
 
 class CheckpointUpdateRequest(BaseModel):

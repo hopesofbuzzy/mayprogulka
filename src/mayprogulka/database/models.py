@@ -129,7 +129,7 @@ class Checkpoint(Base):
         nullable=False,
     )
 
-    barcode: Mapped[String] = mapped_column(
+    barcode: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )

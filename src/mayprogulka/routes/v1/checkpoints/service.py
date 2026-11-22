@@ -57,11 +57,21 @@ class CheckpointService:
         checkpoint = Checkpoint(**cp_fields, barcode=generate_checkpoint_barcode())
         db.add(checkpoint)
         await db.flush()
+
+        # Инкрементное добавление номера позиции
+        pos_result = await db.execute(
+            select(CheckpointPositions).where(
+                and_(CheckpointPositions.route_id == checkpoint.route_id)
+            )
+        )
+        checkpoint_pos: list[CheckpointPositions] = list(pos_result.scalars())
+        position: int = max([check_pos.position for check_pos in checkpoint_pos], default=0) + 1
+
         db.add(
             CheckpointPositions(
                 checkpoint_id=checkpoint.id,
                 route_id=data.route_id,
-                position=data.position,
+                position=position,
             )
         )
         await db.commit()
@@ -73,7 +83,7 @@ class CheckpointService:
             name=checkpoint.name,
             address=checkpoint.address,
             coordinates=checkpoint.coordinates,
-            position=data.position,
+            position=position,
         )
     
     @staticmethod
@@ -117,6 +127,8 @@ class CheckpointService:
                 db.add(checkpoint_position)
             else:
                 checkpoint_position.position = position
+        else:
+            position = -1
         
         await db.commit()
         await db.refresh(checkpoint)
@@ -129,7 +141,7 @@ class CheckpointService:
             name=checkpoint.name,
             address=checkpoint.address,
             coordinates=checkpoint.coordinates,
-            position=checkpoint_position.position,
+            position=position,
         )
     
     @staticmethod
@@ -181,6 +193,15 @@ class CheckpointService:
         errors = []
         valid_checkpoints = []
         positions = []
+
+        # Определение последней позиции чекпоинта в пути.
+        pos_result = await db.execute(
+            select(CheckpointPositions).where(
+                and_(CheckpointPositions.route_id == data.route_id)
+            )
+        )
+        checkpoint_pos: list[CheckpointPositions] = list(pos_result.scalars())
+        position = max([check_pos.position for check_pos in checkpoint_pos], default=0) + 1
         
         for idx, cp_data in enumerate(data.checkpoints):
             try:
@@ -188,10 +209,10 @@ class CheckpointService:
                 cp_dict = cp_data.model_dump(exclude={'route_id', 'position'})
                 checkpoint = Checkpoint(route_id=data.route_id, barcode=generate_checkpoint_barcode(), **cp_dict)
                 valid_checkpoints.append(checkpoint)
-                positions.append((checkpoint, cp_data.position))
+                positions.append((checkpoint, position))
             except Exception as e:
                 errors.append({"index": idx, "error": f"Ошибка валидации: {str(e)}"})
-        
+
         if valid_checkpoints:
             db.add_all(valid_checkpoints)
             try:

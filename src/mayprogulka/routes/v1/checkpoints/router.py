@@ -59,7 +59,7 @@ async def create_checkpoint(
     data: CheckpointCreateRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Создание нового контрольного пункта."""
+    """Создание нового контрольного пункта. position опционален (инкрементное добавление в маршрут)."""
     return await CheckpointService.create(db, data)
 
 
@@ -104,5 +104,5 @@ async def create_checkpoints_batch(
     data: BatchCheckpointCreateRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Массовое создание КП для маршрута."""
+    """Массовое создание КП для маршрута. Порядок КП на маршруте - порядок внутри запроса."""
     return await CheckpointService.create_batch(db, data)
