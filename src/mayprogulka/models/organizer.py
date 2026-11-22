@@ -21,7 +21,7 @@ class CheckpointStats(BaseModel):
     route_id: int
     route_name: str
     name: str
-    order: int
+    position: int
     passed: int
 
 

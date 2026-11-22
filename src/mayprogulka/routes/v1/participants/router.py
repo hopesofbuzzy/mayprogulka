@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 import uuid
 
 from mayprogulka.database.database import get_db
-from mayprogulka.database.models import User, Participant, Route, Checkpoint, CheckpointPass
+from mayprogulka.database.models import User, Participant, Route, Checkpoint, CheckpointPass, CheckpointPositions
 from mayprogulka.database.enums import Role, role_value
 from mayprogulka.models.participants import (
     ParticipantDetail,
@@ -327,8 +327,13 @@ async def get_my_participant_passes(
         raise HTTPException(status_code=404, detail="Участник не найден")
 
     result = await db.execute(
-        select(CheckpointPass, Checkpoint)
+        select(CheckpointPass, Checkpoint, CheckpointPositions.position)
         .join(Checkpoint, CheckpointPass.checkpoint_id == Checkpoint.id)
+        .join(
+            CheckpointPositions,
+            (CheckpointPositions.checkpoint_id == Checkpoint.id)
+            & (CheckpointPositions.route_id == participant.route_id),
+        )
         .where(CheckpointPass.participant_id == participant.id)
         .order_by(CheckpointPass.passed_at)
     )
@@ -339,14 +344,12 @@ async def get_my_participant_passes(
             ParticipantPassItem(
                 checkpoint_id=checkpoint.id,
                 checkpoint_name=checkpoint.name,
-                checkpoint_order=checkpoint.order,
+                position=position,
                 route_id=checkpoint.route_id,
                 address=checkpoint.address,
-                is_start=checkpoint.is_start,
-                is_finish=checkpoint.is_finish,
                 passed_at=checkpoint_pass.passed_at,
             )
-            for checkpoint_pass, checkpoint in result.all()
+            for checkpoint_pass, checkpoint, position in result.all()
         ],
     )
 

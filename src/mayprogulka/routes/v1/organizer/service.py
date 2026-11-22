@@ -10,6 +10,7 @@ from mayprogulka.database.models import (
     Checkpoint,
     CheckpointAssignment,
     CheckpointPass,
+    CheckpointPositions,
     Participant,
     Route,
     User,
@@ -172,19 +173,26 @@ class OrganizerService:
                 Checkpoint.route_id,
                 Route.name,
                 Checkpoint.name,
-                Checkpoint.order,
+                CheckpointPositions.position,
                 func.count(distinct(CheckpointPass.participant_id)),
             )
             .join(Route, Checkpoint.route_id == Route.id)
+            .join(
+                CheckpointPositions,
+                and_(
+                    CheckpointPositions.checkpoint_id == Checkpoint.id,
+                    CheckpointPositions.route_id == Checkpoint.route_id,
+                ),
+            )
             .outerjoin(CheckpointPass, CheckpointPass.checkpoint_id == Checkpoint.id)
             .group_by(
                 Checkpoint.id,
                 Checkpoint.route_id,
                 Route.name,
                 Checkpoint.name,
-                Checkpoint.order,
+                CheckpointPositions.position,
             )
-            .order_by(Route.name, Checkpoint.order)
+            .order_by(Route.name, CheckpointPositions.position)
         )
         if route_id is not None:
             checkpoints_query = checkpoints_query.where(Checkpoint.route_id == route_id)
@@ -198,10 +206,10 @@ class OrganizerService:
                 route_id=current_route_id,
                 route_name=route_name,
                 name=checkpoint_name,
-                order=order,
+                position=position,
                 passed=int(passed),
             )
-            for checkpoint_id, current_route_id, route_name, checkpoint_name, order, passed
+            for checkpoint_id, current_route_id, route_name, checkpoint_name, position, passed
             in checkpoint_rows
         ]
 

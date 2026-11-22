@@ -109,11 +109,9 @@ class ParticipantPassItem(BaseModel):
 
     checkpoint_id: int
     checkpoint_name: str
-    checkpoint_order: int
+    position: int
     route_id: int
     address: str
-    is_start: bool
-    is_finish: bool
     passed_at: datetime
 
 

@@ -10,9 +10,7 @@ class MarkerCheckpointItem(BaseModel):
     name: str
     address: str
     coordinates: str
-    order: int
-    is_start: bool
-    is_finish: bool
+    position: int
 
 
 class MarkerAssignmentsResponse(BaseModel):

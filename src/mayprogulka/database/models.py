@@ -94,6 +94,12 @@ class Route(Base):
         cascade="all, delete-orphan",
     )
 
+    # Позиции контрольных пунктов на маршруте.
+    checkpoint_positions: Mapped[list["CheckpointPositions"]] = relationship(
+        back_populates="route",
+        cascade="all, delete-orphan",
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -138,21 +144,6 @@ class Checkpoint(Base):
         nullable=False,
     )
 
-    is_start: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False
-    )
-
-    is_finish: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False
-    )
-
-    order: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False
-    )
-
     # Координаты храним строкой (TEXT в схеме), напр. "55.75,37.61".
     coordinates: Mapped[str] = mapped_column(
         String,
@@ -162,6 +153,12 @@ class Checkpoint(Base):
     # Маршрут, которому принадлежит контрольный пункт.
     route: Mapped["Route"] = relationship(
         back_populates="checkpoints",
+    )
+
+    # Позиции этого КП на маршрутах.
+    positions: Mapped[list["CheckpointPositions"]] = relationship(
+        back_populates="checkpoint",
+        cascade="all, delete-orphan",
     )
 
     # Отметки о прохождении этого пункта участниками.
@@ -418,3 +415,39 @@ class CheckpointAssignment(Base):
 
 # Совместимый алиас: старые импорты MarkerAssignment продолжают работать.
 MarkerAssignment = CheckpointAssignment
+
+
+class CheckpointPositions(Base):
+    """Связь контрольного пункта и маршрута с порядковым номером пункта на маршруте."""
+
+    __tablename__ = "checkpoint_positions"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    checkpoint_id: Mapped[int] = mapped_column(
+        ForeignKey("checkpoints.id"),
+        nullable=False,
+    )
+
+    route_id: Mapped[int] = mapped_column(
+        ForeignKey("routes.id"),
+        nullable=False,
+    )
+
+    # Порядковый номер контрольного пункта на данном маршруте.
+    position: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    checkpoint: Mapped["Checkpoint"] = relationship(
+        back_populates="positions",
+    )
+
+    route: Mapped["Route"] = relationship(
+        back_populates="checkpoint_positions",
+    )

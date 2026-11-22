@@ -4592,19 +4592,9 @@
             "type": "string",
             "title": "Coordinates"
           },
-          "order": {
+          "position": {
             "type": "integer",
-            "title": "Order"
-          },
-          "is_start": {
-            "type": "boolean",
-            "title": "Is Start",
-            "default": false
-          },
-          "is_finish": {
-            "type": "boolean",
-            "title": "Is Finish",
-            "default": false
+            "title": "Position"
           }
         },
         "type": "object",
@@ -4613,7 +4603,7 @@
           "name",
           "address",
           "coordinates",
-          "order"
+          "position"
         ],
         "title": "CheckpointCreateRequest"
       },
@@ -4659,17 +4649,9 @@
             "type": "string",
             "title": "Coordinates"
           },
-          "order": {
+          "position": {
             "type": "integer",
-            "title": "Order"
-          },
-          "is_start": {
-            "type": "boolean",
-            "title": "Is Start"
-          },
-          "is_finish": {
-            "type": "boolean",
-            "title": "Is Finish"
+            "title": "Position"
           }
         },
         "type": "object",
@@ -4680,9 +4662,7 @@
           "name",
           "address",
           "coordinates",
-          "order",
-          "is_start",
-          "is_finish"
+          "position"
         ],
         "title": "CheckpointResponse"
       },
@@ -4704,9 +4684,9 @@
             "type": "string",
             "title": "Name"
           },
-          "order": {
+          "position": {
             "type": "integer",
-            "title": "Order"
+            "title": "Position"
           },
           "passed": {
             "type": "integer",
@@ -4719,7 +4699,7 @@
           "route_id",
           "route_name",
           "name",
-          "order",
+          "position",
           "passed"
         ],
         "title": "CheckpointStats"
@@ -4759,7 +4739,7 @@
             ],
             "title": "Coordinates"
           },
-          "order": {
+          "position": {
             "anyOf": [
               {
                 "type": "integer"
@@ -4768,29 +4748,7 @@
                 "type": "null"
               }
             ],
-            "title": "Order"
-          },
-          "is_start": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Start"
-          },
-          "is_finish": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Finish"
+            "title": "Position"
           }
         },
         "type": "object",
@@ -5151,17 +5109,9 @@
             "type": "string",
             "title": "Coordinates"
           },
-          "order": {
+          "position": {
             "type": "integer",
-            "title": "Order"
-          },
-          "is_start": {
-            "type": "boolean",
-            "title": "Is Start"
-          },
-          "is_finish": {
-            "type": "boolean",
-            "title": "Is Finish"
+            "title": "Position"
           }
         },
         "type": "object",
@@ -5172,9 +5122,7 @@
           "name",
           "address",
           "coordinates",
-          "order",
-          "is_start",
-          "is_finish"
+          "position"
         ],
         "title": "MarkerCheckpointItem",
         "description": "Назначенный маркеру контрольный пункт."
@@ -5950,9 +5898,9 @@
             "type": "string",
             "title": "Checkpoint Name"
           },
-          "checkpoint_order": {
+          "position": {
             "type": "integer",
-            "title": "Checkpoint Order"
+            "title": "Position"
           },
           "route_id": {
             "type": "integer",
@@ -5961,14 +5909,6 @@
           "address": {
             "type": "string",
             "title": "Address"
-          },
-          "is_start": {
-            "type": "boolean",
-            "title": "Is Start"
-          },
-          "is_finish": {
-            "type": "boolean",
-            "title": "Is Finish"
           },
           "passed_at": {
             "type": "string",
@@ -5980,11 +5920,9 @@
         "required": [
           "checkpoint_id",
           "checkpoint_name",
-          "checkpoint_order",
+          "position",
           "route_id",
           "address",
-          "is_start",
-          "is_finish",
           "passed_at"
         ],
         "title": "ParticipantPassItem",

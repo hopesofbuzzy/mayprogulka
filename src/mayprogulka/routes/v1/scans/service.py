@@ -1,9 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from fastapi import HTTPException
 from datetime import datetime
 
-from mayprogulka.database.models import Map, Participant, Checkpoint, CheckpointPass, Route, User
+from mayprogulka.database.models import (
+    Map,
+    Participant,
+    Checkpoint,
+    CheckpointPass,
+    CheckpointPositions,
+    Route,
+    User,
+)
 from mayprogulka.models.scans import (
     ScanResponse,
     BatchScanRequest,
@@ -59,17 +67,55 @@ class ScanService:
         return result.scalar_one_or_none() is not None
     
     @staticmethod
+    async def _get_position(
+        db: AsyncSession,
+        checkpoint_id: int,
+        route_id: int,
+    ) -> int | None:
+        """Позиция КП на маршруте; None — КП не входит в маршрут."""
+        result = await db.execute(
+            select(CheckpointPositions.position).where(
+                and_(
+                    CheckpointPositions.checkpoint_id == checkpoint_id,
+                    CheckpointPositions.route_id == route_id,
+                )
+            )
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def _get_route_bounds(
+        db: AsyncSession,
+        route_id: int,
+    ) -> tuple[int | None, int | None]:
+        """Минимальная и максимальная позиция КП на маршруте (старт и финиш)."""
+        result = await db.execute(
+            select(
+                func.min(CheckpointPositions.position),
+                func.max(CheckpointPositions.position),
+            ).where(CheckpointPositions.route_id == route_id)
+        )
+        return result.one()
+
+    @staticmethod
     async def _update_participant_status(
         db: AsyncSession,
         participant: Participant,
-        checkpoint: Checkpoint
+        position: int,
     ) -> None:
-        """Обновление статусов и времени первого старта/финиша."""
+        """Обновление статусов и времени первого старта/финиша.
+
+        Старт — минимальная позиция КП на маршруте участника,
+        финиш — максимальная.
+        """
         now = datetime.utcnow()
-        if checkpoint.is_start and not participant.has_started:
+        start_position, finish_position = await ScanService._get_route_bounds(
+            db, participant.route_id
+        )
+        if position == start_position and not participant.has_started:
             participant.has_started = True
             participant.started_at = now
-        if checkpoint.is_finish and not participant.has_finished:
+        if position == finish_position and not participant.has_finished:
             participant.has_finished = True
             participant.finished_at = now
     
@@ -100,6 +146,14 @@ class ScanService:
         # 2. Ищем участника по barcode
         map_obj, participant = await ScanService._find_participant_by_barcode(db, barcode)
         
+        # 2.1. КП должен входить в маршрут участника.
+        position = await ScanService._get_position(db, checkpoint_id, participant.route_id)
+        if position is None:
+            raise HTTPException(
+                status_code=400,
+                detail="КП не входит в маршрут участника",
+            )
+        
         # 3. Проверяем, не проходил ли уже
         if await ScanService._check_already_passed(db, participant.id, checkpoint_id):
             return ScanResponse(
@@ -120,7 +174,7 @@ class ScanService:
         db.add(checkpoint_pass)
         
         # 5. Обновляем статусы участника
-        await ScanService._update_participant_status(db, participant, checkpoint)
+        await ScanService._update_participant_status(db, participant, position)
         
         await db.commit()
         
@@ -167,6 +221,17 @@ class ScanService:
                     db, scan_item.barcode
                 )
                 
+                # КП должен входить в маршрут участника
+                position = await ScanService._get_position(
+                    db, data.checkpoint_id, participant.route_id
+                )
+                if position is None:
+                    errors.append(BatchScanError(
+                        barcode=scan_item.barcode,
+                        error="КП не входит в маршрут участника",
+                    ))
+                    continue
+                
                 # Проверяем дубликат
                 if await ScanService._check_already_passed(
                     db, participant.id, data.checkpoint_id
@@ -185,7 +250,7 @@ class ScanService:
                 
                 # Обновляем статусы
                 await ScanService._update_participant_status(
-                    db, participant, checkpoint
+                    db, participant, position
                 )
                 
                 processed += 1
@@ -236,7 +301,9 @@ class ScanService:
         if not participant:
             raise HTTPException(status_code=404, detail="Участник не найден")
         
-        if participant.route_id != checkpoint.route_id:
+        # КП должен входить в маршрут участника (связь через CheckpointPositions).
+        position = await ScanService._get_position(db, checkpoint_id, participant.route_id)
+        if position is None:
             raise HTTPException(
                 status_code=400,
                 detail="Участник не зарегистрирован на маршрут этого КП"
@@ -259,7 +326,7 @@ class ScanService:
         db.add(checkpoint_pass)
         
         # 5. Обновляем статусы
-        await ScanService._update_participant_status(db, participant, checkpoint)
+        await ScanService._update_participant_status(db, participant, position)
         
         await db.commit()
         

@@ -8,18 +8,14 @@ class CheckpointCreateRequest(BaseModel):
     name: str
     address: str
     coordinates: str
-    order: int
-    is_start: bool = False
-    is_finish: bool = False
+    position: int
 
 
 class CheckpointUpdateRequest(BaseModel):
     name: Optional[str] = None
     address: Optional[str] = None
     coordinates: Optional[str] = None
-    order: Optional[int] = None
-    is_start: Optional[bool] = None
-    is_finish: Optional[bool] = None
+    position: Optional[int] = None
 
 
 class CheckpointResponse(BaseModel):
@@ -31,9 +27,7 @@ class CheckpointResponse(BaseModel):
     name: str
     address: str
     coordinates: str
-    order: int
-    is_start: bool
-    is_finish: bool
+    position: int
 
 
 class CheckpointListResponse(BaseModel):

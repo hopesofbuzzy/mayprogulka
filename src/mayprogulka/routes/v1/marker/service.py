@@ -1,10 +1,11 @@
 from fastapi import HTTPException, status
-from sqlalchemy import delete, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mayprogulka.database.enums import Role, role_value
 from mayprogulka.database.models import (
     Checkpoint,
+    CheckpointPositions,
     MarkerAssignment,
     Route,
     User,
@@ -26,11 +27,18 @@ class MarkerService:
     ) -> MarkerAssignmentsResponse:
         """Вернуть назначенные маркеру КП вместе с данными маршрута."""
         result = await db.execute(
-            select(Checkpoint, Route.name)
+            select(Checkpoint, Route.name, CheckpointPositions.position)
             .join(Route, Checkpoint.route_id == Route.id)
+            .join(
+                CheckpointPositions,
+                and_(
+                    CheckpointPositions.checkpoint_id == Checkpoint.id,
+                    CheckpointPositions.route_id == Checkpoint.route_id,
+                ),
+            )
             .join(MarkerAssignment, MarkerAssignment.checkpoint_id == Checkpoint.id)
             .where(MarkerAssignment.user_id == marker_id)
-            .order_by(Route.name, Checkpoint.order)
+            .order_by(Route.name, CheckpointPositions.position)
         )
 
         return MarkerAssignmentsResponse(
@@ -43,11 +51,9 @@ class MarkerService:
                     name=checkpoint.name,
                     address=checkpoint.address,
                     coordinates=checkpoint.coordinates,
-                    order=checkpoint.order,
-                    is_start=checkpoint.is_start,
-                    is_finish=checkpoint.is_finish,
+                    position=position,
                 )
-                for checkpoint, route_name in result.all()
+                for checkpoint, route_name, position in result.all()
             ],
         )
 
@@ -63,8 +69,15 @@ class MarkerService:
         администратор видят все КП (с необязательным фильтром route_id).
         """
         query = (
-            select(Checkpoint, Route.name)
+            select(Checkpoint, Route.name, CheckpointPositions.position)
             .join(Route, Checkpoint.route_id == Route.id)
+            .join(
+                CheckpointPositions,
+                and_(
+                    CheckpointPositions.checkpoint_id == Checkpoint.id,
+                    CheckpointPositions.route_id == Checkpoint.route_id,
+                ),
+            )
         )
 
         if role_value(actor.role) == Role.MARKER.value:
@@ -76,7 +89,9 @@ class MarkerService:
         if route_id is not None:
             query = query.where(Checkpoint.route_id == route_id)
 
-        result = await db.execute(query.order_by(Route.name, Checkpoint.order))
+        result = await db.execute(
+            query.order_by(Route.name, CheckpointPositions.position)
+        )
 
         return MarkerAssignmentsResponse(
             marker_id=actor.id,
@@ -88,11 +103,9 @@ class MarkerService:
                     name=checkpoint.name,
                     address=checkpoint.address,
                     coordinates=checkpoint.coordinates,
-                    order=checkpoint.order,
-                    is_start=checkpoint.is_start,
-                    is_finish=checkpoint.is_finish,
+                    position=position,
                 )
-                for checkpoint, route_name in result.all()
+                for checkpoint, route_name, position in result.all()
             ],
         )
 
