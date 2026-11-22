@@ -48,23 +48,27 @@ class ScanService:
             )
         
         return row
-    
+
     @staticmethod
-    async def _check_already_passed(
+    async def _is_already_passed(
         db: AsyncSession,
         participant_id: int,
-        checkpoint_id: int
+        checkpoint_id: int,
     ) -> bool:
-        """Проверка, прошёл ли участник уже этот КП."""
+        """
+        Проверка, что participant ещё не сканировался на этом КП
+        """
         result = await db.execute(
-            select(CheckpointPass.id).where(
+            select(CheckpointPass.id)
+            .where(
                 and_(
                     CheckpointPass.participant_id == participant_id,
-                    CheckpointPass.checkpoint_id == checkpoint_id,
+                    CheckpointPass.checkpoint_id == checkpoint_id
                 )
             )
         )
-        return result.scalar_one_or_none() is not None
+        already_passed = result.scalar_one_or_none()
+        return already_passed is not None # КП уже пройден!
     
     @staticmethod
     async def _get_position(
@@ -154,14 +158,15 @@ class ScanService:
                 detail="КП не входит в маршрут участника",
             )
         
-        # 3. Проверяем, не проходил ли уже
-        if await ScanService._check_already_passed(db, participant.id, checkpoint_id):
+        # 2.1. КП должен входить в маршрут участника.
+        # 3. Проверяем, не пройден ли чекпоинт уже
+        if await ScanService._is_already_passed(db, participant.id, checkpoint_id):
             return ScanResponse(
                 status="already_passed",
                 barcode=barcode,
                 participant_name=f"{participant.name} {participant.surname}",
                 checkpoint_name=checkpoint.name,
-                message="Участник уже проходил этот КП",
+                message="Участник уже прошёл чекпоинт",
             )
         
         # 4. Создаём запись о прохождении
@@ -232,8 +237,8 @@ class ScanService:
                     ))
                     continue
                 
-                # Проверяем дубликат
-                if await ScanService._check_already_passed(
+                # Проверяем, что КП не пройден
+                if await ScanService._is_already_passed(
                     db, participant.id, data.checkpoint_id
                 ):
                     already_passed += 1
@@ -309,12 +314,12 @@ class ScanService:
                 detail="Участник не зарегистрирован на маршрут этого КП"
             )
         
-        # 3. Проверяем дубликат
-        if await ScanService._check_already_passed(db, participant_id, checkpoint_id):
+        # 3. Проверяем, нужный ли это чекпоинт для участника
+        if await ScanService._is_already_passed(db, participant_id, checkpoint_id):
             return SelfScanResponse(
                 status="already_passed",
                 checkpoint_name=checkpoint.name,
-                message="Вы уже проходили этот КП",
+                message="Участник уже прошёл этот КП!",
             )
         
         # 4. Создаём запись

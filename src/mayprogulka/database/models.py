@@ -421,6 +421,10 @@ class CheckpointPositions(Base):
     """Связь контрольного пункта и маршрута с порядковым номером пункта на маршруте."""
 
     __tablename__ = "checkpoint_positions"
+    __table_args__ = (
+        UniqueConstraint('route_id', 'checkpoint_id', name='uq_route_checkpoint'),
+        UniqueConstraint('route_id', 'position', name='uq_route_order')
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,

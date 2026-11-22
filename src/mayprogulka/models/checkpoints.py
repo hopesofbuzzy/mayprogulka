@@ -32,10 +32,15 @@ class CheckpointResponse(BaseModel):
 class CheckpointListResponse(BaseModel):
     checkpoints: list[CheckpointResponse]
 
+class CheckpointCreateItemRequest(BaseModel):
+    name: str
+    address: str
+    coordinates: str
 
 class BatchCheckpointCreateRequest(BaseModel):
     route_id: int
-    checkpoints: list[CheckpointCreateRequest]
+    checkpoints: list[CheckpointCreateItemRequest]
+
 
 
 class BatchCheckpointResponse(BaseModel):

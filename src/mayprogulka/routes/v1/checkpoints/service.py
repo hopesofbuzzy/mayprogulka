@@ -59,13 +59,16 @@ class CheckpointService:
         await db.flush()
 
         # Инкрементное добавление номера позиции
-        pos_result = await db.execute(
-            select(CheckpointPositions).where(
-                and_(CheckpointPositions.route_id == checkpoint.route_id)
-            )
+        result = await db.execute(
+            select(func.max(CheckpointPositions.position))
+            .where(CheckpointPositions.route_id == data.route_id)
         )
-        checkpoint_pos: list[CheckpointPositions] = list(pos_result.scalars())
-        position: int = max([check_pos.position for check_pos in checkpoint_pos], default=0) + 1
+        max_position = result.scalar_one_or_none()
+
+        if max_position is None:
+            max_position = 0
+
+        position: int = max_position + 1
 
         db.add(
             CheckpointPositions(
@@ -194,14 +197,16 @@ class CheckpointService:
         valid_checkpoints = []
         positions = []
 
-        # Определение последней позиции чекпоинта в пути.
-        pos_result = await db.execute(
-            select(CheckpointPositions).where(
-                and_(CheckpointPositions.route_id == data.route_id)
-            )
+        # Инкрементное добавление номера позиции
+        result = await db.execute(
+            select(func.max(CheckpointPositions.position))
+            .where(CheckpointPositions.route_id == data.route_id)
         )
-        checkpoint_pos: list[CheckpointPositions] = list(pos_result.scalars())
-        position = max([check_pos.position for check_pos in checkpoint_pos], default=0) + 1
+        max_position = result.scalar_one_or_none()
+
+        if max_position is None:
+            max_position = 0
+        position = max_position + 1
         
         for idx, cp_data in enumerate(data.checkpoints):
             try:
@@ -210,6 +215,7 @@ class CheckpointService:
                 checkpoint = Checkpoint(route_id=data.route_id, barcode=generate_checkpoint_barcode(), **cp_dict)
                 valid_checkpoints.append(checkpoint)
                 positions.append((checkpoint, position))
+                position += 1
             except Exception as e:
                 errors.append({"index": idx, "error": f"Ошибка валидации: {str(e)}"})
 
