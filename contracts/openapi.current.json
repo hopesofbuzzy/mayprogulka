@@ -1322,7 +1322,7 @@
           "checkpoints"
         ],
         "summary": "Create Checkpoint",
-        "description": "Создание нового контрольного пункта.",
+        "description": "Создание нового контрольного пункта. position опционален (инкрементное добавление в маршрут).",
         "operationId": "create_checkpoint_api_v1_admin_checkpoints_post",
         "requestBody": {
           "content": {
@@ -1595,7 +1595,7 @@
           "checkpoints"
         ],
         "summary": "Create Checkpoints Batch",
-        "description": "Массовое создание КП для маршрута.",
+        "description": "Массовое создание КП для маршрута. Порядок КП на маршруте - порядок внутри запроса.",
         "operationId": "create_checkpoints_batch_api_v1_admin_checkpoints_batch_post",
         "requestBody": {
           "content": {
@@ -4354,7 +4354,7 @@
           },
           "checkpoints": {
             "items": {
-              "$ref": "#/components/schemas/CheckpointCreateRequest"
+              "$ref": "#/components/schemas/CheckpointCreateItemRequest"
             },
             "type": "array",
             "title": "Checkpoints"
@@ -4574,6 +4574,29 @@
         ],
         "title": "CheckpointAssignmentResponse"
       },
+      "CheckpointCreateItemRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "coordinates": {
+            "type": "string",
+            "title": "Coordinates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "coordinates"
+        ],
+        "title": "CheckpointCreateItemRequest"
+      },
       "CheckpointCreateRequest": {
         "properties": {
           "route_id": {
@@ -4591,10 +4614,6 @@
           "coordinates": {
             "type": "string",
             "title": "Coordinates"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
           }
         },
         "type": "object",
@@ -4602,8 +4621,7 @@
           "route_id",
           "name",
           "address",
-          "coordinates",
-          "position"
+          "coordinates"
         ],
         "title": "CheckpointCreateRequest"
       },
