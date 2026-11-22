@@ -17,9 +17,18 @@ uv add <библиотека>
 
 `frontend\` - фронтенд.
 
-`src\contracts\` - контракты и схемы.
+`contracts\` - контракты и схемы.
 
 `src\mayprogulka\entrypoint.py` - вход в бэкенд-приложение.
+
+## Роли и API
+
+Роли: `user`, `typist`, `registrar`, `marker`, `organizer`, `admin`.
+`participant` — не роль, а запись участника в таблице `participants`.
+
+Матрица прав и описание эндпоинтов: `contracts/api_contract.md`.
+Машиночитаемый контракт: `contracts/openapi.roles.json`.
+Те же схемы доступны в Swagger UI при запуске: `/docs`.
 
 ## Deployment
 ...

@@ -1,9 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from fastapi import HTTPException
 from datetime import datetime
 
-from mayprogulka.database.models import Map, Participant, Checkpoint, CheckpointPass, Route
+from mayprogulka.database.models import (
+    Map,
+    Participant,
+    Checkpoint,
+    CheckpointPass,
+    CheckpointPositions,
+    Route,
+    User,
+)
 from mayprogulka.models.scans import (
     ScanResponse,
     BatchScanRequest,
@@ -12,6 +20,7 @@ from mayprogulka.models.scans import (
     BatchScanItem,
     SelfScanResponse,
 )
+from mayprogulka.routes.v1.marker.service import MarkerService
 
 
 class ScanService:
@@ -39,35 +48,80 @@ class ScanService:
             )
         
         return row
-    
+
     @staticmethod
-    async def _check_already_passed(
+    async def _is_already_passed(
         db: AsyncSession,
         participant_id: int,
-        checkpoint_id: int
+        checkpoint_id: int,
     ) -> bool:
-        """Проверка, прошёл ли участник уже этот КП."""
+        """
+        Проверка, что participant ещё не сканировался на этом КП
+        """
         result = await db.execute(
-            select(CheckpointPass.id).where(
+            select(CheckpointPass.id)
+            .where(
                 and_(
                     CheckpointPass.participant_id == participant_id,
-                    CheckpointPass.checkpoint_id == checkpoint_id,
+                    CheckpointPass.checkpoint_id == checkpoint_id
                 )
             )
         )
-        return result.scalar_one_or_none() is not None
+        already_passed = result.scalar_one_or_none()
+        return already_passed is not None # КП уже пройден!
     
+    @staticmethod
+    async def _get_position(
+        db: AsyncSession,
+        checkpoint_id: int,
+        route_id: int,
+    ) -> int | None:
+        """Позиция КП на маршруте; None — КП не входит в маршрут."""
+        result = await db.execute(
+            select(CheckpointPositions.position).where(
+                and_(
+                    CheckpointPositions.checkpoint_id == checkpoint_id,
+                    CheckpointPositions.route_id == route_id,
+                )
+            )
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def _get_route_bounds(
+        db: AsyncSession,
+        route_id: int,
+    ) -> tuple[int | None, int | None]:
+        """Минимальная и максимальная позиция КП на маршруте (старт и финиш)."""
+        result = await db.execute(
+            select(
+                func.min(CheckpointPositions.position),
+                func.max(CheckpointPositions.position),
+            ).where(CheckpointPositions.route_id == route_id)
+        )
+        return result.one()
+
     @staticmethod
     async def _update_participant_status(
         db: AsyncSession,
         participant: Participant,
-        checkpoint: Checkpoint
+        position: int,
     ) -> None:
-        """Обновление статусов has_started и has_finished."""
-        if checkpoint.is_start and not participant.has_started:
+        """Обновление статусов и времени первого старта/финиша.
+
+        Старт — минимальная позиция КП на маршруте участника,
+        финиш — максимальная.
+        """
+        now = datetime.utcnow()
+        start_position, finish_position = await ScanService._get_route_bounds(
+            db, participant.route_id
+        )
+        if position == start_position and not participant.has_started:
             participant.has_started = True
-        if checkpoint.is_finish and not participant.has_finished:
+            participant.started_at = now
+        if position == finish_position and not participant.has_finished:
             participant.has_finished = True
+            participant.finished_at = now
     
     @staticmethod
     async def scan_single(
@@ -75,6 +129,7 @@ class ScanService:
         barcode: str,
         checkpoint_id: int,
         scanned_at: datetime | None = None,
+        actor: User | None = None,
     ) -> ScanResponse:
         """
         Одиночное сканирование на КП.
@@ -87,18 +142,31 @@ class ScanService:
         checkpoint = result.scalar_one_or_none()
         if not checkpoint:
             raise HTTPException(status_code=404, detail="КП не найден")
+
+        # 1.1. Маркер может сканировать только назначенные ему КП.
+        if actor is not None:
+            await MarkerService.ensure_checkpoint_access(db, actor, checkpoint_id)
         
         # 2. Ищем участника по barcode
         map_obj, participant = await ScanService._find_participant_by_barcode(db, barcode)
         
-        # 3. Проверяем, не проходил ли уже
-        if await ScanService._check_already_passed(db, participant.id, checkpoint_id):
+        # 2.1. КП должен входить в маршрут участника.
+        position = await ScanService._get_position(db, checkpoint_id, participant.route_id)
+        if position is None:
+            raise HTTPException(
+                status_code=400,
+                detail="КП не входит в маршрут участника",
+            )
+        
+        # 2.1. КП должен входить в маршрут участника.
+        # 3. Проверяем, не пройден ли чекпоинт уже
+        if await ScanService._is_already_passed(db, participant.id, checkpoint_id):
             return ScanResponse(
                 status="already_passed",
                 barcode=barcode,
                 participant_name=f"{participant.name} {participant.surname}",
                 checkpoint_name=checkpoint.name,
-                message="Участник уже проходил этот КП",
+                message="Участник уже прошёл чекпоинт",
             )
         
         # 4. Создаём запись о прохождении
@@ -111,7 +179,7 @@ class ScanService:
         db.add(checkpoint_pass)
         
         # 5. Обновляем статусы участника
-        await ScanService._update_participant_status(db, participant, checkpoint)
+        await ScanService._update_participant_status(db, participant, position)
         
         await db.commit()
         
@@ -128,6 +196,7 @@ class ScanService:
     async def scan_batch(
         db: AsyncSession,
         data: BatchScanRequest,
+        actor: User | None = None,
     ) -> BatchScanResponse:
         """
         Пакетное сканирование. Обрабатывает массив barcode'ов одной транзакцией.
@@ -144,6 +213,10 @@ class ScanService:
         checkpoint = result.scalar_one_or_none()
         if not checkpoint:
             raise HTTPException(status_code=404, detail="КП не найден")
+
+        # Маркер может сканировать только назначенные ему КП.
+        if actor is not None:
+            await MarkerService.ensure_checkpoint_access(db, actor, data.checkpoint_id)
         
         # Обрабатываем каждый barcode
         for scan_item in data.scans:
@@ -153,8 +226,19 @@ class ScanService:
                     db, scan_item.barcode
                 )
                 
-                # Проверяем дубликат
-                if await ScanService._check_already_passed(
+                # КП должен входить в маршрут участника
+                position = await ScanService._get_position(
+                    db, data.checkpoint_id, participant.route_id
+                )
+                if position is None:
+                    errors.append(BatchScanError(
+                        barcode=scan_item.barcode,
+                        error="КП не входит в маршрут участника",
+                    ))
+                    continue
+                
+                # Проверяем, что КП не пройден
+                if await ScanService._is_already_passed(
                     db, participant.id, data.checkpoint_id
                 ):
                     already_passed += 1
@@ -171,7 +255,7 @@ class ScanService:
                 
                 # Обновляем статусы
                 await ScanService._update_participant_status(
-                    db, participant, checkpoint
+                    db, participant, position
                 )
                 
                 processed += 1
@@ -222,18 +306,20 @@ class ScanService:
         if not participant:
             raise HTTPException(status_code=404, detail="Участник не найден")
         
-        if participant.route_id != checkpoint.route_id:
+        # КП должен входить в маршрут участника (связь через CheckpointPositions).
+        position = await ScanService._get_position(db, checkpoint_id, participant.route_id)
+        if position is None:
             raise HTTPException(
                 status_code=400,
                 detail="Участник не зарегистрирован на маршрут этого КП"
             )
         
-        # 3. Проверяем дубликат
-        if await ScanService._check_already_passed(db, participant_id, checkpoint_id):
+        # 3. Проверяем, нужный ли это чекпоинт для участника
+        if await ScanService._is_already_passed(db, participant_id, checkpoint_id):
             return SelfScanResponse(
                 status="already_passed",
                 checkpoint_name=checkpoint.name,
-                message="Вы уже проходили этот КП",
+                message="Участник уже прошёл этот КП!",
             )
         
         # 4. Создаём запись
@@ -245,7 +331,7 @@ class ScanService:
         db.add(checkpoint_pass)
         
         # 5. Обновляем статусы
-        await ScanService._update_participant_status(db, participant, checkpoint)
+        await ScanService._update_participant_status(db, participant, position)
         
         await db.commit()
         
@@ -261,6 +347,7 @@ class ScanService:
         db: AsyncSession,
         checkpoint_id: int,
         barcodes: list[str],
+        actor: User | None = None,
     ) -> dict:
         """
         Обработка файла со списком штрих-кодов (офлайн-синхронизация).
@@ -270,7 +357,7 @@ class ScanService:
             checkpoint_id=checkpoint_id,
             scans=[BatchScanItem(barcode=b) for b in barcodes],
         )
-        result = await ScanService.scan_batch(db, batch_data)
+        result = await ScanService.scan_batch(db, batch_data, actor=actor)
         return {
             "processed": result.processed,
             "already_passed": result.already_passed,

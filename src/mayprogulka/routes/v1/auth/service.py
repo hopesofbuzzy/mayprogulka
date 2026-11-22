@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from mayprogulka.database.database import get_db
 from mayprogulka.database.models import User
+from mayprogulka.database.enums import Role, expand_roles, role_value
 
 # Настройки (в реальном проекте бери из .env!)
 SECRET_KEY = "super-secret-key-change-me-in-production"
@@ -75,23 +76,29 @@ async def get_current_user(
         
     return user
 
-def require_role(*required_roles: str):
+def require_role(*required_roles: Role | str):
     """
     Зависимость для проверки конкретной роли.
-    Использование: Depends(require_role("admin"))
+    Использование: Depends(require_role(Role.ADMIN))
     """
+    allowed = expand_roles(required_roles)
+
     async def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in required_roles:
+        if role_value(current_user.role) not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Доступ запрещен. Роли с доступом: {required_roles}"
+                detail=f"Доступ запрещен. Требуется одна из ролей: {sorted(allowed)}"
             )
         return current_user
     return role_checker
 
 
-# Готовые зависимости для каждой роли
-require_participant = require_role("participant")
-require_organizer = require_role("organizer")
-require_typist = require_role("typist")
-require_admin = require_role("admin")
+# Готовые зависимости для каждой роли.
+# Иерархия: admin наследует organizer. Для registrar/marker организатор
+# указан явно, поэтому администратор попадает туда транзитивно.
+require_user = require_role(Role.USER, Role.ADMIN)
+require_typist = require_role(Role.TYPIST, Role.ADMIN)
+require_registrar = require_role(Role.REGISTRAR, Role.ORGANIZER)
+require_marker = require_role(Role.MARKER, Role.ORGANIZER)
+require_organizer = require_role(Role.ORGANIZER)
+require_admin = require_role(Role.ADMIN)

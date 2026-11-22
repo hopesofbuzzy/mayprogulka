@@ -18,7 +18,11 @@ router = APIRouter(tags=["routes"])
 
 # ==================== ПУБЛИЧНЫЕ ЭНДПОИНТЫ ====================
 
-@router.get("/routes", response_model=RouteListResponse)
+@router.get(
+    "/routes",
+    response_model=RouteListResponse,
+    openapi_extra={"x-roles": ["public"]},
+)
 async def get_routes(db: AsyncSession = Depends(get_db)):
     """Получить список всех доступных маршрутов."""
     routes = await RouteService.get_all_routes(db)
@@ -34,6 +38,7 @@ async def get_routes(db: AsyncSession = Depends(get_db)):
     response_model=RouteResponse,
     status_code=201,
     tags=["admin"],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def create_route(
     data: RouteCreateRequest,
@@ -56,6 +61,7 @@ async def create_route(
     "/admin/routes/{route_id}",
     response_model=RouteResponse,
     tags=["admin"],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def update_route(
     route_id: int,
@@ -73,6 +79,7 @@ async def update_route(
     "/admin/routes/{route_id}",
     status_code=204,
     tags=["admin"],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def delete_route(
     route_id: int,
@@ -87,12 +94,14 @@ async def delete_route(
 @router.post(
     "/routes/{route_id}/map",
     response_model=MapUploadResponse,
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def upload_route_map(
     route_id: int,
     file: UploadFile = File(...),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Загрузить файл карты маршрута."""
+    """Загрузить файл карты маршрута (только администратор)."""
     map_url = await RouteService.upload_map_file(db, route_id, file)
     return MapUploadResponse(map_url=map_url)

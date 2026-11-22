@@ -5,7 +5,6 @@ from datetime import datetime
 
 class MapCreateRequest(BaseModel):
     """Создание карты. participant_id опционален (привязка происходит позже)."""
-    barcode: str
     participant_id: Optional[int] = None  # <-- ИЗМЕНЕНО: стало опциональным
 
 
@@ -33,7 +32,7 @@ class MapListResponse(BaseModel):
 
 
 class BatchMapCreateRequest(BaseModel):
-    barcodes: list[str]  # Упрощено: просто список barcode для массового создания
+    amount: int  # Упрощено: просто количество карт для создания
 
 
 class BatchMapResponse(BaseModel):

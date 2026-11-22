@@ -1,23 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select
 from fastapi import HTTPException
-import uuid
 
 from mayprogulka.database.models import Participant, Route, Map
 from mayprogulka.models.typist import (
     PaperFormRequest,
     PaperFormResponse,
+    PaperFormUpdateRequest,
     MatchRequest,
     MatchResponse,
     UnlinkedMapResponse,
 )
-
-
-def generate_form_id() -> str:
-    """Генерация уникального номера анкеты."""
-    # Формат: MP2026-XXXXXX (где XXXXXX — случайные цифры)
-    unique_part = str(uuid.uuid4().int)[:6].zfill(6)
-    return f"MP2026-{unique_part}"
+from mayprogulka.utils.form_id import generate_form_id
 
 
 class TypistService:
@@ -48,7 +42,7 @@ class TypistService:
         
         # Создаём участника с оплаченным статусом
         participant = Participant(
-            user_id=0,  # Временный пользователь для бумажных анкет
+            user_id=None,  # Бумажная анкета может не иметь аккаунта
             route_id=data.route_id,
             form_id=form_id,
             surname=data.surname,
@@ -59,7 +53,7 @@ class TypistService:
             phone_number=data.phone_number,
             email=data.email,
             payment_status="paid",  # Сразу оплачено!
-            has_started=False,
+            has_started=True,
             has_finished=False,
         )
         
@@ -73,6 +67,48 @@ class TypistService:
             payment_status="paid",
         )
     
+    @staticmethod
+    async def update_paper_form(
+        db: AsyncSession,
+        participant_id: int,
+        data: PaperFormUpdateRequest,
+    ) -> PaperFormResponse:
+        """Правка бумажной анкеты. После старта — 409."""
+        result = await db.execute(
+            select(Participant).where(Participant.id == participant_id)
+        )
+        participant = result.scalar_one_or_none()
+        if participant is None:
+            raise HTTPException(status_code=404, detail="Участник не найден")
+
+        if participant.has_started:
+            raise HTTPException(
+                status_code=409,
+                detail="После старта анкету изменить нельзя",
+            )
+
+        update_data = data.model_dump(exclude_unset=True)
+        if update_data.get("route_id") is not None:
+            route = (
+                await db.execute(
+                    select(Route).where(Route.id == update_data["route_id"])
+                )
+            ).scalar_one_or_none()
+            if route is None:
+                raise HTTPException(status_code=404, detail="Маршрут не найден")
+
+        for field, value in update_data.items():
+            setattr(participant, field, value)
+
+        await db.commit()
+        await db.refresh(participant)
+
+        return PaperFormResponse(
+            participant_id=participant.id,
+            form_id=participant.form_id,
+            payment_status=participant.payment_status,
+        )
+
     @staticmethod
     async def match_map_to_participant(
         db: AsyncSession,
@@ -127,24 +163,34 @@ class TypistService:
     @staticmethod
     async def get_unlinked_maps(
         db: AsyncSession,
-        limit: int = 100
-    ) -> list[UnlinkedMapResponse]:
-        """
-        Получение списка непривязанных карт.
-        """
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[UnlinkedMapResponse], int]:
+        """Получение списка непривязанных карт с общим количеством."""
+        total = (
+            await db.execute(
+                select(func.count(Map.id)).where(Map.participant_id.is_(None))
+            )
+        ).scalar_one()
+
         result = await db.execute(
             select(Map)
             .where(Map.participant_id.is_(None))
+            .order_by(Map.id)
             .limit(limit)
+            .offset(offset)
         )
         maps = result.scalars().all()
-        
+
         # Конвертируем в формат для typist
-        return [
-            UnlinkedMapResponse(
-                id=m.id,
-                barcode=m.barcode,
-                participant_id=m.participant_id
-            )
-            for m in maps
-        ]
+        return (
+            [
+                UnlinkedMapResponse(
+                    id=m.id,
+                    barcode=m.barcode,
+                    participant_id=m.participant_id
+                )
+                for m in maps
+            ],
+            total,
+        )

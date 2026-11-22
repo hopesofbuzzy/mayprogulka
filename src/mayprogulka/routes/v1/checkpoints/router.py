@@ -11,6 +11,7 @@ from mayprogulka.models.checkpoints import (
     CheckpointListResponse,
     BatchCheckpointCreateRequest,
     BatchCheckpointResponse,
+    CheckpointBarcodeResponse
 )
 from mayprogulka.routes.v1.checkpoints.service import CheckpointService
 
@@ -19,7 +20,11 @@ router = APIRouter(tags=["checkpoints"])
 
 # ==================== ПУБЛИЧНЫЕ ЭНДПОИНТЫ ====================
 
-@router.get("/checkpoints", response_model=CheckpointListResponse)
+@router.get(
+    "/checkpoints",
+    response_model=CheckpointListResponse,
+    openapi_extra={"x-roles": ["public"]},
+)
 async def get_checkpoints(
     route_id: int,
     db: AsyncSession = Depends(get_db),
@@ -28,6 +33,18 @@ async def get_checkpoints(
     checkpoints = await CheckpointService.get_by_route(db, route_id)
     return CheckpointListResponse(checkpoints=checkpoints)
 
+# @router.get(
+#     "/admin/checkpoints/{checkpoint_id}/image",
+#     response_model=CheckpointBarcodeResponse,
+#     openapi_extra={"x-roles": ["public"]},
+# )
+# async def get_barcode_image(
+#     route_id: int,
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     """Получить список контрольных пунктов маршрута."""
+#     image = ...
+#     return CheckpointBarcodeResponse(image)
 
 # ==================== АДМИНСКИЕ ЭНДПОИНТЫ ====================
 
@@ -36,12 +53,13 @@ async def get_checkpoints(
     response_model=CheckpointResponse,
     status_code=201,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def create_checkpoint(
     data: CheckpointCreateRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Создание нового контрольного пункта."""
+    """Создание нового контрольного пункта. position опционален (инкрементное добавление в маршрут)."""
     return await CheckpointService.create(db, data)
 
 
@@ -49,6 +67,7 @@ async def create_checkpoint(
     "/admin/checkpoints/{checkpoint_id}",
     response_model=CheckpointResponse,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def update_checkpoint(
     checkpoint_id: int,
@@ -63,6 +82,7 @@ async def update_checkpoint(
     "/admin/checkpoints/{checkpoint_id}",
     status_code=204,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def delete_checkpoint(
     checkpoint_id: int,
@@ -78,10 +98,11 @@ async def delete_checkpoint(
     response_model=BatchCheckpointResponse,
     status_code=201,
     dependencies=[Depends(require_admin)],
+    openapi_extra={"x-roles": ["admin"]},
 )
 async def create_checkpoints_batch(
     data: BatchCheckpointCreateRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Массовое создание КП для маршрута."""
+    """Массовое создание КП для маршрута. Порядок КП на маршруте - порядок внутри запроса."""
     return await CheckpointService.create_batch(db, data)

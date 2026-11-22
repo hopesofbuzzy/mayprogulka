@@ -7,14 +7,24 @@ from sqlalchemy import (
     Boolean,
     Date,
     ForeignKey,
-    DateTime
+    DateTime,
+    CheckConstraint,
+    Index,
+    UniqueConstraint,
+    text,
 )
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
+from .enums import ALL_ROLES, Role
+
+_ROLE_CHECK = "role IN (" + ", ".join(f"'{role}'" for role in ALL_ROLES) + ")"
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint(_ROLE_CHECK, name="ck_users_role"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -25,14 +35,22 @@ class User(Base):
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # Roles:
-    # 1. participant
-    # 2. typist
-    # 3. organizer
-    # 4. admin
-    role: Mapped[str] = mapped_column(String, default="participant")
+    # Роли: user, typist, registrar, marker, organizer, admin.
+    # Значение дополнительно проверяется CHECK-констрейнтом ck_users_role.
+    role: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default=Role.USER.value,
+        server_default=Role.USER.value,
+    )
 
     participants: Mapped[list["Participant"]] = relationship(back_populates="user")
+
+    # Контрольные пункты, назначенные маркеру.
+    marker_assignments: Mapped[list["CheckpointAssignment"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 class Route(Base):
     """Маршрут соревнования или мероприятия."""
@@ -76,6 +94,12 @@ class Route(Base):
         cascade="all, delete-orphan",
     )
 
+    # Позиции контрольных пунктов на маршруте.
+    checkpoint_positions: Mapped[list["CheckpointPositions"]] = relationship(
+        back_populates="route",
+        cascade="all, delete-orphan",
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -105,6 +129,11 @@ class Checkpoint(Base):
         nullable=False,
     )
 
+    barcode: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
     name: Mapped[str] = mapped_column(
         String,
         nullable=False,
@@ -113,21 +142,6 @@ class Checkpoint(Base):
     address: Mapped[str] = mapped_column(
         String,
         nullable=False,
-    )
-
-    is_start: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False
-    )
-
-    is_finish: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False
-    )
-
-    order: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False
     )
 
     # Координаты храним строкой (TEXT в схеме), напр. "55.75,37.61".
@@ -141,8 +155,20 @@ class Checkpoint(Base):
         back_populates="checkpoints",
     )
 
+    # Позиции этого КП на маршрутах.
+    positions: Mapped[list["CheckpointPositions"]] = relationship(
+        back_populates="checkpoint",
+        cascade="all, delete-orphan",
+    )
+
     # Отметки о прохождении этого пункта участниками.
     passes: Mapped[list["CheckpointPass"]] = relationship(
+        back_populates="checkpoint",
+        cascade="all, delete-orphan",
+    )
+
+    # Назначения КП маркерам.
+    marker_assignments: Mapped[list["CheckpointAssignment"]] = relationship(
         back_populates="checkpoint",
         cascade="all, delete-orphan",
     )
@@ -152,6 +178,11 @@ class Participant(Base):
     """Данные участника конкретного маршрута."""
 
     __tablename__ = "participants"
+    __table_args__ = (
+        Index("uq_participants_form_id", "form_id", unique=True),
+        Index("ix_participants_route_id", "route_id"),
+        Index("ix_participants_started_finished", "has_started", "has_finished"),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -160,9 +191,11 @@ class Participant(Base):
     )
 
     # Внешний ключ на пользователя.
-    user_id: Mapped[int] = mapped_column(
+    # NULL допустим для бумажных анкет: их вводит наборщик, аккаунта у
+    # участника может не быть.
+    user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"),
-        nullable=False,
+        nullable=True,
     )
 
     # Внешний ключ на маршрут.
@@ -186,6 +219,17 @@ class Participant(Base):
         Boolean,
         default=False,
         nullable=False,
+    )
+
+    # Фактическое время первого старта и финиша (NULL — ещё не было).
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
     )
 
     surname: Mapped[str] = mapped_column(
@@ -224,7 +268,8 @@ class Participant(Base):
     )
 
     # Объект пользователя, которому принадлежит участие.
-    user: Mapped["User"] = relationship(
+    # Для бумажных анкет пользователя нет.
+    user: Mapped["User | None"] = relationship(
         back_populates="participants",
     )
 
@@ -298,6 +343,15 @@ class Map(Base):
     """Карта, связанная с участником."""
 
     __tablename__ = "maps"
+    __table_args__ = (
+        # Одна карта на участника. NULL (непривязанные карты) не считаются.
+        Index(
+            "uq_maps_participant_id",
+            "participant_id",
+            unique=True,
+            sqlite_where=text("participant_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -321,4 +375,83 @@ class Map(Base):
     # Участник, которому принадлежит карта.
     participant: Mapped["Participant"] = relationship(
         back_populates="maps",
+    )
+
+
+class CheckpointAssignment(Base):
+    """Назначение контрольного пункта маркеру.
+
+    Маркер (роль ``marker``) может сканировать карты только на тех КП,
+    которые ему назначил организатор или администратор.
+    """
+
+    # Историческое имя таблицы сохранено для совместимости с миграцией.
+    __tablename__ = "marker_assignments"
+    __table_args__ = (
+        UniqueConstraint("user_id", "checkpoint_id", name="uq_marker_checkpoint"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+
+    checkpoint_id: Mapped[int] = mapped_column(
+        ForeignKey("checkpoints.id"),
+        nullable=False,
+        index=True,
+    )
+
+    user: Mapped["User"] = relationship(back_populates="marker_assignments")
+    checkpoint: Mapped["Checkpoint"] = relationship(back_populates="marker_assignments")
+
+
+# Совместимый алиас: старые импорты MarkerAssignment продолжают работать.
+MarkerAssignment = CheckpointAssignment
+
+
+class CheckpointPositions(Base):
+    """Связь контрольного пункта и маршрута с порядковым номером пункта на маршруте."""
+
+    __tablename__ = "checkpoint_positions"
+    __table_args__ = (
+        UniqueConstraint('route_id', 'checkpoint_id', name='uq_route_checkpoint'),
+        UniqueConstraint('route_id', 'position', name='uq_route_order')
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    checkpoint_id: Mapped[int] = mapped_column(
+        ForeignKey("checkpoints.id"),
+        nullable=False,
+    )
+
+    route_id: Mapped[int] = mapped_column(
+        ForeignKey("routes.id"),
+        nullable=False,
+    )
+
+    # Порядковый номер контрольного пункта на данном маршруте.
+    position: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    checkpoint: Mapped["Checkpoint"] = relationship(
+        back_populates="positions",
+    )
+
+    route: Mapped["Route"] = relationship(
+        back_populates="checkpoint_positions",
     )

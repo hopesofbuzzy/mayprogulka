@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mayprogulka.database.database import get_db
-from mayprogulka.database.models import User
-from mayprogulka.routes.v1.auth.service import require_role, get_current_user
+from mayprogulka.database.models import Checkpoint, Participant, User
+from mayprogulka.database.enums import Role, role_value
+from mayprogulka.routes.v1.auth.service import require_marker, require_user
 from mayprogulka.models.scans import (
     ScanRequest,
     ScanResponse,
@@ -18,39 +20,55 @@ from .service import ScanService
 router = APIRouter(prefix="/scans", tags=["scans"])
 
 
-# ==================== СКАНИРОВАНИЕ ОРГАНИЗАТОРОМ ====================
+# ==================== СКАНИРОВАНИЕ МАРКЕРОМ ====================
 
-@router.post("", response_model=ScanResponse)
+@router.post(
+    "",
+    response_model=ScanResponse,
+    openapi_extra={"x-roles": ["marker", "organizer", "admin"]},
+)
 async def scan_single(
     data: ScanRequest,
-    current_user: User = Depends(require_role("organizer")),
+    current_user: User = Depends(require_marker),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Одиночное сканирование участника на КП организатором.
-    Основной эндпоинт для волонтёров на контрольных пунктах.
+    Одиночное сканирование карты на КП.
+
+    Доступно маркеру (только на назначенных ему КП) и администратору.
     """
-    return await ScanService.scan_single(db, data.barcode, data.checkpoint_id)
+    return await ScanService.scan_single(
+        db, data.barcode, data.checkpoint_id, actor=current_user
+    )
 
 
-@router.post("/batch", response_model=BatchScanResponse)
+@router.post(
+    "/batch",
+    response_model=BatchScanResponse,
+    openapi_extra={"x-roles": ["marker", "organizer", "admin"]},
+)
 async def scan_batch(
     data: BatchScanRequest,
-    current_user: User = Depends(require_role("organizer")),
+    current_user: User = Depends(require_marker),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Пакетное сканирование (массовое чтение).
-    Критически важен для скорости: обрабатывает массив barcode'ов одной транзакцией.
+
+    Маркер может передавать пачки штрих-кодов только со своего КП.
     """
-    return await ScanService.scan_batch(db, data)
+    return await ScanService.scan_batch(db, data, actor=current_user)
 
 
-@router.post("/upload-file", response_model=UploadFileResponse)
+@router.post(
+    "/upload-file",
+    response_model=UploadFileResponse,
+    openapi_extra={"x-roles": ["marker", "organizer", "admin"]},
+)
 async def upload_scan_file(
     checkpoint_id: int,
     file: UploadFile = File(...),
-    current_user: User = Depends(require_role("organizer")),
+    current_user: User = Depends(require_marker),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -77,47 +95,54 @@ async def upload_scan_file(
     if not barcodes:
         raise HTTPException(status_code=400, detail="Файл не содержит штрих-кодов")
     
-    return await ScanService.scan_from_file(db, checkpoint_id, barcodes)
+    return await ScanService.scan_from_file(
+        db, checkpoint_id, barcodes, actor=current_user
+    )
 
 
 # ==================== САМОСТОЯТЕЛЬНАЯ ОТМЕТКА ====================
 
-@router.post("/self", response_model=SelfScanResponse)
+@router.post(
+    "/self",
+    response_model=SelfScanResponse,
+    openapi_extra={"x-roles": ["user", "admin"]},
+)
 async def scan_self(
     data: SelfScanRequest,
-    current_user: User = Depends(require_role("participant")),
+    current_user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Самостоятельная отметка участника на КП по общему QR-коду.
-    Участник сканирует QR-код на КП (который содержит checkpoint_id),
-    приложение отправляет запрос с токеном участника.
+
+    ``participant_id`` обязателен. Отметить можно только собственную
+    запись участника; чужая запись — 403. До старта отметка запрещена
+    (409). Администратор может отметить любую запись.
     """
-    # Находим участника текущего пользователя на нужном маршруте
-    from sqlalchemy import select
-    from mayprogulka.database.models import Participant, Checkpoint
-    
-    # Получаем checkpoint
     result = await db.execute(
-        select(Checkpoint).where(Checkpoint.id == data.checkpoint_id)
+        select(Checkpoint).where(Checkpoint.barcode == data.checkpoint_barcode)
     )
     checkpoint = result.scalar_one_or_none()
     if not checkpoint:
         raise HTTPException(status_code=404, detail="КП не найден")
-    
-    # Находим участника этого пользователя на этом маршруте
+
     result = await db.execute(
-        select(Participant).where(
-            Participant.user_id == current_user.id,
-            Participant.route_id == checkpoint.route_id,
-        )
+        select(Participant).where(Participant.id == data.participant_id)
     )
     participant = result.scalar_one_or_none()
-    
-    if not participant:
+    if participant is None:
+        raise HTTPException(status_code=404, detail="Участник не найден")
+
+    is_admin = role_value(current_user.role) == Role.ADMIN.value
+    if participant.user_id != current_user.id and not is_admin:
+        raise HTTPException(status_code=403, detail="Это чужая запись участника")
+
+    if not participant.has_started:
         raise HTTPException(
-            status_code=404,
-            detail="Вы не зарегистрированы на маршрут этого КП"
+            status_code=409,
+            detail="Участник ещё не стартовал на маршруте",
         )
-    
-    return await ScanService.scan_self(db, participant.id, data.checkpoint_id)
+
+    return await ScanService.scan_self(
+        db, participant.id, checkpoint.id
+    )

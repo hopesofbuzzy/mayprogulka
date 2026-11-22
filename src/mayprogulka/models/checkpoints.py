@@ -8,42 +8,44 @@ class CheckpointCreateRequest(BaseModel):
     name: str
     address: str
     coordinates: str
-    order: int
-    is_start: bool = False
-    is_finish: bool = False
 
 
 class CheckpointUpdateRequest(BaseModel):
     name: Optional[str] = None
     address: Optional[str] = None
     coordinates: Optional[str] = None
-    order: Optional[int] = None
-    is_start: Optional[bool] = None
-    is_finish: Optional[bool] = None
+    position: Optional[int] = None
 
 
 class CheckpointResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
     id: int
+    barcode: str
     route_id: int
     name: str
     address: str
     coordinates: str
-    order: int
-    is_start: bool
-    is_finish: bool
+    position: int
 
 
 class CheckpointListResponse(BaseModel):
     checkpoints: list[CheckpointResponse]
 
+class CheckpointCreateItemRequest(BaseModel):
+    name: str
+    address: str
+    coordinates: str
 
 class BatchCheckpointCreateRequest(BaseModel):
     route_id: int
-    checkpoints: list[CheckpointCreateRequest]
+    checkpoints: list[CheckpointCreateItemRequest]
+
 
 
 class BatchCheckpointResponse(BaseModel):
     created_count: int
     errors: list[dict]
+
+class CheckpointBarcodeResponse(BaseModel):
+    ...

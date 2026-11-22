@@ -22,6 +22,19 @@ class PaperFormResponse(BaseModel):
     payment_status: str
 
 
+class PaperFormUpdateRequest(BaseModel):
+    """Правка бумажной анкеты до старта."""
+
+    route_id: Optional[int] = None
+    surname: Optional[str] = None
+    name: Optional[str] = None
+    middle_name: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
+
+
 class MatchRequest(BaseModel):
     """Сопоставление карты с участником."""
     barcode: str
@@ -49,3 +62,6 @@ class UnlinkedMapResponse(BaseModel):
 class UnlinkedMapListResponse(BaseModel):
     """Список непривязанных карт."""
     maps: list[UnlinkedMapResponse]
+    total: int = 0
+    limit: int = 100
+    offset: int = 0
