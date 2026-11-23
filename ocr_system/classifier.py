@@ -94,28 +94,44 @@ class DeepLearningOCRClassifier:
         # 1. Если уже есть корректный адрес с собачкой
         if "@" in s and "." in s:
             return re.sub(r"[^a-zA-Z0-9@._\-]", "", s).lower()
+
+        cleaned = re.sub(r"[^A-Z0-9@._\-(a\)]", "", s).lower()
+        
+        # 2. Нечеткий поиск известных почтовых доменов (длинные домены проверяются первыми)
+        known_domains = [
+            ("gmail", ["gmail", "gmai", "gma1l"]),
+            ("yandex", ["yandex", "yadex", "yandx"]),
+            ("rambler", ["rambler", "ramblr"]),
+            ("inbox", ["inbox", "inbx"]),
+            ("urfu", ["urfu"]),
+            ("list", ["list", "l1st"]),
+            ("mail", ["mail", "dmail", "mai", "mall", "ma1l"]),
+            ("bk", ["bk"]),
+            ("ya", ["ya"])
+        ]
+        
+        found_domain = None
+        best_split_idx = -1
+        
+        for dom_canon, variants in known_domains:
+            for var in variants:
+                idx = cleaned.find(var)
+                if idx > 0:
+                    found_domain = dom_canon
+                    best_split_idx = idx
+                    break
+            if found_domain:
+                break
+                
+        if found_domain and best_split_idx > 0:
+            username = cleaned[:best_split_idx].rstrip("@._-0do")
+            username = re.sub(r"[\(\[]a[\)\]]$", "", username)
+            if not username:
+                username = cleaned[:best_split_idx].rstrip("@._-")
+            zone = "com" if found_domain == "gmail" else "ru"
+            return f"{username}@{found_domain}.{zone}"
             
-        # 2. Поиск почтового домена с учетом визуальных артефактов символа '@' (D, 0, O, (a))
-        domains = ["MAIL", "YANDEX", "GMAIL", "BK", "LIST", "INBOX", "RAMBLER", "URFU", "YA"]
-        dom_pattern = "|".join(domains)
-        pattern = rf"([A-Z0-9._\-]+?)(?:[@©0OD]|(?:[\(\[]A[\)\]]))({dom_pattern})[\.]?(RU|COM)?"
-        m = re.search(pattern, s)
-        if m:
-            user = m.group(1).lower()
-            dom = m.group(2).lower()
-            zone = m.group(3).lower() if m.group(3) else ("com" if dom == "gmail" else "ru")
-            return f"{user}@{dom}.{zone}"
-            
-        # 3. Если домен слит со словом
-        for dom in domains:
-            if dom in s:
-                parts = s.split(dom)
-                user = parts[0].strip("._-").lower()
-                zone = "com" if dom == "GMAIL" else "ru"
-                if user:
-                    return f"{user}@{dom.lower()}.{zone}"
-                    
-        return re.sub(r"[^a-zA-Z0-9@._\-]", "", s).lower()
+        return cleaned
 
     def decode_phone(self, raw_str):
         digits = re.sub(r"\D", "", raw_str)

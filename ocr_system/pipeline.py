@@ -104,21 +104,30 @@ class FormOCRPipeline:
 
         # E-mail
         raw_email, em_conf = self.classifier.predict_field_strip(email_strip)
+        if not raw_email or len(raw_email) < 5:
+            enh_email = cv2.convertScaleAbs(email_strip, alpha=1.2, beta=-20)
+            raw_email, em_conf = self.classifier.predict_field_strip(enh_email)
         email_formatted = self.classifier.decode_email(raw_email)
 
         # Город
         raw_city, c_conf = self.classifier.predict_field_strip(city_strip)
         city_formatted = self.classifier.decode_city(raw_city)
 
-        # Предыдущие участия
-        raw_prev, _ = self.classifier.predict_field_strip(prev_strip)
-        prev_nums = re.findall(r"\d+", raw_prev)
-        if "5" in raw_prev:
-            prev_walks = 5
-        elif prev_nums:
-            prev_walks = int(prev_nums[0])
+        # Предыдущие участия (бокс из 2 цифр, например 05)
+        prev_strip = aligned[550:615, 230:315]
+        gray_p = cv2.cvtColor(prev_strip, cv2.COLOR_BGR2GRAY)
+        _, th_p = cv2.threshold(gray_p, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        th_p_bgr = cv2.cvtColor(th_p, cv2.COLOR_GRAY2BGR)
+        th_p_2x = cv2.resize(th_p_bgr, (0,0), fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+        raw_prev, _ = self.classifier.predict_field_strip(th_p_2x)
+        clean_prev = raw_prev.replace('О', '0').replace('O', '0').replace('o', '0')
+        prev_nums = re.findall(r"\d+", clean_prev)
+        if prev_nums:
+            prev_walks = prev_nums[0]
+            if len(prev_walks) == 1:
+                prev_walks = "0" + prev_walks
         else:
-            prev_walks = 0
+            prev_walks = "00"
 
         # Номер карты (служебный блок)
         card_number = "018420"
