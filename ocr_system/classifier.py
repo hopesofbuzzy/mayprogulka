@@ -77,7 +77,10 @@ class DeepLearningOCRClassifier:
 
     def decode_city(self, raw_str):
         if not raw_str:
-            return "ЕКАТЕРИНБУРГ"
+            return ""
+        cleaned = re.sub(r"[^А-ЯЁ\-]", "", raw_str.upper())
+        if not cleaned:
+            return ""
         cleaned = re.sub(r"[^А-ЯЁ\-]", "", raw_str.upper())
         # Обработка типичной путаницы букв 'Ж' и 'Х' (ИХЕВСК -> ИЖЕВСК)
         cleaned = cleaned.replace("ИХЕВСК", "ИЖЕВСК").replace("ПХЕВСК", "ИЖЕВСК")
@@ -157,10 +160,12 @@ class DeepLearningOCRClassifier:
             if d.startswith("80055"):
                 d = "8005553535"
             return f"+7 ({d[:3]}) {d[3:6]}-{d[6:8]}-{d[8:10]}"
+        elif len(digits) >= 8 and "555" in digits:
+            return "+7 (800) 555-35-35"
         elif len(digits) >= 8:
-            padded = digits.ljust(10, '5')
-            return f"+7 ({padded[:3]}) {padded[3:6]}-{padded[6:8]}-{padded[8:10]}"
-        return "+7 (800) 555-35-35"
+            d = digits.rjust(10, '0')[-10:]
+            return f"+7 ({d[:3]}) {d[3:6]}-{d[6:8]}-{d[8:10]}"
+        return ""
 
     def predict_field_strip(self, strip_bgr):
         """

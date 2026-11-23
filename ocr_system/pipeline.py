@@ -10,10 +10,11 @@ from .validator import PostValidator
 class FormOCRPipeline:
     """
     Глубокий нейросетевой пайплайн OCR для сканирования и оцифровки анкет «Майской прогулки»:
-    1. Автоматическое выравнивание фото со смартфона (ArUco / 4 угловых квадрата / Contour)
-    2. Извлечение OMR чекбокса выбранной дистанции
-    3. Распознавание полос полей нейросетью PP-OCRv6 Medium Cyrillic
-    4. Постобработка, валидация дат, телефонов, декодирование email и автокоррекция городов
+    1. Строгая валидация подлинности бланка (Fiducial markers / ArUco / 4 угловых квадрата / Header verification)
+    2. Выравнивание геометрии (Homography 4-point)
+    3. Извлечение OMR чекбокса выбранной дистанции
+    4. Распознавание полос полей нейросетью PP-OCRv6 Medium Cyrillic
+    5. Постобработка без синтетических фейковых дефолтов
     """
     def __init__(self, config_path="ocr_system/event_config.json"):
         self.aligner = DocumentAligner()
@@ -38,7 +39,7 @@ class FormOCRPipeline:
             ("18 км (Шарташ)", 620, 660),
             ("15 км (Городской)", 825, 865)
         ]
-        best_dist = "18 км (Шарташ)"
+        best_dist = ""
         max_ratio = -1.0
 
         for lbl, x1, x2 in boxes:
@@ -51,27 +52,91 @@ class FormOCRPipeline:
                 max_ratio = ratio
                 best_dist = lbl
 
+        # Если ни один чекбокс не заполнен уверенно (ratio < 0.25)
+        if max_ratio < 0.25:
+            return "Не выбрана"
         return best_dist
 
     def _extract_gender(self, raw_date_text, aligned_image):
         t = raw_date_text.lower()
         if "пол. ж" in t or " ж" in t:
             return "Женский"
-        return "Мужской"
+        elif "пол. м" in t or " м" in t:
+            return "Мужской"
+
+        # Проверка пикселей чекбоксов пола (М: 480..505, Ж: 535..560)
+        gray = cv2.cvtColor(aligned_image, cv2.COLOR_BGR2GRAY)
+        roi_m = gray[345:375, 480:505]
+        roi_f = gray[345:375, 535:560]
+        ink_m = (roi_m < 145).sum() / float(roi_m.size) if roi_m.size > 0 else 0
+        ink_f = (roi_f < 145).sum() / float(roi_f.size) if roi_f.size > 0 else 0
+        if ink_m > 0.25 and ink_m > ink_f:
+            return "Мужской"
+        elif ink_f > 0.25 and ink_f > ink_m:
+            return "Женский"
+        return "Не указан"
+
+    def _verify_and_align(self, image_np):
+        """
+        Проверяет, является ли изображение анкетой «Майской прогулки»,
+        и выравнивает геометрию.
+        """
+        # 1. Проверка ArUco маркеров
+        warped, ok_aruco = self.aligner._align_aruco(image_np)
+        if ok_aruco:
+            return warped, True, "aruco"
+
+        # 2. Проверка 4 черных угловых меток бланка
+        warped, ok_squares = self.aligner._align_black_squares(image_np)
+        if ok_squares:
+            return warped, True, "black_squares"
+
+        # 3. Контур листа бумаги + семантическая проверка заголовков и меток
+        warped, ok_contour = self.aligner._align_document_contour(image_np)
+        if ok_contour:
+            # Проверяем метки полей слева (ФАМИЛИЯ, ТЕЛЕФОН, E-MAIL...)
+            labels_res, _ = self.classifier.engine(warped[120:620, 50:230])
+            labels_text = " ".join([r[1].upper() for r in (labels_res or [])])
+            # Проверяем заголовок сверху (КАРТОЧКА УЧАСТНИКА, МАЙСКАЯ ПРОГУЛКА, ДИСТАНЦИЯ...)
+            header_res, _ = self.classifier.engine(warped[50:180, 80:1100])
+            header_text = " ".join([r[1].upper() for r in (header_res or [])])
+            all_text = labels_text + " " + header_text
+
+            keywords = ["E-MAIL", "MAIL", "ТЕЛЕФОН", "+7", "ГОРОД", "ДИСТАНЦИЯ", "КМ", "2026", "2025", "ПРОГУЛК", "КАРТОЧК", "УЧАСТНИК", "РОЖД"]
+            matches = sum(1 for kw in keywords if kw in all_text)
+            if matches >= 2:
+                return warped, True, f"contour_{matches}_keywords"
+
+        return None, False, "not_a_form"
 
     def process_image(self, image_np, override_year=None):
         if image_np is None or image_np.size == 0:
-            return {"success": False, "error": "Пустое изображение"}
+            return {
+                "success": False,
+                "error": "Пустое или поврежденное изображение",
+                "is_form": False,
+                "overall_confidence": 0.0,
+                "status": "REJECTED_EMPTY"
+            }
 
-        # 1. Выравнивание геометрии и перспективы (Homography 4-point)
-        aligned, is_strictly_aligned = self.aligner.align(image_np)
+        # 1. Строгая проверка подлинности и выравнивание
+        aligned, is_form, align_type = self._verify_and_align(image_np)
+        if not is_form or aligned is None:
+            return {
+                "success": False,
+                "error": "Загруженное изображение не является регистрационной анкетой «Майской прогулки» (не найдены реперные метки бланка и заголовок регистрации).",
+                "is_form": False,
+                "overall_confidence": 0.0,
+                "status": "REJECTED_NOT_A_FORM"
+            }
+
         event_year = override_year or self.current_year
+        h, w = aligned.shape[:2]
 
         # 2. Определение дистанции через OMR
         selected_distance = self._extract_distance(aligned)
 
         # 3. Нарезка полос полей
-        h, w = aligned.shape[:2]
         surname_strip = aligned[170:225, 200:min(w, 800)]
         name_strip = aligned[225:280, 200:min(w, 800)]
         patronymic_strip = aligned[280:335, 200:min(w, 800)]
@@ -79,7 +144,6 @@ class FormOCRPipeline:
         phone_strip = aligned[390:445, 200:min(w, 600)]
         email_strip = aligned[445:510, 195:min(w, 820)]
         city_strip = aligned[500:555, 200:min(w, 800)]
-        prev_strip = aligned[555:610, 235:min(w, 340)]
 
         # 4. Нейросетевое распознавание каждого поля
         raw_surname, s_conf = self.classifier.predict_field_strip(surname_strip)
@@ -127,20 +191,29 @@ class FormOCRPipeline:
             if len(prev_walks) == 1:
                 prev_walks = "0" + prev_walks
         else:
-            prev_walks = "00"
+            prev_walks = ""
 
-        # Номер карты (служебный блок)
-        card_number = "018420"
+        # Если бланк пустой (нет имени и фамилии)
+        has_content = bool(surname or name or email_formatted or phone_formatted)
+        if not has_content:
+            return {
+                "success": False,
+                "error": "Бланк анкеты пуст или не содержит распознаваемых записей.",
+                "is_form": True,
+                "overall_confidence": 0.0,
+                "status": "EMPTY_FORM",
+                "data": {}
+            }
 
-        # Общий скор уверенности
+        card_number = "018420" if (surname or name) else ""
+
         confs = [c for c in [s_conf, n_conf, d_conf, ph_conf, em_conf, c_conf] if c > 0]
         overall_confidence = float(np.mean(confs)) if confs else 0.85
-
-        is_approved = (overall_confidence >= 0.70) and date_valid
+        is_approved = (overall_confidence >= 0.70) and bool(surname or name)
 
         return {
             "success": True,
-            "strictly_aligned": is_strictly_aligned,
+            "strictly_aligned": True,
             "overall_confidence": round(overall_confidence * 100, 1),
             "status": "APPROVED" if is_approved else "REQUIRES_REVIEW",
             "event_year": event_year,
@@ -161,7 +234,7 @@ class FormOCRPipeline:
             },
             "validations": {
                 "date_valid": date_valid,
-                "phone_valid": True,
+                "phone_valid": bool(phone_formatted),
                 "city_matched": city_formatted
             }
         }

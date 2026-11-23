@@ -77,6 +77,7 @@ def index():
         .status-loading { border-color: var(--accent-blue); background: rgba(56, 189, 248, 0.08); color: var(--accent-blue); }
         .status-approved { border-color: var(--accent-green); background: rgba(34, 197, 94, 0.1); color: var(--accent-green); }
         .status-review { border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); }
+        .status-rejected { border-color: var(--accent-red); background: rgba(239, 68, 68, 0.12); color: #fca5a5; }
 
         .metrics-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
         .metric-pill { background: var(--surface-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px; text-align: center; }
@@ -346,12 +347,31 @@ def index():
         }
 
         function updateForm(res) {
+            const sc = document.getElementById('status-card');
             if (!res || !res.success) {
-                alert('Ошибка обработки: ' + (res ? res.error : 'Неизвестно'));
+                sc.className = 'status-box status-rejected';
+                document.getElementById('status-text').innerText = '❌ ИЗОБРАЖЕНИЕ НЕ ЯВЛЯЕТСЯ АНКЕТОЙ';
+                document.getElementById('status-sub').innerText = (res && res.error) ? res.error : 'Не найдены обязательные реперные метки бланка «Майской прогулки»';
+                document.getElementById('conf-val').innerText = '0%';
+                document.getElementById('metric-conf').innerText = '0%';
+                document.getElementById('metric-dist').innerText = '—';
+                document.getElementById('metric-age').innerText = '—';
+                document.getElementById('btn-confirm').disabled = true;
+
+                document.getElementById('inp-surname').value = '';
+                document.getElementById('inp-name').value = '';
+                document.getElementById('inp-patronymic').value = '';
+                document.getElementById('inp-gender').value = '';
+                document.getElementById('inp-birth').value = '';
+                document.getElementById('inp-phone').value = '';
+                document.getElementById('inp-email').value = '';
+                document.getElementById('inp-city').value = '';
+                document.getElementById('inp-prev').value = '';
+                document.getElementById('inp-card').value = '';
                 return;
             }
 
-            const d = res.data;
+            const d = res.data || {};
             document.getElementById('inp-surname').value = d.surname || '';
             document.getElementById('inp-name').value = d.name || '';
             document.getElementById('inp-patronymic').value = d.patronymic || '';
