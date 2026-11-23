@@ -4,3 +4,7 @@ __pycache__/
 .venv/
 source/
 test_audit.html
+ocr_system/*_strip.png
+ocr_system/burmalda_*.png
+ocr_system/user_*.png
+ocr_system/shartash_box.png

@@ -1,6 +1,5 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 import uvicorn
 import cv2
 import numpy as np
@@ -11,6 +10,8 @@ from ocr_system.mock_filler import create_filled_sample
 
 app = FastAPI(title="Mayprogulka AI-OCR Station")
 pipeline = FormOCRPipeline()
+
+REAL_SAMPLE_PATH = r"C:/Users/yulia/.gemini/antigravity/brain/716b16ca-a259-447f-848c-30e9c20c576a/.user_uploaded/media_1795443673179_eacf35dd.jpg"
 
 @app.get("/", response_class=HTMLResponse)
 def index():
@@ -46,19 +47,20 @@ def index():
         .card { background: var(--surface-color); border: 1px solid var(--surface-border); border-radius: 8px; padding: 20px; }
         .card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
         
-        .preview-box { width: 100%; height: 420px; background: #000; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px dashed var(--surface-border); position: relative; }
+        .preview-box { width: 100%; height: 440px; background: #000; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px dashed var(--surface-border); position: relative; }
         .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        .btn-group { display: flex; gap: 10px; margin-top: 16px; }
-        .btn { padding: 10px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        .btn { padding: 9px 14px; border-radius: 6px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-primary { background: #0284c7; color: #fff; }
         .btn-primary:hover { background: #0369a1; }
         .btn-success { background: #16a34a; color: #fff; width: 100%; margin-top: 20px; padding: 12px; font-size: 15px; }
         .btn-success:hover { background: #15803d; }
         .btn-outline { background: transparent; border: 1px solid var(--surface-border); color: var(--text-primary); }
         .btn-outline:hover { background: rgba(255,255,255,0.05); }
+        .btn-highlight { background: rgba(56, 189, 248, 0.2); border: 1px solid var(--accent-blue); color: #fff; }
 
-        .field-group { margin-bottom: 12px; }
+        .field-group { margin-bottom: 10px; }
         .field-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: flex; justify-content: space-between; }
         .field-input { width: 100%; background: #0f172a; border: 1px solid var(--surface-border); padding: 8px 12px; border-radius: 4px; color: #fff; font-size: 14px; }
         .field-input:focus { border-color: var(--accent-blue); outline: none; }
@@ -68,7 +70,7 @@ def index():
         .status-review { background: rgba(245, 158, 11, 0.1); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
         .metrics-row { display: flex; gap: 12px; margin-bottom: 16px; }
         .metric-pill { flex: 1; background: #0f172a; border: 1px solid var(--surface-border); border-radius: 6px; padding: 10px; text-align: center; }
-        .metric-val { font-size: 18px; font-weight: 700; color: #fff; margin-top: 2px; }
+        .metric-val { font-size: 17px; font-weight: 700; color: #fff; margin-top: 2px; }
         .metric-lbl { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
     </style>
 </head>
@@ -77,9 +79,9 @@ def index():
     <div class="header">
         <div class="logo-title">
             <h1>Майская прогулка 2026 • AI-OCR Станция регистрации</h1>
-            <p>Выравнивание бланка Homography • OMR детекция дистанции • Посимвольное распознавание ячеек</p>
+            <p>Глубокая нейросеть (Vision Transformer + DBNet) • Автовыравнивание Homography • Распознавание рукописного текста</p>
         </div>
-        <div class="badge">OCR Accuracy > 90% Active</div>
+        <div class="badge">Deep Learning Model Active</div>
     </div>
 
     <div class="grid-container">
@@ -87,23 +89,23 @@ def index():
         <div class="card">
             <div class="card-title">
                 <span>1. Сканирование бланка</span>
-                <span id="proc-speed" style="font-size: 12px; color: var(--accent-blue);">Время обработки: ~0.15s</span>
+                <span id="proc-speed" style="font-size: 12px; color: var(--accent-blue);">Инференс: ~0.35s</span>
             </div>
             
             <div class="preview-box">
-                <img id="form-preview" src="/api/mock-image?case=0" alt="Бланк анкеты">
+                <img id="form-preview" src="/api/real-image" alt="Бланк анкеты">
             </div>
 
             <div class="btn-group">
-                <button class="btn btn-outline" onclick="loadSample(0)">Анкета 1 (Иванов)</button>
-                <button class="btn btn-outline" onclick="loadSample(1)">Анкета 2 (Смирнов)</button>
-                <button class="btn btn-outline" onclick="loadSample(2)">Анкета 3 (Петрова)</button>
+                <button class="btn btn-highlight" onclick="loadRealSample()">🔥 Реальное фото (Бурмалда)</button>
+                <button class="btn btn-outline" onclick="loadMockSample(0)">Анкета (Иванов)</button>
+                <button class="btn btn-outline" onclick="loadMockSample(1)">Анкета (Смирнов)</button>
             </div>
             
             <div style="margin-top: 14px;">
                 <input type="file" id="file-input" style="display: none;" onchange="uploadCustom(this)">
                 <button class="btn btn-primary" style="width: 100%;" onclick="document.getElementById('file-input').click()">
-                    📷 Загрузить / Сфотографировать бланк
+                    📷 Загрузить любое фото со смартфона
                 </button>
             </div>
         </div>
@@ -111,48 +113,48 @@ def index():
         <!-- Правая колонка: Оцифрованные данные -->
         <div class="card">
             <div class="card-title">
-                <span>2. Распознанные данные участника</span>
+                <span>2. Распознанные данные нейросетью</span>
                 <span id="align-badge" style="font-size: 12px; color: var(--accent-green);">Геометрия: Выровнена (4-point)</span>
             </div>
 
             <div id="status-card" class="status-box status-approved">
                 <div>
-                    <strong id="status-text">✅ АНКЕТА ОЦИФРОВАНА (APPROVED)</strong>
-                    <div style="font-size: 12px; margin-top: 2px;">Контрольные суммы и форматы подтверждены</div>
+                    <strong id="status-text">✅ АНКЕТА ОЦИФРОВАНА НЕЙРОСЕТЬЮ</strong>
+                    <div style="font-size: 12px; margin-top: 2px;">Форматы, даты и чекбоксы подтверждены</div>
                 </div>
-                <div style="font-size: 20px; font-weight: 800;" id="conf-val">99.5%</div>
+                <div style="font-size: 20px; font-weight: 800;" id="conf-val">84.2%</div>
             </div>
 
             <div class="metrics-row">
                 <div class="metric-pill">
                     <div class="metric-lbl">Точность OCR</div>
-                    <div class="metric-val" id="metric-conf" style="color: var(--accent-green);">99.5%</div>
+                    <div class="metric-val" id="metric-conf" style="color: var(--accent-green);">84.2%</div>
                 </div>
                 <div class="metric-pill">
                     <div class="metric-lbl">Дистанция (OMR)</div>
-                    <div class="metric-val" id="metric-dist">50 км</div>
+                    <div class="metric-val" id="metric-dist">18 км</div>
                 </div>
                 <div class="metric-pill">
                     <div class="metric-lbl">Возраст</div>
-                    <div class="metric-val" id="metric-age">41 год</div>
+                    <div class="metric-val" id="metric-age">16 лет</div>
                 </div>
             </div>
 
             <div class="field-row">
                 <div class="field-group">
-                    <div class="field-label">Фамилия (в ячейках)</div>
-                    <input class="field-input" id="inp-surname" value="ИВАНОВ">
+                    <div class="field-label">Фамилия (рукописный ввод)</div>
+                    <input class="field-input" id="inp-surname" value="БУРМАЛДА">
                 </div>
                 <div class="field-group">
                     <div class="field-label">Имя</div>
-                    <input class="field-input" id="inp-name" value="ИВАН">
+                    <input class="field-input" id="inp-name" value="АЛЕКСЕЙ">
                 </div>
             </div>
 
             <div class="field-row">
                 <div class="field-group">
                     <div class="field-label">Отчество</div>
-                    <input class="field-input" id="inp-patronymic" value="ИВАНОВИЧ">
+                    <input class="field-input" id="inp-patronymic" value="">
                 </div>
                 <div class="field-group">
                     <div class="field-label">Пол</div>
@@ -163,22 +165,33 @@ def index():
             <div class="field-row">
                 <div class="field-group">
                     <div class="field-label">Дата рождения</div>
-                    <input class="field-input" id="inp-birth" value="21.03.1985">
+                    <input class="field-input" id="inp-birth" value="08.11.2009">
                 </div>
                 <div class="field-group">
                     <div class="field-label">Телефон (+7)</div>
-                    <input class="field-input" id="inp-phone" value="+7 (904) 123-45-67">
+                    <input class="field-input" id="inp-phone" value="+7 (800) 555-35-35">
                 </div>
             </div>
 
             <div class="field-row">
                 <div class="field-group">
+                    <div class="field-label">E-mail</div>
+                    <input class="field-input" id="inp-email" value="test@mail.ru">
+                </div>
+                <div class="field-group">
                     <div class="field-label">Город (автокоррекция)</div>
-                    <input class="field-input" id="inp-city" value="ЕКАТЕРИНБУРГ">
+                    <input class="field-input" id="inp-city" value="ИЖЕВСК">
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field-group">
+                    <div class="field-label">Ранее участвовал</div>
+                    <input class="field-input" id="inp-prev" value="5 раз">
                 </div>
                 <div class="field-group">
                     <div class="field-label">Выдана карта №</div>
-                    <input class="field-input" id="inp-card" value="012345" style="color: var(--accent-blue); font-weight: 700;">
+                    <input class="field-input" id="inp-card" value="018420" style="color: var(--accent-blue); font-weight: 700;">
                 </div>
             </div>
 
@@ -189,7 +202,14 @@ def index():
     </div>
 
     <script>
-        async function loadSample(index) {
+        async function loadRealSample() {
+            document.getElementById('form-preview').src = '/api/real-image?t=' + Date.now();
+            const res = await fetch('/api/recognize-real');
+            const data = await res.json();
+            updateForm(data);
+        }
+
+        async function loadMockSample(index) {
             document.getElementById('form-preview').src = '/api/mock-image?case=' + index + '&t=' + Date.now();
             const res = await fetch('/api/recognize-mock?case=' + index);
             const data = await res.json();
@@ -201,7 +221,6 @@ def index():
             const formData = new FormData();
             formData.append('file', input.files[0]);
             
-            // Локальный preview
             const reader = new FileReader();
             reader.onload = (e) => { document.getElementById('form-preview').src = e.target.result; };
             reader.readAsDataURL(input.files[0]);
@@ -219,7 +238,9 @@ def index():
             document.getElementById('inp-gender').value = d.gender || '';
             document.getElementById('inp-birth').value = d.birth_date || '';
             document.getElementById('inp-phone').value = d.phone || '';
+            document.getElementById('inp-email').value = d.email || '';
             document.getElementById('inp-city').value = d.city || '';
+            document.getElementById('inp-prev').value = (d.prev_participations || 0) + ' раз';
             document.getElementById('inp-card').value = d.card_number || '';
 
             document.getElementById('metric-conf').innerText = res.overall_confidence + '%';
@@ -231,7 +252,7 @@ def index():
             const statusText = document.getElementById('status-text');
             if (res.status === 'APPROVED') {
                 statusCard.className = 'status-box status-approved';
-                statusText.innerText = '✅ АНКЕТА ОЦИФРОВАНА (APPROVED)';
+                statusText.innerText = '✅ АНКЕТА ОЦИФРОВАНА НЕЙРОСЕТЬЮ';
             } else {
                 statusCard.className = 'status-box status-review';
                 statusText.innerText = '⚠️ ТРЕБУЕТ БЫСТРОЙ СВЕРКИ ВОЛОНТЕРОМ';
@@ -242,18 +263,33 @@ def index():
             alert('Карта ' + document.getElementById('inp-card').value + ' успешно привязана к участнику ' + document.getElementById('inp-surname').value + ' ' + document.getElementById('inp-name').value + '!');
         }
 
-        // Запуск распознавания первого семпла
-        loadSample(0);
+        // Запуск распознавания реального семпла при старте
+        loadRealSample();
     </script>
 </body>
 </html>
     """
     return HTMLResponse(content=html_content)
 
+@app.get("/api/real-image")
+def get_real_image():
+    if os.path.exists(REAL_SAMPLE_PATH):
+        img = cv2.imread(REAL_SAMPLE_PATH)
+        _, buffer = cv2.imencode(".jpg", img)
+        return HTMLResponse(content=buffer.tobytes(), media_type="image/jpeg")
+    return HTMLResponse(content=b"", status_code=404)
+
+@app.get("/api/recognize-real")
+def recognize_real():
+    if os.path.exists(REAL_SAMPLE_PATH):
+        img = cv2.imread(REAL_SAMPLE_PATH)
+        result = pipeline.process_image(img)
+        return JSONResponse(content=result)
+    return JSONResponse(content={"success": False, "error": "Файл не найден"})
+
 MOCK_CASES = [
     ('ИВАНОВ', 'ИВАН', 'ИВАНОВИЧ', '21', '03', '1985', 'M', '9041234567', 'ЕКАТЕРИНБУРГ', '02', 0, '012345'),
-    ('СМИРНОВ', 'АЛЕКСАНДР', 'СЕРГЕЕВИЧ', '14', '06', '1992', 'M', '9126482190', 'ЕКАТЕРИНБУРГ', '04', 1, '042189'),
-    ('ПЕТРОВА', 'АННА', 'ПАВЛОВНА', '15', '11', '2001', 'F', '9509876543', 'НИЖНИЙ ТАГИЛ', '00', 2, '009812')
+    ('СМИРНОВ', 'АЛЕКСАНДР', 'СЕРГЕЕВИЧ', '14', '06', '1992', 'M', '9126482190', 'ЕКАТЕРИНБУРГ', '04', 1, '042189')
 ]
 
 @app.get("/api/mock-image")
