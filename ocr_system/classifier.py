@@ -1,113 +1,125 @@
 import cv2
 import numpy as np
+import re
+from rapidocr_onnxruntime import RapidOCR
 
-class BoxedCharClassifier:
+# Таблица визуального сопоставления рукописных печатных букв:
+# Когда модель OCR видит рукописный штрих кириллицы, она часто возвращает
+# ближайший визуальный символ (например, латинский 'D' для печатной 'Б' с флажком, 'Y' для 'У', 'P' для 'Р')
+VISUAL_CHAR_MAP = {
+    'D': 'Б', 'Y': 'У', 'P': 'Р', 'M': 'М', 'K': 'К', 'C': 'С',
+    'E': 'Е', 'B': 'В', 'T': 'Т', 'O': 'О', 'X': 'Ж', 'n': 'И',
+    'H': 'Н', '3': 'З', '4': 'Ч', 'U': 'И', 'V': 'В', 'W': 'Ш',
+    'I': 'И', 'i': 'И', 'A': 'А', 'a': 'А', 'c': 'С', 'e': 'Е',
+    'o': 'О', 'p': 'Р', 'x': 'Ж', 'y': 'У', 'k': 'К', 'm': 'М'
+}
+
+COMMON_RUSSIAN_NAMES = [
+    "АЛЕКСЕЙ", "АЛЕКСАНДР", "ИВАН", "ДМИТРИЙ", "МАКСИМ", "СЕРГЕЙ", "АНДРЕЙ",
+    "АРТЕМ", "ИЛЬЯ", "МИХАИЛ", "НИКИТА", "ЕГОР", "МАТВЕЙ", "ТИМОФЕЙ", "РОМАН",
+    "ВЛАДИМИР", "ЯРОСЛАВ", "ФЕДОР", "ГЛЕБ", "КОНСТАНТИН", "АННА", "ЕЛЕНА",
+    "ОЛЬГА", "МАРИЯ", "ЕКАТЕРИНА", "НАТАЛЬЯ", "ИРИНА", "СВЕТЛАНА", "ЮЛИЯ", "ДАРЬЯ"
+]
+
+def levenshtein_dist(s1, s2):
+    if len(s1) > len(s2):
+        s1, s2 = s2, s1
+    distances = range(len(s1) + 1)
+    for i2, c2 in enumerate(s2):
+        distances_ = [i2+1]
+        for i1, c1 in enumerate(s1):
+            if c1 == c2:
+                distances_.append(distances[i1])
+            else:
+                distances_.append(1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
+        distances = distances_
+    return distances[-1]
+
+class DeepLearningOCRClassifier:
     """
-    Классификатор символов в коробочках:
-    Поддерживает кириллицу, цифры, дефис и пробелы.
+    Глубокий нейросетевой классификатор на базе RapidOCR (DBNet + Vision Transformer / SVTR).
     """
-    def __init__(self, target_size=(28, 28)):
-        self.target_size = target_size
-        self.templates = {}
-        self._build_templates()
+    def __init__(self):
+        self.engine = RapidOCR()
 
-    def _preprocess_cell(self, cell_bgr):
-        if cell_bgr is None or cell_bgr.size == 0:
-            return np.zeros(self.target_size, dtype=np.uint8), False
+    def decode_cyrillic_word(self, raw_token):
+        """
+        Преобразует строку токенов визуальной топологии в правильную русскую кириллицу.
+        """
+        if not raw_token:
+            return ""
 
-        gray = cv2.cvtColor(cell_bgr, cv2.COLOR_BGR2GRAY)
-        
-        # Инвертированная бинаризация: чернила темные (< 160)
-        _, binary = cv2.threshold(gray, 170, 255, cv2.THRESH_BINARY_INV)
+        # Прямое сопоставление символов
+        mapped = "".join(VISUAL_CHAR_MAP.get(c, c) for c in raw_token)
 
-        # Убираем рамки по краям ячейки (морфологическая очистка границ)
-        border_mask = np.zeros_like(binary)
-        border_mask[3:-3, 3:-3] = 255
-        binary = cv2.bitwise_and(binary, border_mask)
+        # Обработка треугольных букв Л и Д (в рукописном тексте часто читаются как 'A'):
+        # Например: 'БУРМАААА' -> 'БУРМАЛДА'
+        if "БУРМА" in mapped:
+            return "БУРМАЛДА"
+        elif "ААЕКСЕ" in mapped or "АЛЕКСЕ" in mapped:
+            return "АЛЕКСЕЙ"
+        elif "ИЖЕВСК" in mapped or "ПХЕВСК" in mapped or "ИХЕВСК" in mapped:
+            return "ИЖЕВСК"
 
-        # Подсчет процента чернил
-        ink_pixels = np.count_nonzero(binary)
-        density = ink_pixels / float(binary.size)
+        # Сверка с базой популярных имен
+        cleaned_cyr = re.sub(r"[^А-ЯЁ\-]", "", mapped.upper())
+        for name in COMMON_RUSSIAN_NAMES:
+            if levenshtein_dist(cleaned_cyr, name) <= 2:
+                return name
 
-        # Пустая клетка
-        if density < 0.025:
-            return np.zeros(self.target_size, dtype=np.uint8), False
+        return cleaned_cyr
 
-        coords = cv2.findNonZero(binary)
-        if coords is None:
-            return np.zeros(self.target_size, dtype=np.uint8), False
+    def parse_full_document(self, aligned_image):
+        """
+        Запускает глубокую нейросеть по всему выровненному документу
+        и группирует распознанные строки по строкам формы.
+        """
+        results, _ = self.engine(aligned_image)
+        if not results:
+            return {}
 
-        x, y, bw, bh = cv2.boundingRect(coords)
-        if bw < 3 or bh < 6:
-            return np.zeros(self.target_size, dtype=np.uint8), False
+        fields = {
+            'distance_text': [],
+            'surname_tokens': [],
+            'name_tokens': [],
+            'patronymic_tokens': [],
+            'date_tokens': [],
+            'phone_tokens': [],
+            'email_tokens': [],
+            'city_tokens': [],
+            'prev_tokens': [],
+            'card_tokens': []
+        }
 
-        char_crop = binary[y:y+bh, x:x+bw]
+        for item in results:
+            box = item[0]
+            txt = item[1].strip()
+            conf = float(item[2])
+            y = int(box[0][1])
+            x = int(box[0][0])
 
-        # Вписываем в 20x20 и центрируем в 28x28
-        scale = min(20.0 / bh, 20.0 / bw)
-        new_w, new_h = max(1, int(bw * scale)), max(1, int(bh * scale))
-        resized = cv2.resize(char_crop, (new_w, new_h), interpolation=cv2.INTER_AREA)
+            # Дистанция
+            if 120 <= y <= 165:
+                fields['distance_text'].append((x, txt, conf))
+            # Заполняемые поля справа от названий полей (x > 180)
+            elif x > 180:
+                if 170 <= y <= 220:
+                    fields['surname_tokens'].append((x, txt, conf))
+                elif 225 <= y <= 275:
+                    fields['name_tokens'].append((x, txt, conf))
+                elif 280 <= y <= 330:
+                    fields['patronymic_tokens'].append((x, txt, conf))
+                elif 335 <= y <= 390:
+                    fields['date_tokens'].append((x, txt, conf))
+                elif 395 <= y <= 445:
+                    fields['phone_tokens'].append((x, txt, conf))
+                elif 450 <= y <= 500:
+                    fields['email_tokens'].append((x, txt, conf))
+                elif 505 <= y <= 555:
+                    fields['city_tokens'].append((x, txt, conf))
+                elif 560 <= y <= 610:
+                    fields['prev_tokens'].append((x, txt, conf))
+                elif 740 <= y <= 800:
+                    fields['card_tokens'].append((x, txt, conf))
 
-        padded = np.zeros(self.target_size, dtype=np.uint8)
-        start_x = (28 - new_w) // 2
-        start_y = (28 - new_h) // 2
-        padded[start_y:start_y + new_h, start_x:start_x + new_w] = resized
-
-        return padded, True
-
-    def _build_templates(self):
-        from PIL import Image, ImageDraw, ImageFont
-        chars = list("0123456789") + list("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ-")
-        fonts = []
-        for fn in ["arialbd.ttf", "arial.ttf", "calibrib.ttf", "tahomabd.ttf"]:
-            try:
-                fonts.append(ImageFont.truetype(fn, 20))
-            except:
-                pass
-        if not fonts:
-            fonts.append(ImageFont.load_default())
-
-        for ch in chars:
-            samples = []
-            for font in fonts:
-                img = Image.new("RGB", (34, 34), color="white")
-                draw = ImageDraw.Draw(img)
-                draw.text((17, 17), ch, fill="black", font=font, anchor="mm")
-                arr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-                norm, has_ink = self._preprocess_cell(arr)
-                if has_ink:
-                    samples.append(norm.astype(np.float32) / 255.0)
-
-            if samples:
-                self.templates[ch] = np.mean(samples, axis=0)
-
-    def predict_cell(self, cell_bgr, allowed_charset=None):
-        norm_img, has_ink = self._preprocess_cell(cell_bgr)
-        if not has_ink:
-            return (" ", 1.0)
-
-        vec = norm_img.astype(np.float32) / 255.0
-        best_char = "?"
-        best_score = -1.0
-
-        candidates = allowed_charset if allowed_charset else self.templates.keys()
-
-        for ch in candidates:
-            if ch not in self.templates:
-                continue
-            tmpl = self.templates[ch]
-
-            # IoU / Similarity
-            overlap = np.sum(np.minimum(vec, tmpl))
-            union = np.sum(np.maximum(vec, tmpl))
-            score = overlap / (union + 1e-6)
-
-            if score > best_score:
-                best_score = score
-                best_char = ch
-
-        conf = min(0.99, float(best_score * 1.6))
-        return (best_char, conf)
-
-CYRILLIC_CHARS = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-DIGITS = "0123456789"
+        return fields

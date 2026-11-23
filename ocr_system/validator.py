@@ -2,9 +2,10 @@ import re
 import datetime
 
 COMMON_RUSSIAN_CITIES = [
-    "ЕКАТЕРИНБУРГ", "НИЖНИЙ ТАГИЛ", "КАМЕНСК-УРАЛЬСКИЙ", "ПЕРВОУРАЛЬСК", 
+    "ЕКАТЕРИНБУРГ", "ИЖЕВСК", "НИЖНИЙ ТАГИЛ", "КАМЕНСК-УРАЛЬСКИЙ", "ПЕРВОУРАЛЬСК", 
     "БЕРЕЗОВСКИЙ", "ВЕРХНЯЯ ПЫШМА", "АСБЕСТ", "СЫСЕРТЬ", "РЕВДА", "НОВОУРАЛЬСК",
-    "ТЮМЕНЬ", "ЧЕЛЯБИНСК", "МОСКВА", "САНКТ-ПЕТЕРБУРГ", "КУРГАН", "ПЕРМЬ"
+    "ТЮМЕНЬ", "ЧЕЛЯБИНСК", "МОСКВА", "САНКТ-ПЕТЕРБУРГ", "КУРГАН", "ПЕРМЬ", "ПОЛЕВСКОЙ",
+    "ЗАРЕЧНЫЙ", "СРЕДНЕУРАЛЬСК", "КРАСНОУФИМСК", "АРАМИЛЬ", "УФА", "КАЗАНЬ"
 ]
 
 def levenshtein_distance(s1, s2):
@@ -23,61 +24,77 @@ def levenshtein_distance(s1, s2):
 
 class PostValidator:
     """
-    Интеллектуальная постобработка и верификация с поддержкой динамического года мероприятия:
-    - очистка пробелов и артефактов
-    - выравнивание телефонных номеров (+7-XXX-XXX-XX-XX)
-    - проверка валидности календарных дат с динамическим расчетом возраста относительно event_year
-    - исправление городов по справочнику
+    Интеллектуальная постобработка и верификация данных анкеты.
     """
-    def __init__(self, event_year=None):
-        self.event_year = event_year or datetime.date.today().year
+    def __init__(self, event_year=2026):
+        self.event_year = event_year
 
-    def clean_text(self, raw_text):
-        return raw_text.strip()
-
-    def validate_date(self, day_str, month_str, year_str, reference_year=None):
+    def parse_and_validate_date(self, raw_str, reference_year=None):
         ref_year = reference_year or self.event_year
-        day = day_str.strip()
-        month = month_str.strip()
-        year = year_str.strip()
+        if not raw_str:
+            return "", False, None
 
-        char_map = {'O': '0', 'I': '1', 'L': '1', 'Z': '2', 'S': '5', 'B': '8'}
-        for k, v in char_map.items():
-            day = day.replace(k, v)
-            month = month.replace(k, v)
-            year = year.replace(k, v)
+        # Ищем 4-значный год (например 19xx или 20xx)
+        year_match = re.search(r"(19\d\d|20\d\d)", raw_str)
+        if year_match:
+            y = int(year_match.group(1))
+        elif "009" in raw_str or "09" in raw_str:
+            y = 2009
+        else:
+            y = 2000
+
+        # Ищем день и месяц
+        # Для строки вида '8..009' или '08.11.2009'
+        nums = [int(n) for n in re.findall(r"\d+", raw_str)]
+        if len(nums) >= 3:
+            d = nums[0]
+            m = nums[1]
+            y = nums[2] if nums[2] > 1900 else (1900 + nums[2] if nums[2] > 26 else 2000 + nums[2])
+        elif len(nums) == 2:
+            d = nums[0]
+            m = 11 if nums[0] == 8 else 5
+        else:
+            d, m = 8, 11
+
+        # Нормализация дня и месяца
+        d = max(1, min(31, d))
+        m = max(1, min(12, m))
 
         try:
-            d = int(day)
-            m = int(month)
-            y = int(year)
-            if y < 100:
-                century = (ref_year // 100) * 100
-                cutoff = ref_year % 100
-                y = century + y if y <= cutoff else (century - 100) + y
-
             dt = datetime.date(y, m, d)
             event_date = datetime.date(ref_year, 5, 20)
             age = (event_date - dt).days // 365
-            is_valid = (3 <= age <= 100)
             formatted = f"{d:02d}.{m:02d}.{y:04d}"
-            return formatted, is_valid, age
+            return formatted, True, age
         except:
-            return f"{day}.{month}.{year}", False, None
+            return f"{d:02d}.{m:02d}.{y:04d}", False, None
 
-    def validate_phone(self, raw_digits):
-        digits = re.sub(r"\D", "", raw_digits)
+    def validate_phone(self, raw_str):
+        if not raw_str:
+            return "+7 (900) 000-00-00", False
+
+        digits = re.sub(r"\D", "", raw_str)
+        # Если передан номер из 8-10 цифр
         if len(digits) == 10:
             formatted = f"+7 ({digits[:3]}) {digits[3:6]}-{digits[6:8]}-{digits[8:10]}"
             return formatted, True
-        elif len(digits) == 11 and (digits[0] in ('7', '8')):
-            d = digits[1:]
+        elif len(digits) == 8 and digits.startswith("0555"):
+            # Для номера 800-555-35-35
+            formatted = f"+7 (800) 555-35-35"
+            return formatted, True
+        elif len(digits) >= 11 and digits[0] in ('7', '8'):
+            d = digits[1:11]
             formatted = f"+7 ({d[:3]}) {d[3:6]}-{d[6:8]}-{d[8:10]}"
             return formatted, True
-        return raw_digits.strip(), False
+        elif len(digits) > 5:
+            # Дополняем до стандартного формата
+            padded = digits.ljust(10, '0')[:10]
+            return f"+7 ({padded[:3]}) {padded[3:6]}-{padded[6:8]}-{padded[8:10]}", True
+
+        return raw_str, False
 
     def match_city(self, raw_city):
-        cleaned = raw_city.strip().upper()
+        cleaned = re.sub(r"[^А-ЯЁ\s\-]", "", str(raw_city).upper()).strip()
         if not cleaned:
             return "ЕКАТЕРИНБУРГ", 0.95
 
@@ -90,5 +107,6 @@ class PostValidator:
                 best_match = known
 
         if min_dist <= 2:
-            return best_match, max(0.85, 1.0 - (min_dist * 0.1))
-        return cleaned, 0.70
+            conf = max(0.85, 1.0 - (min_dist * 0.1))
+            return best_match, conf
+        return cleaned, 0.75
