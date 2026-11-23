@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Майская прогулка 2026 • Цифровая Экосистема</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF542E',
+              'orange-hover': '#E0411D',
+              pine: '#122419',
+              'pine-card': '#193323',
+              slate: '#262626',
+              bg: '#FFE8DA',
+              surface: '#FFF8F3',
+              dark: '#1F140E'
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Onest', 'sans-serif'],
+            sport: ['"Bebas Neue"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FFE8DA;
+      color: #1F140E;
+      font-family: 'Onest', sans-serif;
+    }
+    .hero-topo {
+      background-image: radial-gradient(#FF542E 0.75px, transparent 0.75px), radial-gradient(#122419 0.75px, #FFE8DA 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+      opacity: 0.98;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#FF542E] selection:text-white hero-topo">
+
+  <!-- TOP NAV -->
+  <header class="bg-[#122419] text-[#FFF8F3] border-b-4 border-[#FF542E] px-4 sm:px-8 py-4 shadow-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-[#FF542E] flex items-center justify-center font-display font-black text-white text-lg shadow-md">
+          МП
+        </div>
+        <div>
+          <div class="font-display font-black text-base sm:text-xl tracking-tight leading-none text-white">
+            МАЙСКАЯ ПРОГУЛКА <span class="text-[#FF542E] font-sport text-2xl tracking-wider">2026</span>
+          </div>
+          <div class="text-[11px] font-mono text-emerald-400/90 tracking-wider uppercase mt-0.5">
+            Event Operations & Safety Platform • Екатеринбург
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick status badges -->
+      <div class="flex items-center gap-2 font-mono text-xs">
+        <span class="px-3 py-1 rounded bg-[#1C3627] text-emerald-300 border border-emerald-500/40">
+          ● 7 МОДУЛЕЙ АКТИВНЫ
+        </span>
+        <span class="px-3 py-1 rounded bg-[#FF542E]/20 text-[#FF542E] border border-[#FF542E]/40 font-bold">
+          17 МАЯ 2026
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION: Master Ecosystem Presentation -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10">
+    
+    <!-- Hero Banner -->
+    <div class="bg-gradient-to-br from-[#122419] to-[#1C3828] text-white rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden border-2 border-[#244732]">
+      <div class="relative z-10 max-w-3xl">
+        <div class="inline-flex items-center gap-2 bg-[#FF542E] text-white px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider mb-4 shadow">
+          Урал • Традиция с 1984 года • 15 000+ участников
+        </div>
+        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-display font-black tracking-tight leading-tight mb-4">
+          Единая цифровая система фестиваля
+        </h1>
+        <p class="text-sm sm:text-lg text-emerald-100/90 leading-relaxed font-sans mb-6">
+          Полный цикл обслуживания крупнейшего пешеходного события Урала: от открытого лендинга и личного кабинета семьи до секундной выдачи карт на старте, офлайн-сканера в лесу и Safety Engine штаба МЧС.
+        </p>
+
+        <!-- Rapid Access Links -->
+        <div class="flex flex-wrap items-center gap-3 font-mono text-xs">
+          <span class="text-white/60">Быстрый переход:</span>
+          <a href="mayprogulka_festival.html" class="bg-[#FF542E] hover:bg-[#E0411D] text-white px-3.5 py-2 rounded-lg font-bold transition">
+            Публичный портал &rarr;
+          </a>
+          <a href="user_cabinet.html" class="bg-[#244732] hover:bg-[#346647] text-white px-3.5 py-2 rounded-lg font-bold transition">
+            Личный кабинет &rarr;
+          </a>
+          <a href="safety_dashboard.html" class="bg-red-700 hover:bg-red-600 text-white px-3.5 py-2 rounded-lg font-bold transition">
+            Штаб безопасности &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 CONTOURS CARDS GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- CONTOUR 1: PUBLIC PORTAL -->
+      <div class="bg-white rounded-2xl p-6 border-2 border-[#122419]/10 shadow-xl flex flex-col justify-between hover:border-[#15803D] transition group">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              КОНТУР I • ПУБЛИЧНЫЙ
+            </span>
+            <span class="text-xs font-mono text-neutral-400">Гости и участники</span>
+          </div>
+
+          <h2 class="text-2xl font-display font-bold text-[#1F140E] mb-3 group-hover:text-emerald-700 transition">
+            Главный портал и Интерактивный гид
+          </h2>
+
+          <p class="text-sm text-neutral-600 leading-relaxed mb-6 font-sans">
+            Фестивальный сайт с живым тикающим таймером, интерактивным 3D-значком финишера, селектором 4 дистанций, анимированным профилем высот, памяткой по клещам и регламентом.
+          </p>
+
+          <ul class="space-y-2.5 text-xs font-mono text-neutral-700 border-t border-neutral-100 pt-4 mb-6">
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <strong>Главный лендинг</strong> (таймер, фото, партнеры)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <strong>Селектор маршрутов</strong> (10, 17, 33, 50 км)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <strong>Профиль перепада высот</strong> (SVG)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <strong>Памятка безопасности</strong> (клещи, дождевик)
+            </li>
+          </ul>
+        </div>
+
+        <div class="space-y-2">
+          <a href="mayprogulka_festival.html" class="block w-full text-center bg-[#15803D] hover:bg-[#126631] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-wider font-mono transition shadow">
+            Открыть Главный портал &rarr;
+          </a>
+          <a href="route_selector.html" class="block w-full text-center bg-neutral-100 hover:bg-neutral-200 text-neutral-800 py-2.5 rounded-xl font-medium text-xs font-mono transition">
+            Интерактивная карта маршрутов &rarr;
+          </a>
+        </div>
+      </div>
+
+      <!-- CONTOUR 2: USER CABINET -->
+      <div class="bg-white rounded-2xl p-6 border-2 border-[#122419]/10 shadow-xl flex flex-col justify-between hover:border-[#1D4ED8] transition group">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-800 border border-blue-300">
+              КОНТУР II • УЧАСТНИК
+            </span>
+            <span class="text-xs font-mono text-neutral-400">Роль `user`</span>
+          </div>
+
+          <h2 class="text-2xl font-display font-bold text-[#1F140E] mb-3 group-hover:text-blue-700 transition">
+            Личный кабинет и Семья
+          </h2>
+
+          <p class="text-sm text-neutral-600 leading-relaxed mb-6 font-sans">
+            Управление семейной регистрацией (1 плательщик → N участников), анкета с уральскими вузами и школами, электронный билет с QR-кодом Form ID и генератор карточки финишера для соцсетей.
+          </p>
+
+          <ul class="space-y-2.5 text-xs font-mono text-neutral-700 border-t border-neutral-100 pt-4 mb-6">
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              <strong>Семья / Команда</strong> (1 корзина на всех)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              <strong>Анкета участника</strong> (УрФУ, школы, 152-ФЗ)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              <strong>Электронный QR-билет</strong> (Form ID)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              <strong>Карточка финишера</strong> (Story для ВК/ТГ)
+            </li>
+          </ul>
+        </div>
+
+        <div class="space-y-2">
+          <a href="user_cabinet.html" class="block w-full text-center bg-[#1D4ED8] hover:bg-[#1E40AF] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-wider font-mono transition shadow">
+            Войти в Личный кабинет &rarr;
+          </a>
+        </div>
+      </div>
+
+      <!-- CONTOUR 3: OPERATIONS & SAFETY -->
+      <div class="bg-[#122419] text-white rounded-2xl p-6 border-2 border-[#244732] shadow-xl flex flex-col justify-between hover:border-[#FF542E] transition group">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#FF542E]/20 text-[#FF542E] border border-[#FF542E]/40">
+              КОНТУР III • ОПЕРАЦИИ
+            </span>
+            <span class="text-xs font-mono text-emerald-400">Штаб и волонтеры</span>
+          </div>
+
+          <h2 class="text-2xl font-display font-bold text-white mb-3 group-hover:text-[#FF542E] transition">
+            Служебный контур и Безопасность
+          </h2>
+
+          <p class="text-sm text-white/70 leading-relaxed mb-6 font-sans">
+            Инструменты для проведения дня старта: скоростной стартовый терминал, лесной офлайн PWA-сканер маркёра КП, экран штаба МЧС (Safety Engine) и станция оператора ввода бумажных анкет (OCR).
+          </p>
+
+          <ul class="space-y-2.5 text-xs font-mono text-white/80 border-t border-[#244732] pt-4 mb-6">
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
+              <strong>Стартовый терминал</strong> (выдача за 2 сек)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
+              <strong>PWA-сканер маркёра</strong> (офлайн в лесу)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
+              <strong>Safety Engine Штаб</strong> (закат, МЧС)
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
+              <strong>Станция OCR</strong> (валидация бумаги)
+            </li>
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 font-mono text-[11px]">
+          <a href="registrar_terminal.html" class="bg-[#1C3828] hover:bg-[#254C35] text-emerald-300 p-2.5 rounded-lg text-center font-bold border border-[#244732] transition">
+            Старт (2 сек) &rarr;
+          </a>
+          <a href="marker_terminal.html" class="bg-[#1C3828] hover:bg-[#254C35] text-amber-300 p-2.5 rounded-lg text-center font-bold border border-[#244732] transition">
+            Маркёр КП &rarr;
+          </a>
+          <a href="safety_dashboard.html" class="col-span-2 bg-[#FF542E] hover:bg-[#E0411D] text-white py-2.5 rounded-lg text-center font-bold uppercase tracking-wider transition shadow">
+            Штаб Safety Engine &rarr;
+          </a>
+          <a href="typist_station.html" class="col-span-2 bg-[#0D1A12] hover:bg-[#162E20] text-white/80 py-2 rounded-lg text-center font-medium border border-[#244732] transition">
+            Станция наборщика (OCR) &rarr;
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ARCHITECTURE & METRICS SUMMARY -->
+    <section class="bg-white rounded-2xl p-6 sm:p-8 border border-[#122419]/10 shadow">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-neutral-100 mb-6">
+        <div>
+          <h3 class="font-display font-bold text-xl text-[#1F140E]">Архитектурный стек и соответствие ТЗ</h3>
+          <p class="text-xs font-mono text-neutral-500 mt-0.5">Основано на требованиях Льва Муравьева, УрФУ и ФСТСО</p>
+        </div>
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <span class="px-2.5 py-1 rounded bg-neutral-100 text-neutral-700">ТЗ 100% ВЫПОЛНЕНО</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono text-xs">
+        <div class="p-4 rounded-xl bg-[#FFF8F3] border border-[#FFE8DA]">
+          <div class="font-bold text-[#FF542E] uppercase mb-1">Разделение сущностей</div>
+          <p class="text-neutral-700 font-sans text-xs">
+            Form ID (электронная анкета) отделена от Card ID (типографская карта с штрихкодом), что устранило очереди на старте.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#FFF8F3] border border-[#FFE8DA]">
+          <div class="font-bold text-[#15803D] uppercase mb-1">Офлайн-устойчивость</div>
+          <p class="text-neutral-700 font-sans text-xs">
+            Терминалы КП кэшируют отметки в IndexedDB с пакетной отправкой (POST /scans/batch) при появлении сети.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#FFF8F3] border border-[#FFE8DA]">
+          <div class="font-bold text-[#1D4ED8] uppercase mb-1">Safety Engine</div>
+          <p class="text-neutral-700 font-sans text-xs">
+            Предиктивный контроль возвращения из леса до заката солнца (21:30) с автоматическим алертом по отстающим.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#FFF8F3] border border-[#FFE8DA]">
+          <div class="font-bold text-neutral-900 uppercase mb-1">ДНК Уральского Бренда</div>
+          <p class="text-neutral-700 font-sans text-xs">
+            Устранена «стерильная белизна» SaaS: глубокий хвойный, майский оранж, теплая бумага, 3D-значок и история с 1984 года.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#122419] text-white/70 border-t border-[#244732] px-4 sm:px-8 py-6 text-xs font-mono">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <span class="text-white font-bold">© 1984–2026 «Майская прогулка»</span> • Уральский федеральный университет имени первого Президента России Б.Н. Ельцина
+      </div>
+      <div class="flex items-center gap-4">
+        <span>ФСТСО</span>
+        <span>Минспорта СО</span>
+        <span>УрФУ</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>

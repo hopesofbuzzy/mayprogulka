@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личный кабинет участника • Майская прогулка 2026</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-pine: #122419;
+      --brand-pine-light: #1b3324;
+      --brand-orange: #ea580c;
+      --brand-orange-hover: #c2410c;
+      --brand-bg: #f7f8f5;
+      --brand-bg-paper: #ecefea;
+      --brand-card: #ffffff;
+      --text-dark: #1f140e;
+      --text-muted: #5a6b60;
+      --border-subtle: rgba(18, 36, 25, 0.1);
+    }
+
+    body {
+      font-family: 'Onest', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--brand-bg);
+      color: var(--text-dark);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-unbounded { font-family: 'Unbounded', sans-serif; }
+    .font-bebas { font-family: 'Bebas Neue', sans-serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      background: rgba(18, 36, 25, 0.65);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Fullscreen barcode flash for sunny start */
+    .fullscreen-ticket {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+
+  <!-- TOP STATUS BAR -->
+  <div class="bg-[#122419] text-white py-2 px-4 text-xs font-medium">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Майская прогулка 2026 • Регистрация открыта • Старт 17 мая (стадион УрФУ)</span>
+      </div>
+      <div class="flex items-center gap-4 text-stone-300">
+        <a href="route_selector.html" class="hover:text-white underline underline-offset-2 transition">Карта маршрутов</a>
+        <span class="text-stone-500">•</span>
+        <a href="mayprogulka_festival.html" class="hover:text-white underline underline-offset-2 transition">На главную</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN HEADER -->
+  <header class="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <a href="mayprogulka_festival.html" class="w-10 h-10 rounded-xl bg-[#ea580c] text-white flex items-center justify-center font-unbounded font-black text-sm shadow-sm hover:scale-105 transition-transform" title="На главную">
+          МП
+        </a>
+        <div>
+          <h1 class="font-unbounded font-bold text-base sm:text-lg text-[#122419] tracking-tight leading-tight">
+            Личный кабинет
+          </h1>
+          <span class="text-xs text-stone-500 font-medium">
+            Семья Смирновых • Учетная запись: <strong class="text-stone-700">alex.smirnov@example.com</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="flex items-center gap-2.5">
+        <a href="route_selector.html" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-[#122419] transition">
+          <svg class="w-4 h-4 text-[#ea580c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+          Выбрать дистанцию
+        </a>
+        <button onclick="openModal()" class="bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5">
+          <span class="text-base leading-none">+</span>
+          <span class="hidden sm:inline">Добавить участника</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENT TABS NAVIGATION -->
+  <div class="max-w-6xl mx-auto px-4 pt-6 pb-2">
+    <div class="flex items-center gap-2 border-b border-stone-200 overflow-x-auto pb-1" id="nav-tabs">
+      <button onclick="switchTab('team')" id="tab-btn-team" class="px-4 py-2.5 rounded-t-xl font-unbounded font-bold text-xs sm:text-sm border-b-2 border-[#ea580c] text-[#ea580c] bg-white transition flex items-center gap-2">
+        <span>👨‍👩‍👧‍👦 Мои участники (Семья)</span>
+        <span id="badge-count" class="px-2 py-0.5 rounded-full bg-orange-100 text-[#ea580c] text-[11px] font-bold">3</span>
+      </button>
+
+      <button onclick="switchTab('tickets')" id="tab-btn-tickets" class="px-4 py-2.5 rounded-t-xl font-unbounded font-bold text-xs sm:text-sm border-b-2 border-transparent text-stone-600 hover:text-[#122419] transition flex items-center gap-2">
+        <span>🎟️ Электронные билеты (QR)</span>
+      </button>
+
+      <button onclick="switchTab('diploma')" id="tab-btn-diploma" class="px-4 py-2.5 rounded-t-xl font-unbounded font-bold text-xs sm:text-sm border-b-2 border-transparent text-stone-600 hover:text-[#122419] transition flex items-center gap-2">
+        <span>🎖️ Диплом и карточка финишера</span>
+      </button>
+    </div>
+  </div>
+
+  <main class="max-w-6xl mx-auto px-4 pt-4">
+
+    <!-- TAB 1: МОИ УЧАСТНИКИ (СЕМЕЙНЫЙ ПРОФИЛЬ) -->
+    <section id="tab-team" class="space-y-6">
+      <!-- Notice Box: 1 to N Payer Logic -->
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <span class="text-xl">ℹ️</span>
+          <div class="text-xs sm:text-sm text-emerald-900 leading-relaxed">
+            <strong>Семейная регистрация:</strong> Вы можете зарегистрировать всех членов семьи, детей или коллег с одного аккаунта. 
+            Оплата производится единым платежом, при этом для каждого участника формируется <strong>индивидуальный Form ID и QR-код</strong> для прохода на старте.
+          </div>
+        </div>
+        <button onclick="openModal()" class="shrink-0 text-xs font-bold text-emerald-800 bg-white border border-emerald-300 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition shadow-xs">
+          + Добавить еще
+        </button>
+      </div>
+
+      <!-- Participants Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="participants-grid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Summary Checkout Box -->
+      <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <span class="text-xs text-stone-500 uppercase tracking-wider font-bold block mb-1">
+            Итоговая корзина регистрации
+          </span>
+          <div class="flex items-baseline gap-3">
+            <span id="cart-total" class="font-unbounded font-black text-2xl sm:text-3xl text-[#122419] tabular-nums">
+              1 400 ₽
+            </span>
+            <span class="text-xs text-stone-500 font-medium">за <span id="cart-count">3</span> участников (включает значки и карты)</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <button onclick="payAll()" id="btn-pay" class="w-full md:w-auto bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+            <span>💳 Оплатить всю корзину (СБП / Карта)</span>
+            <span>→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ЭЛЕКТРОННЫЕ БИЛЕТЫ (QR-КОДЫ) -->
+    <section id="tab-tickets" class="hidden space-y-6">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm">
+        <div class="max-w-2xl mx-auto text-center mb-8">
+          <span class="text-xs font-bold uppercase tracking-wider text-[#ea580c] bg-orange-50 px-3 py-1 rounded-full inline-block mb-2">
+            Экспресс-старт без очередей
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-unbounded font-black text-[#122419]">
+            ЭЛЕКТРОННЫЕ БИЛЕТЫ И QR-КОДЫ
+          </h2>
+          <p class="text-xs sm:text-sm text-stone-600 mt-2">
+            На старте подойдите к экспресс-окну выдачи карт и покажите QR-код с экрана телефона волонтеру-регистратору. Считывание занимает 2 секунды!
+          </p>
+        </div>
+
+        <!-- Participant Selector for Ticket -->
+        <div class="flex justify-center mb-8">
+          <div class="bg-stone-100 p-1 rounded-xl flex flex-wrap gap-1" id="ticket-pills">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Big Ticket Visual Card -->
+        <div id="active-ticket-container" class="max-w-md mx-auto bg-stone-50 rounded-2xl border-2 border-dashed border-stone-300 p-6 shadow-sm relative overflow-hidden">
+          <!-- Top Tag -->
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
+            <div>
+              <span class="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">ID заявки (Form ID)</span>
+              <span id="t-form-id" class="font-unbounded font-bold text-base text-[#122419] tabular-nums">MP2026-849201</span>
+            </div>
+            <span id="t-paid-status" class="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold uppercase">
+              ✓ Оплачено
+            </span>
+          </div>
+
+          <!-- Participant Info -->
+          <div class="mb-4">
+            <h3 id="t-name" class="font-unbounded font-black text-xl text-[#122419] mb-1">
+              Смирнов Алексей
+            </h3>
+            <div class="text-xs text-stone-600 flex flex-wrap gap-x-4 gap-y-1">
+              <span>Маршрут: <strong id="t-route" class="text-[#ea580c]">33 км «В Новокольцовский»</strong></span>
+              <span>Старт: <strong id="t-time" class="tabular-nums">08:00 — 11:00</strong></span>
+            </div>
+          </div>
+
+          <!-- QR Code Display Box -->
+          <div class="bg-white rounded-xl p-6 border border-stone-200 text-center shadow-inner flex flex-col items-center justify-center my-4">
+            <!-- Simulated High-Contrast QR Code SVG -->
+            <svg id="ticket-qr" width="180" height="180" viewBox="0 0 100 100" class="mx-auto">
+              <path d="M10,10 h30 v30 h-30 z M15,15 v20 h20 v-20 z M20,20 h10 v10 h-10 z" fill="#122419"/>
+              <path d="M60,10 h30 v30 h-30 z M65,15 v20 h20 v-20 z M70,20 h10 v10 h-10 z" fill="#122419"/>
+              <path d="M10,60 h30 v30 h-30 z M15,65 v20 h20 v-20 z M20,70 h10 v10 h-10 z" fill="#122419"/>
+              <!-- Data dots -->
+              <rect x="50" y="10" width="5" height="15" fill="#122419"/>
+              <rect x="10" y="45" width="15" height="10" fill="#122419"/>
+              <rect x="30" y="45" width="10" height="10" fill="#122419"/>
+              <rect x="50" y="30" width="10" height="25" fill="#122419"/>
+              <rect x="70" y="45" width="20" height="10" fill="#122419"/>
+              <rect x="45" y="60" width="15" height="15" fill="#122419"/>
+              <rect x="65" y="60" width="15" height="10" fill="#122419"/>
+              <rect x="85" y="65" width="5" height="25" fill="#122419"/>
+              <rect x="50" y="80" width="25" height="10" fill="#122419"/>
+            </svg>
+            <span id="t-qr-caption" class="font-bebas text-lg tracking-widest text-stone-700 mt-2 block tabular-nums">
+              *MP2026-849201*
+            </span>
+          </div>
+
+          <!-- Buttons: Fullscreen & PDF -->
+          <div class="grid grid-cols-2 gap-2 mt-4 text-xs font-semibold">
+            <button onclick="toggleFullscreenTicket()" class="py-2.5 px-3 rounded-lg bg-[#122419] text-white hover:bg-stone-800 transition shadow-xs flex items-center justify-center gap-1.5">
+              <span>☀️</span> Во весь экран
+            </button>
+            <button onclick="alert('PDF-анкета с договором-офертой скачана')" class="py-2.5 px-3 rounded-lg bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center justify-center gap-1.5">
+              <span>📄</span> Скачать PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ДИПЛОМ И ГЕНЕРАТИВНАЯ КАРТОЧКА ФИНИШЕРА -->
+    <section id="tab-diploma" class="hidden space-y-6">
+      <div class="bg-white rounded-3xl p-6 sm:p-10 border border-stone-200 shadow-sm">
+        <div class="max-w-2xl mx-auto text-center mb-8">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full inline-block mb-2">
+            Виральный контент для соцсетей
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-unbounded font-black text-[#122419]">
+            КАРТОЧКА ФИНИШЕРА 2026
+          </h2>
+          <p class="text-xs sm:text-sm text-stone-600 mt-2">
+            После фиксации прохождения последнего КП здесь генерируется персональный диплом. Сохраните его и поделитесь в Telegram, VK или сторис!
+          </p>
+        </div>
+
+        <!-- Finisher Card Preview (Story aspect ratio: 9:16 or stylish card) -->
+        <div class="max-w-sm mx-auto bg-gradient-to-br from-[#122419] via-[#1b3324] to-[#0f1d14] text-white rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-[#ea580c] relative overflow-hidden">
+          <!-- Background Ural Contour Silhouette -->
+          <div class="absolute -right-10 -bottom-10 opacity-20 pointer-events-none">
+            <svg width="250" height="250" viewBox="0 0 100 100" fill="white">
+              <polygon points="50,15 90,85 10,85"/>
+              <polygon points="70,35 100,85 40,85"/>
+            </svg>
+          </div>
+
+          <div class="relative z-10 text-center">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-unbounded font-bold uppercase tracking-wider text-yellow-300 mb-4">
+              🎖️ Официальный финишер • 17 мая 2026
+            </div>
+
+            <h3 id="diploma-name" class="font-unbounded font-black text-2xl text-white tracking-tight mb-1">
+              СМИРНОВ АЛЕКСЕЙ
+            </h3>
+            <span id="diploma-city-vuz" class="text-xs text-stone-300 font-semibold block mb-6">
+              г. Екатеринбург • УрФУ
+            </span>
+
+            <!-- Massive Achievement Number -->
+            <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 mb-6">
+              <span class="text-xs text-yellow-300 font-bold uppercase tracking-wider block mb-1">Пройденная дистанция</span>
+              <div id="diploma-dist" class="font-unbounded font-black text-5xl text-white tracking-tight leading-none tabular-nums">
+                33 <span class="text-2xl text-yellow-300">КМ</span>
+              </div>
+              <span id="diploma-route" class="text-[11px] text-stone-300 mt-2 block">Маршрут «В Новокольцовский»</span>
+            </div>
+
+            <!-- Stats Matrix -->
+            <div class="grid grid-cols-3 gap-2 text-center text-xs mb-6">
+              <div class="bg-white/5 rounded-xl p-2.5 border border-white/10">
+                <span class="text-[10px] text-stone-400 uppercase block">Время</span>
+                <span class="font-bold text-sm text-white tabular-nums mt-0.5 block">7ч 14м</span>
+              </div>
+              <div class="bg-white/5 rounded-xl p-2.5 border border-white/10">
+                <span class="text-[10px] text-stone-400 uppercase block">Калории</span>
+                <span class="font-bold text-sm text-yellow-300 tabular-nums mt-0.5 block">~2 180</span>
+              </div>
+              <div class="bg-white/5 rounded-xl p-2.5 border border-white/10">
+                <span class="text-[10px] text-stone-400 uppercase block">Значок №</span>
+                <span id="diploma-badge-num" class="font-bold text-sm text-emerald-400 tabular-nums mt-0.5 block">849201</span>
+              </div>
+            </div>
+
+            <div class="text-[11px] font-unbounded font-black tracking-tight text-yellow-200 uppercase pt-2 border-t border-white/20">
+              «Победителем становится каждый,<br>кто пришел на финиш!»
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-6">
+          <button onclick="downloadStoryCard()" class="bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs px-6 py-3 rounded-xl shadow-md transition active:scale-95 inline-flex items-center gap-2">
+            <span>📥 Скачать карточку финишера (SVG/PNG)</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: АНКЕТА УЧАСТНИКА (ПО НАТУРНОМУ БЛАНКУ ЗАКАЗЧИКА) -->
+  <div id="participant-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-4 modal-backdrop overflow-y-auto">
+    <div class="bg-white rounded-3xl border border-stone-200 max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8 animate-in fade-in duration-200">
+      
+      <!-- Close Button -->
+      <button onclick="closeModal()" class="absolute top-5 right-5 text-stone-400 hover:text-stone-700 text-xl font-bold w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center transition">
+        ✕
+      </button>
+
+      <div class="mb-6">
+        <span class="text-xs font-bold uppercase tracking-wider text-[#ea580c] bg-orange-50 px-2.5 py-1 rounded-md">
+          Анкета участника 2026
+        </span>
+        <h3 class="text-xl sm:text-2xl font-unbounded font-black text-[#122419] mt-1">
+          Регистрация участника
+        </h3>
+        <p class="text-xs text-stone-500 mt-1">
+          Поля регламентированы оргкомитетом УрФУ и Федерацией спортивного туризма
+        </p>
+      </div>
+
+      <form id="add-form" onsubmit="saveParticipant(event)" class="space-y-4 text-xs">
+        
+        <!-- ФИО -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Фамилия *</label>
+            <input type="text" id="f-surname" required placeholder="Иванов" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Имя *</label>
+            <input type="text" id="f-name" required placeholder="Иван" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Отчество</label>
+            <input type="text" id="f-patronymic" placeholder="Иванович" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+          </div>
+        </div>
+
+        <!-- Пол и Дата Рождения -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Пол *</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center justify-center gap-2 p-2.5 bg-stone-50 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-100 font-medium">
+                <input type="radio" name="gender" value="М" checked class="accent-[#ea580c]">
+                <span>Мужской</span>
+              </label>
+              <label class="flex items-center justify-center gap-2 p-2.5 bg-stone-50 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-100 font-medium">
+                <input type="radio" name="gender" value="Ж" class="accent-[#ea580c]">
+                <span>Женский</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Дата рождения *</label>
+            <input type="date" id="f-birth" required value="1995-06-15" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium tabular-nums focus:outline-none focus:border-[#ea580c]">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Ранее участвовал в Прогулке</label>
+            <div class="flex items-center gap-2">
+              <input type="number" id="f-prev" min="0" max="42" value="0" class="w-24 bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-bold tabular-nums focus:outline-none focus:border-[#ea580c]">
+              <span class="text-stone-500 font-medium">раз(а)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Контакты и Город -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Телефон (+7) *</label>
+            <input type="tel" id="f-phone" required placeholder="+7 999 000-00-00" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium tabular-nums focus:outline-none focus:border-[#ea580c]">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">E-mail</label>
+            <input type="email" id="f-email" placeholder="ivanov@example.com" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Город проживания *</label>
+            <input type="text" id="f-city" required value="г. Екатеринбург" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+          </div>
+        </div>
+
+        <!-- Дистанция -->
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Выбор дистанции и маршрута *</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50">
+              <div class="flex items-center justify-between">
+                <span class="font-unbounded font-bold text-xs text-[#122419]">10 км</span>
+                <input type="radio" name="route" value="10" class="accent-[#ea580c]">
+              </div>
+              <span class="text-[10px] text-stone-500 mt-1">Городской • 400 ₽</span>
+            </label>
+
+            <label class="border-2 border-[#ea580c] rounded-xl p-3 cursor-pointer bg-orange-50/50 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="font-unbounded font-bold text-xs text-[#ea580c]">17 км</span>
+                <input type="radio" name="route" value="17" checked class="accent-[#ea580c]">
+              </div>
+              <span class="text-[10px] text-stone-500 mt-1">Шарташ • 450 ₽</span>
+            </label>
+
+            <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50">
+              <div class="flex items-center justify-between">
+                <span class="font-unbounded font-bold text-xs text-[#122419]">33 км</span>
+                <input type="radio" name="route" value="33" class="accent-[#ea580c]">
+              </div>
+              <span class="text-[10px] text-stone-500 mt-1">Кампус • 500 ₽</span>
+            </label>
+
+            <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50">
+              <div class="flex items-center justify-between">
+                <span class="font-unbounded font-bold text-xs text-[#122419]">50 км</span>
+                <input type="radio" name="route" value="50" class="accent-[#ea580c]">
+              </div>
+              <span class="text-[10px] text-stone-500 mt-1">Классика • 600 ₽</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Динамический социальный срез (Требование Льва Муравьева) -->
+        <div class="p-3.5 bg-stone-100 rounded-2xl border border-stone-200 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-stone-700 mb-1">Социальный статус / род занятий *</label>
+              <select id="f-soc" onchange="handleSocChange(this)" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+                <option value="student" selected>Студент ВУЗа / колледжа</option>
+                <option value="school">Школьник</option>
+                <option value="employee">Служащий / Специалист</option>
+                <option value="it">IT-специалист</option>
+                <option value="engineer">Инженер / Производство</option>
+                <option value="teacher">Преподаватель / Учитель</option>
+                <option value="business">Предприниматель</option>
+                <option value="pensioner">Пенсионер</option>
+                <option value="other">Другое</option>
+              </select>
+            </div>
+
+            <!-- Conditional 1: ВУЗ Екатеринбурга -->
+            <div id="box-vuz">
+              <label class="block font-semibold text-stone-700 mb-1">Учебное заведение (ВУЗ) *</label>
+              <select id="f-vuz" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+                <option value="urfu" selected>УрФУ (Уральский федеральный университет)</option>
+                <option value="urguu">УрГЮУ (Юридический университет)</option>
+                <option value="ugmu">УГМУ (Медицинский университет)</option>
+                <option value="uggu">УГГУ (Горный университет)</option>
+                <option value="urgeu">УрГЭУ (СИНХ)</option>
+                <option value="rgppu">РГППУ (Педагогический)</option>
+                <option value="urgau">УрГАУ (Аграрный)</option>
+                <option value="urgups">УрГУПС (Путей сообщения)</option>
+                <option value="other_vuz">Другой ВУЗ / колледж</option>
+              </select>
+            </div>
+
+            <!-- Conditional 2: Школа -->
+            <div id="box-school" class="hidden">
+              <label class="block font-semibold text-stone-700 mb-1">Номер школы и класс *</label>
+              <input type="text" id="f-school-num" placeholder="Гимназия №9, 8 «Б»" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+            </div>
+          </div>
+        </div>
+
+        <!-- Юридические чекбоксы (152-ФЗ и ответственность) -->
+        <div class="space-y-2 pt-2 border-t border-stone-200 text-[11px] text-stone-600">
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" required checked class="accent-[#ea580c] mt-0.5">
+            <span>Даю согласие на обработку персональных данных в соответствии с Федеральным законом № 152-ФЗ.</span>
+          </label>
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" required checked class="accent-[#ea580c] mt-0.5">
+            <span>Подтверждаю отсутствие медицинских противопоказаний и принимаю на себя ответственность за свое здоровье и соблюдение правил пожарной безопасности в лесу.</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-3">
+          <button type="submit" class="w-full bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-sm py-3.5 rounded-xl shadow-md transition active:scale-98">
+            Сохранить участника и перейти к корзине
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN TICKET VIEW (FOR VOLUNTEER ON BRIGHT SUNLIGHT) -->
+  <div id="fs-ticket" class="fullscreen-ticket hidden">
+    <button onclick="toggleFullscreenTicket()" class="absolute top-6 right-6 text-2xl font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 w-12 h-12 rounded-full flex items-center justify-center transition">
+      ✕
+    </button>
+    <div class="text-center max-w-sm w-full">
+      <span class="text-xs font-bold uppercase tracking-wider text-[#ea580c] bg-orange-100 px-3 py-1 rounded-full mb-3 inline-block">
+        МАЙСКАЯ ПРОГУЛКА 2026 • ЭКСПРЕСС-СТАРТ
+      </span>
+      <h2 id="fs-name" class="text-2xl font-unbounded font-black text-[#122419] mb-1">
+        Смирнов Алексей
+      </h2>
+      <div id="fs-route" class="text-sm font-bold text-[#ea580c] mb-6">
+        33 км «В Новокольцовский»
+      </div>
+
+      <!-- Maximum Brightness QR Code -->
+      <div class="bg-white p-6 border-4 border-black rounded-3xl shadow-xl inline-block mb-4">
+        <svg width="240" height="240" viewBox="0 0 100 100" class="mx-auto">
+          <path d="M10,10 h30 v30 h-30 z M15,15 v20 h20 v-20 z M20,20 h10 v10 h-10 z" fill="#000000"/>
+          <path d="M60,10 h30 v30 h-30 z M65,15 v20 h20 v-20 z M70,20 h10 v10 h-10 z" fill="#000000"/>
+          <path d="M10,60 h30 v30 h-30 z M15,65 v20 h20 v-20 z M20,70 h10 v10 h-10 z" fill="#000000"/>
+          <rect x="50" y="10" width="5" height="15" fill="#000000"/>
+          <rect x="10" y="45" width="15" height="10" fill="#000000"/>
+          <rect x="30" y="45" width="10" height="10" fill="#000000"/>
+          <rect x="50" y="30" width="10" height="25" fill="#000000"/>
+          <rect x="70" y="45" width="20" height="10" fill="#000000"/>
+          <rect x="45" y="60" width="15" height="15" fill="#000000"/>
+          <rect x="65" y="60" width="15" height="10" fill="#000000"/>
+          <rect x="85" y="65" width="5" height="25" fill="#000000"/>
+          <rect x="50" y="80" width="25" height="10" fill="#000000"/>
+        </svg>
+      </div>
+      <div id="fs-form-id" class="font-unbounded font-black text-xl text-black tabular-nums tracking-widest">
+        MP2026-849201
+      </div>
+      <p class="text-xs text-stone-500 mt-2">
+        Покажите этот экран регистратору в палатке выдачи карт
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Initial Mock Participants Data (Model: 1 Payer -> N Participants)
+    let participants = [
+      {
+        id: 'MP2026-849201',
+        name: 'Смирнов Алексей Сергеевич',
+        roleLabel: 'Глава семьи / Заявитель',
+        gender: 'М',
+        birth: '1988-06-14',
+        phone: '+7 912 648-21-90',
+        city: 'г. Екатеринбург',
+        dist: '33',
+        routeName: '33 км «В Новокольцовский»',
+        soc: 'IT-специалист (УрФУ)',
+        price: 500,
+        isPaid: true,
+        status: 'Оплачен • Билет готов'
+      },
+      {
+        id: 'MP2026-849202',
+        name: 'Смирнова Елена Викторовна',
+        roleLabel: 'Супруга',
+        gender: 'Ж',
+        birth: '1990-11-22',
+        phone: '+7 912 648-21-91',
+        city: 'г. Екатеринбург',
+        dist: '17',
+        routeName: '17 км «Шарташская кругосветка»',
+        soc: 'Служащий',
+        price: 450,
+        isPaid: true,
+        status: 'Оплачен • Билет готов'
+      },
+      {
+        id: 'MP2026-849203',
+        name: 'Смирнов Артём Алексеевич',
+        roleLabel: 'Сын (11 лет)',
+        gender: 'М',
+        birth: '2015-03-08',
+        phone: '+7 912 648-21-90',
+        city: 'г. Екатеринбург',
+        dist: '17',
+        routeName: '17 км «Шарташская кругосветка»',
+        soc: 'Школьник (Гимназия №9)',
+        price: 450,
+        isPaid: true,
+        status: 'Оплачен • Билет готов'
+      }
+    ];
+
+    let activeTicketIdx = 0;
+
+    // Render Grid
+    function renderParticipants() {
+      const grid = document.getElementById('participants-grid');
+      grid.innerHTML = participants.map((p, idx) => `
+        <div class="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1.5 ${p.dist === '33' ? 'bg-blue-600' : 'bg-emerald-600'}"></div>
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-2 pt-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
+                ${p.roleLabel}
+              </span>
+              <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                ${p.status}
+              </span>
+            </div>
+
+            <h4 class="font-unbounded font-bold text-base text-[#122419] mb-1">
+              ${p.name}
+            </h4>
+            <div class="text-xs text-[#ea580c] font-bold mb-3">
+              ${p.routeName}
+            </div>
+
+            <div class="space-y-1 text-xs text-stone-600 pt-2 border-t border-stone-100">
+              <div class="flex justify-between">
+                <span class="text-stone-400">Form ID:</span>
+                <span class="font-bold tabular-nums">${p.id}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-stone-400">Контакты:</span>
+                <span class="tabular-nums">${p.phone}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-stone-400">Социальный срез:</span>
+                <span>${p.soc}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+            <span class="font-unbounded font-black text-sm text-[#122419] tabular-nums">
+              ${p.price} ₽
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="viewTicket(${idx})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-100 text-[#ea580c] hover:bg-orange-200 transition">
+                Показать QR →
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Update counters
+      const total = participants.reduce((acc, cur) => acc + cur.price, 0);
+      document.getElementById('cart-total').textContent = `${total.toLocaleString('ru-RU')} ₽`;
+      document.getElementById('cart-count').textContent = participants.length;
+      document.getElementById('badge-count').textContent = participants.length;
+
+      renderTicketPills();
+    }
+
+    function renderTicketPills() {
+      const container = document.getElementById('ticket-pills');
+      container.innerHTML = participants.map((p, idx) => `
+        <button onclick="selectTicket(${idx})" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${activeTicketIdx === idx ? 'bg-[#ea580c] text-white shadow-xs' : 'text-stone-600 hover:text-black'}">
+          ${p.name.split(' ')[0]} (${p.dist} км)
+        </button>
+      `).join('');
+    }
+
+    function selectTicket(idx) {
+      if (idx < 0 || idx >= participants.length) return;
+      activeTicketIdx = idx;
+      renderTicketPills();
+      const p = participants[idx];
+
+      document.getElementById('t-form-id').textContent = p.id;
+      document.getElementById('t-name').textContent = p.name;
+      document.getElementById('t-route').textContent = p.routeName;
+
+      const startWindows = {
+        '10': '11:00 — 13:00',
+        '17': '09:00 — 12:00',
+        '33': '08:00 — 11:00',
+        '50': '07:00 — 09:00'
+      };
+      document.getElementById('t-time').textContent = startWindows[p.dist] || '08:00 — 12:00';
+
+      const qrCaption = document.getElementById('t-qr-caption');
+      if (qrCaption) qrCaption.textContent = `*${p.id}*`;
+
+      document.getElementById('fs-name').textContent = p.name;
+      document.getElementById('fs-route').textContent = p.routeName;
+      document.getElementById('fs-form-id').textContent = p.id;
+
+      // Update Finisher Diploma Card with active participant
+      const dipName = document.getElementById('diploma-name');
+      if (dipName) dipName.textContent = p.name.toUpperCase();
+      const dipCityVuz = document.getElementById('diploma-city-vuz');
+      if (dipCityVuz) dipCityVuz.textContent = `${p.city} • ${p.soc}`;
+      const dipDist = document.getElementById('diploma-dist');
+      if (dipDist) dipDist.innerHTML = `${p.dist} <span class="text-2xl text-yellow-300">КМ</span>`;
+      const dipRoute = document.getElementById('diploma-route');
+      if (dipRoute) dipRoute.textContent = p.routeName;
+      const dipBadge = document.getElementById('diploma-badge-num');
+      if (dipBadge) dipBadge.textContent = p.id.replace('MP2026-', '');
+    }
+
+    function viewTicket(idx) {
+      switchTab('tickets');
+      selectTicket(idx);
+    }
+
+    // Tabs switching
+    function switchTab(tabId) {
+      ['team', 'tickets', 'diploma'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        btn.classList.remove('border-[#ea580c]', 'text-[#ea580c]');
+        btn.classList.add('border-transparent', 'text-stone-600');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      activeBtn.classList.remove('border-transparent', 'text-stone-600');
+      activeBtn.classList.add('border-[#ea580c]', 'text-[#ea580c]');
+    }
+
+    // Modal logic
+    function openModal() {
+      document.getElementById('participant-modal').classList.remove('hidden');
+    }
+    function closeModal() {
+      document.getElementById('participant-modal').classList.add('hidden');
+    }
+
+    // Conditional Fields
+    function handleSocChange(select) {
+      const val = select.value;
+      const boxVuz = document.getElementById('box-vuz');
+      const boxSchool = document.getElementById('box-school');
+
+      if (val === 'student' || val === 'teacher') {
+        boxVuz.classList.remove('hidden');
+        boxSchool.classList.add('hidden');
+      } else if (val === 'school') {
+        boxVuz.classList.add('hidden');
+        boxSchool.classList.remove('hidden');
+      } else {
+        boxVuz.classList.add('hidden');
+        boxSchool.classList.add('hidden');
+      }
+    }
+
+    // Save New Participant
+    function saveParticipant(e) {
+      e.preventDefault();
+      const surname = document.getElementById('f-surname').value.trim();
+      const name = document.getElementById('f-name').value.trim();
+      const patronymic = document.getElementById('f-patronymic').value.trim();
+      const gender = document.querySelector('input[name="gender"]:checked').value;
+      const birth = document.getElementById('f-birth').value;
+      const prev = document.getElementById('f-prev').value;
+      const phone = document.getElementById('f-phone').value.trim();
+      const email = document.getElementById('f-email').value.trim();
+      const city = document.getElementById('f-city').value.trim();
+      const routeVal = document.querySelector('input[name="route"]:checked').value;
+      const soc = document.getElementById('f-soc').value;
+
+      let socLabel = 'Специалист';
+      if (soc === 'student') {
+        const vuz = document.getElementById('f-vuz').value || 'УрФУ';
+        socLabel = `Студент (${vuz})`;
+      } else if (soc === 'teacher') {
+        const vuz = document.getElementById('f-vuz').value || 'УрФУ';
+        socLabel = `Преподаватель (${vuz})`;
+      } else if (soc === 'school') {
+        const school = document.getElementById('f-school').value.trim() || 'СОШ';
+        socLabel = `Школьник (${school})`;
+      }
+
+      const prices = { '10': 400, '17': 450, '33': 500, '50': 600 };
+      const routeNames = {
+        '10': '10 км «Городской»',
+        '17': '17 км «Шарташская кругосветка»',
+        '33': '33 км «В Новокольцовский»',
+        '50': '50 км «Классика»'
+      };
+
+      const randNum = Math.floor(100000 + Math.random() * 900000);
+      const newP = {
+        id: `MP2026-${randNum}`,
+        name: `${surname} ${name} ${patronymic}`.trim(),
+        roleLabel: 'Член команды',
+        gender: gender,
+        birth: birth,
+        phone: phone,
+        email: email,
+        city: city,
+        dist: routeVal,
+        routeName: routeNames[routeVal],
+        soc: socLabel,
+        price: prices[routeVal],
+        isPaid: false,
+        status: 'Ожидает оплаты'
+      };
+
+      participants.push(newP);
+      closeModal();
+      renderParticipants();
+      selectTicket(participants.length - 1);
+      alert(`Участник ${newP.name} успешно добавлен! Сформирован Form ID: ${newP.id}. Оплатите взнос через СБП для активации QR-билета.`);
+    }
+
+    function toggleFullscreenTicket() {
+      const fs = document.getElementById('fs-ticket');
+      fs.classList.toggle('hidden');
+    }
+
+    function payAll() {
+      participants.forEach(p => {
+        p.isPaid = true;
+        p.status = 'Оплачен • Билет готов';
+      });
+      renderParticipants();
+      selectTicket(activeTicketIdx);
+      alert('Оплата через СБП успешно проведена! Персональные Form ID и QR-коды для старта активированы.');
+    }
+
+    function downloadStoryCard() {
+      const p = participants[activeTicketIdx] || participants[0];
+      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+        <defs>
+          <linearGradient id="card-bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#122419"/>
+            <stop offset="50%" stop-color="#1b3324"/>
+            <stop offset="100%" stop-color="#0f1d14"/>
+          </linearGradient>
+        </defs>
+        <rect width="600" height="900" fill="url(#card-bg)" rx="28"/>
+        <rect x="20" y="20" width="560" height="860" fill="none" stroke="#ea580c" stroke-width="5" rx="20"/>
+        <text x="300" y="80" fill="#facc15" font-family="'Unbounded', sans-serif" font-size="12" font-weight="bold" text-anchor="middle" letter-spacing="2">★ ОФИЦИАЛЬНЫЙ ФИНИШЕР 2026 ★</text>
+        <text x="300" y="110" fill="#ffffff" font-family="'Onest', sans-serif" font-size="14" text-anchor="middle">17 МАЯ 2026 • ЕКАТЕРИНБУРГ • УрФУ</text>
+        <text x="300" y="220" fill="#ffffff" font-family="'Unbounded', sans-serif" font-size="24" font-weight="bold" text-anchor="middle">${p.name.toUpperCase()}</text>
+        <text x="300" y="255" fill="#9ca3af" font-family="'Onest', sans-serif" font-size="15" text-anchor="middle">${p.city} • ${p.soc}</text>
+        <rect x="70" y="310" width="460" height="180" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" rx="20"/>
+        <text x="300" y="355" fill="#facc15" font-family="'Onest', sans-serif" font-size="13" font-weight="bold" text-anchor="middle" letter-spacing="1">ПРОЙДЕННАЯ ДИСТАНЦИЯ</text>
+        <text x="300" y="435" fill="#ffffff" font-family="'Unbounded', sans-serif" font-size="70" font-weight="900" text-anchor="middle">${p.dist} <tspan font-size="32" fill="#facc15">КМ</tspan></text>
+        <text x="300" y="470" fill="#d1d5db" font-family="'Onest', sans-serif" font-size="14" text-anchor="middle">${p.routeName}</text>
+        <text x="300" y="580" fill="#22c55e" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">FORM ID: ${p.id}</text>
+        <text x="300" y="720" fill="#fef08a" font-family="'Unbounded', sans-serif" font-size="14" font-weight="bold" text-anchor="middle">«ПОБЕДИТЕЛЕМ СТАНОВИТСЯ КАЖДЫЙ,</text>
+        <text x="300" y="745" fill="#fef08a" font-family="'Unbounded', sans-serif" font-size="14" font-weight="bold" text-anchor="middle">КТО ПРИШЕЛ НА ФИНИШ!»</text>
+      </svg>`;
+      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Mayprogulka2026_${p.id}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Read route param from URL on load
+    function initSelectedRoute() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const routeParam = urlParams.get('route') || localStorage.getItem('mp_selected_route');
+      if (routeParam && ['10', '17', '33', '50'].includes(routeParam)) {
+        const radio = document.querySelector(`input[name="route"][value="${routeParam}"]`);
+        if (radio) radio.checked = true;
+      }
+    }
+
+    // Modal & ticket dismiss
+    document.getElementById('participant-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'participant-modal') closeModal();
+    });
+    document.getElementById('fs-ticket').addEventListener('click', (e) => {
+      if (e.target.id === 'fs-ticket') toggleFullscreenTicket();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        const fs = document.getElementById('fs-ticket');
+        if (fs && !fs.classList.contains('hidden')) fs.classList.add('hidden');
+      }
+    });
+
+    initSelectedRoute();
+    renderParticipants();
+    selectTicket(0);
+  </script>
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>

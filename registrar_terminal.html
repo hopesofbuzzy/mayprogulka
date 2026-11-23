@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Стартовый терминал регистратора • Майская прогулка 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF542E',
+              'orange-hover': '#E0411D',
+              pine: '#122419',
+              'pine-light': '#1C3627',
+              slate: '#262626',
+              bg: '#FFE8DA',
+              surface: '#FFF8F3',
+              dark: '#1F140E'
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Onest', 'sans-serif'],
+            sport: ['"Bebas Neue"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #122419;
+      color: #FFF8F3;
+      font-family: 'Onest', sans-serif;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    .flash-success {
+      animation: flashGreen 0.6s ease-out;
+    }
+    @keyframes flashGreen {
+      0% { background-color: #15803d; }
+      100% { background-color: #122419; }
+    }
+    .flash-error {
+      animation: flashRed 0.6s ease-out;
+    }
+    @keyframes flashRed {
+      0% { background-color: #b91c1c; }
+      100% { background-color: #122419; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#FF542E] selection:text-white" id="terminal-body">
+
+  <!-- TOP STATUS BAR: палатка, время, статус подключения -->
+  <header class="bg-[#0D1A12] border-b border-[#2A4D37] px-4 sm:px-6 py-2.5 flex items-center justify-between">
+    <div class="flex items-center gap-3 sm:gap-6">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-[#22c55e] animate-pulse"></span>
+        <span class="font-sport tracking-wider text-xl text-white">ТЕРМИНАЛ СТАРТА #04</span>
+      </div>
+      <div class="hidden md:flex items-center gap-2 text-xs font-mono text-emerald-400 bg-[#162E20] px-3 py-1 rounded border border-[#2A4D37]">
+        <span>ПАЛАТКА: УрФУ / МИРА 19</span>
+        <span class="text-white/30">•</span>
+        <span>ОПЕРАТОР: Анна Смирнова</span>
+      </div>
+    </div>
+
+    <!-- Live clock & sync status -->
+    <div class="flex items-center gap-4">
+      <div class="text-right">
+        <div id="live-clock" class="font-mono text-xl sm:text-2xl font-bold tracking-wider text-white">08:42:15</div>
+        <div class="text-[10px] uppercase font-mono text-white/50 tracking-widest">17 МАЯ 2026 • УРАЛ</div>
+      </div>
+      <a href="user_cabinet.html" class="hidden sm:inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-white bg-[#1A3323] hover:bg-[#234530] px-3 py-1.5 rounded transition border border-[#2A4D37]">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Кабинет
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN OPERATING WORKSPACE: 3-column / 2-card layout optimized for fast eye movement -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+    
+    <!-- LEFT PANEL: Scanner inputs and hotkey guidance (4 Cols) -->
+    <section class="lg:col-span-5 flex flex-col gap-4">
+      
+      <!-- STEP 1: SCAN TICKET FORM QR -->
+      <div class="bg-[#183022] border-2 border-[#2A4D37] rounded-xl p-4 sm:p-5 shadow-xl transition-all relative overflow-hidden" id="step1-card">
+        <div class="flex items-center justify-between mb-3">
+          <span class="px-2.5 py-1 bg-[#FF542E] text-white font-mono text-xs font-bold rounded uppercase tracking-wider">
+            Шаг 1 • АНКЕТА
+          </span>
+          <span class="text-xs font-mono text-white/60">Сканер или F2</span>
+        </div>
+
+        <label class="block text-sm font-medium text-white/80 mb-2">
+          Отсканируйте QR билет участника (Form ID):
+        </label>
+        
+        <div class="relative">
+          <input 
+            type="text" 
+            id="form-id-input" 
+            autofocus 
+            autocomplete="off" 
+            placeholder="MP2026-XXXXXX..." 
+            class="w-full bg-[#0D1A12] border-2 border-emerald-500/50 focus:border-[#FF542E] rounded-lg px-4 py-3.5 text-lg font-mono text-white placeholder-white/20 focus:outline-none focus:ring-4 focus:ring-[#FF542E]/20 transition uppercase tracking-wider">
+          <button 
+            type="button" 
+            onclick="simulateScanTicket()" 
+            title="Эмулировать сканирование билета" 
+            class="absolute right-2 top-2 px-3 py-1.5 bg-[#2A4D37] hover:bg-[#39694B] text-white text-xs font-mono rounded transition flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+            Тест QR
+          </button>
+        </div>
+
+        <!-- Quick lookup buttons for frequent test cases -->
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="text-[11px] text-white/50 self-center mr-1">Быстрый тест:</span>
+          <button onclick="loadPreset('MP2026-981240')" class="text-xs bg-[#122419] hover:bg-[#20402C] text-emerald-300 px-2 py-1 rounded font-mono border border-[#2A4D37]">
+            Оплачен (33 км)
+          </button>
+          <button onclick="loadPreset('MP2026-441209')" class="text-xs bg-[#122419] hover:bg-[#20402C] text-amber-300 px-2 py-1 rounded font-mono border border-[#2A4D37]">
+            Не оплачен (17 км)
+          </button>
+          <button onclick="loadPreset('MP2026-FAMILY3')" class="text-xs bg-[#122419] hover:bg-[#20402C] text-sky-300 px-2 py-1 rounded font-mono border border-[#2A4D37]">
+            Группа (3 чел)
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: SCAN PHYSICAL ROUTE MAP BARCODE (CARD ID) -->
+      <div class="bg-[#183022] border-2 border-[#2A4D37] rounded-xl p-4 sm:p-5 shadow-xl transition-all relative overflow-hidden opacity-60 pointer-events-none" id="step2-card">
+        <div class="flex items-center justify-between mb-3">
+          <span class="px-2.5 py-1 bg-amber-500 text-black font-mono text-xs font-bold rounded uppercase tracking-wider">
+            Шаг 2 • КАРТА МАРШРУТА
+          </span>
+          <span class="text-xs font-mono text-white/60">Штрихкод на карте</span>
+        </div>
+
+        <label class="block text-sm font-medium text-white/80 mb-2">
+          Отсканируйте штрихкод выданной бумажной карты (Card ID):
+        </label>
+        
+        <div class="relative">
+          <input 
+            type="text" 
+            id="card-id-input" 
+            autocomplete="off" 
+            placeholder="CARD-XX-XXXXX..." 
+            class="w-full bg-[#0D1A12] border-2 border-amber-500/50 focus:border-amber-400 rounded-lg px-4 py-3.5 text-lg font-mono text-white placeholder-white/20 focus:outline-none focus:ring-4 focus:ring-amber-400/20 transition uppercase tracking-wider">
+          <button 
+            type="button" 
+            onclick="simulateScanCard()" 
+            title="Эмулировать сканирование карты" 
+            class="absolute right-2 top-2 px-3 py-1.5 bg-[#2A4D37] hover:bg-[#39694B] text-white text-xs font-mono rounded transition flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+            Тест Штрихкод
+          </button>
+        </div>
+
+        <div class="mt-3 text-xs text-white/50 flex items-center gap-2">
+          <span>Рекомендуемая пачка:</span>
+          <span id="recommended-pack-tag" class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-900/60 text-emerald-300 border border-emerald-500/40">
+            Ожидание выбора анкеты...
+          </span>
+        </div>
+      </div>
+
+      <!-- HOTKEYS CHEAT SHEET -->
+      <div class="bg-[#122419]/80 border border-[#2A4D37] rounded-xl p-3 sm:p-4 text-xs font-mono text-white/60">
+        <div class="font-bold text-white/80 mb-2 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-[#FF542E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          Горячие клавиши оператора
+        </div>
+        <div class="grid grid-cols-2 gap-y-1.5 text-[11px]">
+          <div><kbd class="bg-[#1F3D2A] text-white px-1.5 py-0.5 rounded border border-[#2A4D37]">Enter</kbd> Подтвердить ввод</div>
+          <div><kbd class="bg-[#1F3D2A] text-white px-1.5 py-0.5 rounded border border-[#2A4D37]">F2</kbd> Фокус на Form ID</div>
+          <div><kbd class="bg-[#1F3D2A] text-white px-1.5 py-0.5 rounded border border-[#2A4D37]">Space</kbd> Оплата наличными</div>
+          <div><kbd class="bg-[#1F3D2A] text-white px-1.5 py-0.5 rounded border border-[#2A4D37]">Esc</kbd> Сброс / Отмена</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT / CENTER PANEL: Participant Data & Verification Card (7 Cols) -->
+    <section class="lg:col-span-7 flex flex-col gap-4">
+      
+      <!-- MAIN TICKET VERIFICATION DISPLAY -->
+      <div id="participant-display" class="bg-[#162E20] border-2 border-[#2A4D37] rounded-xl p-5 sm:p-6 shadow-2xl relative min-h-[420px] flex flex-col justify-between">
+        
+        <!-- EMPTY STATE (Waiting for scan) -->
+        <div id="empty-state" class="my-auto text-center py-12">
+          <div class="w-20 h-20 mx-auto rounded-full bg-[#122419] border-2 border-[#2A4D37] flex items-center justify-center text-emerald-400 mb-4 animate-pulse">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-display font-bold text-white mb-2">Ожидание участника</h2>
+          <p class="text-sm text-white/60 max-w-md mx-auto">
+            Поднесите QR-код с экрана смартфона или распечатанного бланка к сканеру для начала процедуры выдачи карты.
+          </p>
+          <div class="mt-6 inline-flex items-center gap-2 text-xs font-mono text-emerald-400/80 bg-[#122419] px-3 py-1.5 rounded-full border border-[#2A4D37]">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            СКАНЕР ГОТОВ К РАБОТЕ
+          </div>
+        </div>
+
+        <!-- LOADED PARTICIPANT STATE (Initially Hidden) -->
+        <div id="loaded-state" class="hidden flex-col gap-5">
+          <!-- Top header: Distance & Form ID -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#2A4D37]">
+            <div class="flex items-center gap-3">
+              <span id="route-badge" class="px-4 py-1.5 rounded-lg font-sport text-2xl tracking-wider text-white shadow-md bg-[#1D4ED8]">
+                33 КМ • КАМПУС
+              </span>
+              <span id="display-form-id" class="font-mono text-sm sm:text-base font-bold text-white/80 bg-[#122419] px-3 py-1 rounded border border-[#2A4D37]">
+                MP2026-981240
+              </span>
+            </div>
+            
+            <!-- Payment status indicator -->
+            <div id="payment-status-badge" class="px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              ВЗНОС ОПЛАЧЕН ОНЛАЙН
+            </div>
+          </div>
+
+          <!-- Participant Info Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-[#122419] p-3.5 rounded-lg border border-[#2A4D37]">
+              <span class="text-[11px] font-mono text-white/50 uppercase tracking-wider block mb-1">ФИО Участника</span>
+              <div id="display-fio" class="font-display font-bold text-xl sm:text-2xl text-white">
+                АЛЕКСЕЙ СМИРНОВ
+              </div>
+              <div id="display-subtext" class="text-xs text-white/60 mt-1 font-mono">
+                Мужчина, 1994 г.р. (32 года) • Екатеринбург
+              </div>
+            </div>
+
+            <div class="bg-[#122419] p-3.5 rounded-lg border border-[#2A4D37]">
+              <span class="text-[11px] font-mono text-white/50 uppercase tracking-wider block mb-1">Социальный статус / ВУЗ</span>
+              <div id="display-org" class="font-semibold text-sm sm:text-base text-emerald-300">
+                УрФУ • Выпускник (Институт ИРИТ-РТФ)
+              </div>
+              <div id="display-phone" class="text-xs text-white/60 mt-1 font-mono">
+                Тел: +7 (912) 840-XX-XX • Опыт: 4-я прогулка
+              </div>
+            </div>
+          </div>
+
+          <!-- Unpaid Alert & Action Bar (If status == unpaid) -->
+          <div id="unpaid-action-box" class="hidden bg-amber-950/40 border-2 border-amber-500 rounded-lg p-4">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <div class="text-amber-400 font-bold text-sm uppercase font-mono">Взнос не оплачен на сайте!</div>
+                <div class="text-xs text-white/70">К оплате на старте: <strong class="text-amber-300 text-sm">450 ₽</strong></div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="markAsPaid('Наличные')" class="bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-lg font-bold text-xs uppercase font-mono tracking-wider transition">
+                  Оплачено (Нал / Терминал) [Пробел]
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Group Members List (If family/group ticket) -->
+          <div id="group-members-box" class="hidden bg-[#122419] p-3.5 rounded-lg border border-[#2A4D37]">
+            <span class="text-xs font-mono text-white/60 uppercase tracking-wider block mb-2 font-bold flex items-center justify-between">
+              <span>Состав группы / Семьи (3 человека):</span>
+              <span class="text-emerald-400 text-[11px]">Сканируйте карту для каждого</span>
+            </span>
+            <div class="space-y-2" id="group-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Big Next Action Callout -->
+          <div id="action-prompt" class="bg-[#0D1A12] border-2 border-dashed border-amber-500/60 rounded-xl p-4 text-center">
+            <div class="text-amber-400 font-sport text-2xl tracking-wider mb-1 animate-bounce">
+              ШАГ 2: ВОЗЬМИТЕ СИНЮЮ КАРТУ «33 КМ» И СКАНИРУЙТЕ ЕЁ ШТРИХКОД
+            </div>
+            <p class="text-xs font-mono text-white/60">
+              Система автоматически свяжет анкету участника с физической картой и зарегистрирует старт.
+            </p>
+          </div>
+        </div>
+
+        <!-- SUCCESS CARD LINKED MODAL / FLASH OVERLAY -->
+        <div id="success-overlay" class="hidden absolute inset-0 bg-[#15803d] rounded-xl flex flex-col items-center justify-center p-6 text-center z-20">
+          <div class="w-20 h-20 rounded-full bg-white text-emerald-800 flex items-center justify-center mb-3 shadow-2xl">
+            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+          </div>
+          <h3 class="text-3xl sm:text-4xl font-display font-black text-white tracking-wide mb-1">СТАРТ ВЫДАН!</h3>
+          <p id="success-details" class="font-mono text-sm sm:text-base text-white/90 mb-4">
+            Карта CARD-33-04821 привязана к MP2026-981240
+          </p>
+          <div class="text-xs font-mono text-white/70 bg-black/30 px-4 py-1.5 rounded-full">
+            Следующий участник через 1 сек...
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM STATS STRIP: Палатка в реальном времени -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-center">
+        <div class="bg-[#162E20] border border-[#2A4D37] p-3 rounded-lg">
+          <div class="text-xs text-white/50 uppercase">Выдано карт</div>
+          <div id="counter-total" class="font-sport text-3xl sm:text-4xl text-emerald-400 font-bold">342</div>
+        </div>
+        <div class="bg-[#162E20] border border-[#2A4D37] p-3 rounded-lg">
+          <div class="text-xs text-white/50 uppercase">Скорость палатки</div>
+          <div class="font-sport text-3xl sm:text-4xl text-white font-bold">18 <span class="text-sm font-sans text-white/60">чел/мин</span></div>
+        </div>
+        <div class="bg-[#162E20] border border-[#2A4D37] p-3 rounded-lg">
+          <div class="text-xs text-white/50 uppercase">Взнос на старте</div>
+          <div class="font-sport text-3xl sm:text-4xl text-amber-400 font-bold">12 600 ₽</div>
+        </div>
+        <div class="bg-[#162E20] border border-[#2A4D37] p-3 rounded-lg">
+          <div class="text-xs text-white/50 uppercase">Остаток карт 33 км</div>
+          <div class="font-sport text-3xl sm:text-4xl text-sky-400 font-bold">658 <span class="text-sm font-sans text-white/60">шт</span></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER NOTIFICATION & QUICK SWITCHER -->
+  <footer class="bg-[#0D1A12] border-t border-[#2A4D37] px-4 py-2.5 flex flex-wrap items-center justify-between text-xs font-mono text-white/60">
+    <div class="flex items-center gap-3">
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span>СИСТЕМА: СВЯЗЬ СО ШТАБОМ СТАБИЛЬНА (LAN 1 Gbit / Backup LTE)</span>
+    </div>
+    <div class="flex items-center gap-4 mt-1 sm:mt-0">
+      <a href="marker_terminal.html" class="text-emerald-400 hover:underline">Перейти в Терминал КП &rarr;</a>
+      <a href="safety_dashboard.html" class="text-[#FF542E] hover:underline">Ситуационный центр &rarr;</a>
+    </div>
+  </footer>
+
+  <!-- AUDIO FEEDBACK SYNTHESIZER (No external audio files needed) -->
+  <script>
+    // Audio Context Synthesizer for high-throughput beep feedback
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playBeep(freq = 880, duration = 0.08, type = 'sine') {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e) {
+        console.log("Audio not allowed yet");
+      }
+    }
+
+    function playSuccessChime() {
+      playBeep(587.33, 0.08); // D5
+      setTimeout(() => playBeep(880, 0.12), 90); // A5
+    }
+
+    function playErrorBuzzer() {
+      playBeep(220, 0.25, 'sawtooth');
+    }
+  </script>
+
+  <!-- TERMINAL CORE LOGIC -->
+  <script>
+    // Mock Participant Database
+    const database = {
+      'MP2026-981240': {
+        formId: 'MP2026-981240',
+        fio: 'СМИРНОВ АЛЕКСЕЙ ИВАНОВИЧ',
+        gender: 'М',
+        birthYear: 1994,
+        city: 'Екатеринбург',
+        route: '33 км',
+        routeName: 'Кампус Новокольцовский',
+        routeColor: '#1D4ED8',
+        org: 'УрФУ • ИРИТ-РТФ',
+        phone: '+7 (912) 840-12-88',
+        paid: true,
+        times: 4,
+        isGroup: false
+      },
+      'MP2026-441209': {
+        formId: 'MP2026-441209',
+        fio: 'ЕКАТЕРИНА ВОЛКОВА',
+        gender: 'Ж',
+        birthYear: 2002,
+        city: 'Екатеринбург',
+        route: '17 км',
+        routeName: 'Шарташский бор',
+        routeColor: '#15803D',
+        org: 'УГМУ • Студентка 4 курс',
+        phone: '+7 (908) 123-45-67',
+        paid: false,
+        times: 1,
+        isGroup: false
+      },
+      'MP2026-FAMILY3': {
+        formId: 'MP2026-FAMILY3',
+        fio: 'СЕМЬЯ КУЗНЕЦОВЫХ (3 чел)',
+        gender: 'М/Ж',
+        birthYear: 1986,
+        city: 'Верхняя Пышма',
+        route: '10 км',
+        routeName: 'Семейный круг',
+        routeColor: '#EAB308',
+        org: 'Семья с ребенком 9 лет',
+        phone: '+7 (950) 654-32-10',
+        paid: true,
+        times: 6,
+        isGroup: true,
+        members: [
+          { name: 'Кузнецов Михаил (Папа)', card: null },
+          { name: 'Кузнецова Ольга (Мама)', card: null },
+          { name: 'Кузнецов Артем (Сын, 9 лет)', card: null }
+        ]
+      }
+    };
+
+    let currentParticipant = null;
+    let totalCardsIssued = 342;
+
+    // Clock
+    setInterval(() => {
+      const d = new Date();
+      document.getElementById('live-clock').textContent = d.toTimeString().split(' ')[0];
+    }, 1000);
+
+    // DOM Elements
+    const formInput = document.getElementById('form-id-input');
+    const cardInput = document.getElementById('card-id-input');
+    const step1Card = document.getElementById('step1-card');
+    const step2Card = document.getElementById('step2-card');
+    const emptyState = document.getElementById('empty-state');
+    const loadedState = document.getElementById('loaded-state');
+    const successOverlay = document.getElementById('success-overlay');
+    const unpaidActionBox = document.getElementById('unpaid-action-box');
+    const paymentStatusBadge = document.getElementById('payment-status-badge');
+    const terminalBody = document.getElementById('terminal-body');
+
+    // Set of issued physical cards to prevent duplicate assignment (F3)
+    const issuedPhysicalCards = new Set();
+    window.resetTimer = null;
+
+    // Handle Form ID Scan / Input
+    formInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        processTicketLookup(formInput.value.trim().toUpperCase());
+      }
+    });
+
+    // Handle Card ID Scan / Input
+    cardInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        linkCardToParticipant(cardInput.value.trim().toUpperCase());
+      }
+    });
+
+    // Global Hotkeys (F5: Guard against space press in input fields)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') {
+        e.preventDefault();
+        formInput.focus();
+        formInput.select();
+      } else if (e.key === 'Escape') {
+        resetTerminal();
+      } else if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && currentParticipant && !currentParticipant.paid) {
+        e.preventDefault();
+        markAsPaid('Наличные');
+      }
+    });
+
+    function processTicketLookup(formId) {
+      if (!formId) return;
+      clearTimeout(window.resetTimer);
+      
+      // F7: Reject unknown tickets instead of creating dummy participant
+      const p = database[formId];
+      if (!p) {
+        playErrorBuzzer();
+        alert(`ОШИБКА: Билет "${formId}" не найден в базе регистрации!\nПроверьте QR-код участника или выполните поиск по номеру телефона.`);
+        formInput.select();
+        return;
+      }
+
+      currentParticipant = p;
+      playBeep(700, 0.08);
+
+      // Render Participant Info
+      emptyState.classList.add('hidden');
+      loadedState.classList.remove('hidden');
+
+      document.getElementById('route-badge').textContent = `${p.route.toUpperCase()} • ${p.routeName.toUpperCase()}`;
+      document.getElementById('route-badge').style.backgroundColor = p.routeColor;
+      document.getElementById('display-form-id').textContent = p.formId;
+      document.getElementById('display-fio').textContent = p.fio;
+      document.getElementById('display-subtext').textContent = `${p.gender === 'М' ? 'Мужчина' : 'Женщина'}, ${p.birthYear} г.р. (${2026 - p.birthYear} лет) • ${p.city}`;
+      document.getElementById('display-org').textContent = p.org;
+      document.getElementById('display-phone').textContent = `Тел: ${p.phone} • Опыт: ${p.times}-я прогулка`;
+
+      // Update recommended card tag
+      const recTag = document.getElementById('recommended-pack-tag');
+      recTag.textContent = `Пачка карт: ${p.route}`;
+      recTag.style.backgroundColor = p.routeColor + '40';
+      recTag.style.color = '#FFFFFF';
+
+      // Payment logic
+      if (p.paid) {
+        unpaidActionBox.classList.add('hidden');
+        paymentStatusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50";
+        paymentStatusBadge.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ОПЛАЧЕНО ОНЛАЙН`;
+        activateStep2();
+      } else {
+        unpaidActionBox.classList.remove('hidden');
+        paymentStatusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 bg-red-500/20 text-red-300 border border-red-500/50";
+        paymentStatusBadge.innerHTML = `<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> НЕ ОПЛАЧЕНО`;
+        deactivateStep2();
+      }
+
+      // Group handle
+      const groupBox = document.getElementById('group-members-box');
+      if (p.isGroup && p.members) {
+        groupBox.classList.remove('hidden');
+        const list = document.getElementById('group-list');
+        list.innerHTML = p.members.map((m, idx) => `
+          <div class="flex items-center justify-between text-xs bg-[#0D1A12] px-3 py-2 rounded border border-[#2A4D37]">
+            <span class="font-medium text-white">${m.name}</span>
+            <span class="font-mono ${m.card ? 'text-emerald-400 font-bold' : 'text-amber-400'}">
+              ${m.card ? 'Карта: ' + m.card : 'Ожидает карту...'}
+            </span>
+          </div>
+        `).join('');
+      } else {
+        groupBox.classList.add('hidden');
+      }
+    }
+
+    function activateStep2() {
+      step2Card.classList.remove('opacity-60', 'pointer-events-none');
+      step2Card.classList.add('ring-2', 'ring-amber-500');
+      cardInput.disabled = false;
+      cardInput.focus();
+    }
+
+    function deactivateStep2() {
+      step2Card.classList.add('opacity-60', 'pointer-events-none');
+      step2Card.classList.remove('ring-2', 'ring-amber-500');
+    }
+
+    function markAsPaid(method) {
+      if (!currentParticipant) return;
+      currentParticipant.paid = true;
+      playBeep(1000, 0.1);
+      unpaidActionBox.classList.add('hidden');
+      paymentStatusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50";
+      paymentStatusBadge.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ОПЛАЧЕНО (${method})`;
+      activateStep2();
+    }
+
+    function linkCardToParticipant(cardId) {
+      if (!cardId || !currentParticipant) return;
+
+      // F3: Guard against duplicate physical card assignment
+      if (issuedPhysicalCards.has(cardId)) {
+        playErrorBuzzer();
+        alert(`ОШИБКА: Карта ${cardId} уже была выдана ранее!\nНельзя выдать одну физическую карту повторно.`);
+        cardInput.select();
+        return;
+      }
+
+      // F3: Guard against route mismatch
+      const expectedDist = currentParticipant.route.replace(' км', '');
+      if (expectedDist === '50' && !cardId.startsWith('CARD-50-')) {
+        playErrorBuzzer();
+        alert(`ОШИБКА СЕРИИ: Участник идет на 50 км! Выдайте карту серии CARD-50-XXXXX.`);
+        cardInput.select();
+        return;
+      }
+      if (expectedDist === '33' && !cardId.startsWith('CARD-33-')) {
+        playErrorBuzzer();
+        alert(`ОШИБКА СЕРИИ: Участник идет на 33 км! Выдайте карту серии CARD-33-XXXXX.`);
+        cardInput.select();
+        return;
+      }
+
+      // Group check
+      if (currentParticipant.isGroup && currentParticipant.members) {
+        // Prevent duplicate card within same group
+        if (currentParticipant.members.some(m => m.card === cardId)) {
+          playErrorBuzzer();
+          alert(`ОШИБКА: Карта ${cardId} уже назначена другому члену этой группы!`);
+          cardInput.select();
+          return;
+        }
+
+        const nextMember = currentParticipant.members.find(m => !m.card);
+        if (nextMember) {
+          nextMember.card = cardId;
+          issuedPhysicalCards.add(cardId);
+          playSuccessChime();
+          cardInput.value = '';
+          // re-render group
+          processTicketLookup(currentParticipant.formId);
+          // if still members unassigned, stay on step 2
+          if (currentParticipant.members.some(m => !m.card)) {
+            cardInput.focus();
+            return;
+          }
+        }
+      } else {
+        issuedPhysicalCards.add(cardId);
+      }
+
+      // F2: Send HTTP POST to FastAPI backend
+      try {
+        const formData = new FormData();
+        formData.append('form_id', currentParticipant.formId);
+        formData.append('card_id', cardId);
+        formData.append('route', currentParticipant.route);
+        fetch('/api/registrar/issue-card', { method: 'POST', body: formData })
+          .then(res => res.json())
+          .then(data => console.log('Server synced:', data))
+          .catch(err => console.log('Offline/Mock mode:', err));
+      } catch(e){}
+
+      // Success Chime and Visual Feedback
+      playSuccessChime();
+      totalCardsIssued++;
+      document.getElementById('counter-total').textContent = totalCardsIssued;
+
+      document.getElementById('success-details').textContent = 
+        `Карта ${cardId} привязана к ${currentParticipant.formId} (${currentParticipant.fio})`;
+      
+      successOverlay.classList.remove('hidden');
+      terminalBody.classList.add('flash-success');
+
+      // R20: Safe auto-reset with timer clearance
+      clearTimeout(window.resetTimer);
+      window.resetTimer = setTimeout(() => {
+        resetTerminal();
+      }, 1200);
+    }
+
+    function resetTerminal() {
+      currentParticipant = null;
+      formInput.value = '';
+      cardInput.value = '';
+      emptyState.classList.remove('hidden');
+      loadedState.classList.add('hidden');
+      successOverlay.classList.add('hidden');
+      terminalBody.classList.remove('flash-success', 'flash-error');
+      deactivateStep2();
+      formInput.focus();
+    }
+
+    // Quick simulation triggers
+    function simulateScanTicket() {
+      const presets = ['MP2026-981240', 'MP2026-441209', 'MP2026-FAMILY3'];
+      const randomPreset = presets[Math.floor(Math.random() * presets.length)];
+      formInput.value = randomPreset;
+      processTicketLookup(randomPreset);
+    }
+
+    function simulateScanCard() {
+      const randNum = Math.floor(10000 + Math.random() * 90000);
+      const prefix = currentParticipant ? currentParticipant.route.replace(' км', '') : '33';
+      const fakeCard = `CARD-${prefix}-${randNum}`;
+      cardInput.value = fakeCard;
+      linkCardToParticipant(fakeCard);
+    }
+
+    function loadPreset(code) {
+      formInput.value = code;
+      processTicketLookup(code);
+    }
+  </script>
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>

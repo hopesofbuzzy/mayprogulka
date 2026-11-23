@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Выбор маршрута • Майская прогулка 2026</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Onest:wght@400;500;600;700&display=swap');
+
+    :root {
+      --canvas: #f6f8f5;
+      --card: #ffffff;
+      --pine-deep: #132219;
+      --text-muted: #5a6b60;
+      --border-subtle: rgba(19, 34, 25, 0.08);
+      --border-focus: rgba(19, 34, 25, 0.2);
+      --route-17: #15803d;
+      --route-33: #1d4ed8;
+      --route-50: #c2410c;
+    }
+
+    body {
+      font-family: 'Onest', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--canvas);
+      color: var(--pine-deep);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-display {
+      font-family: 'Unbounded', sans-serif;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .route-card {
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+    }
+
+    .route-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px -6px rgba(19, 34, 25, 0.09);
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      background: rgba(19, 34, 25, 0.6);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-6 md:p-8">
+
+  <div class="max-w-6xl mx-auto">
+    <!-- Header Section -->
+    <header class="mb-8">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-[#132219] text-white flex items-center justify-center font-display font-bold text-sm shadow-sm">
+            МП
+          </div>
+          <div>
+            <span class="text-xs font-semibold tracking-wider uppercase text-[var(--text-muted)]">Екатеринбург • 17 мая 2026</span>
+            <h1 class="text-xl sm:text-2xl font-bold font-display tracking-tight text-[var(--pine-deep)]">
+              Выбери свой маршрут
+            </h1>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a href="mayprogulka_festival.html" class="text-xs font-semibold px-3 py-2 rounded-lg bg-white border border-[var(--border-subtle)] hover:border-[var(--border-focus)] text-[var(--pine-deep)] transition shadow-sm">
+            ← Главная
+          </a>
+          <a href="user_cabinet.html" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#122419] hover:bg-[#1C3627] text-white transition shadow-sm">
+            <svg class="w-3.5 h-3.5 text-[#FF542E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            Личный кабинет
+          </a>
+          <button id="toggle-view-btn" class="hidden sm:inline-block text-xs font-medium px-3 py-2 rounded-lg bg-white border border-[var(--border-subtle)] hover:border-[var(--border-focus)] transition shadow-sm">
+            📊 Сравнение параметров
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters & Category Navigation -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mt-5">
+        <div class="flex flex-wrap items-center gap-1.5" id="filter-tabs">
+          <button data-filter="all" class="filter-btn active px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#132219] text-white transition shadow-sm">
+            Все маршруты (4)
+          </button>
+          <button data-filter="urban" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--pine-deep)] transition">
+            Городской (10 км)
+          </button>
+          <button data-filter="easy" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--pine-deep)] transition">
+            Лесные и семейные (17 км)
+          </button>
+          <button data-filter="medium" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--pine-deep)] transition">
+            Оптимальный хайкинг (33 км)
+          </button>
+          <button data-filter="hard" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--pine-deep)] transition">
+            Ультра-испытание (50 км)
+          </button>
+        </div>
+
+        <div class="text-xs text-[var(--text-muted)] flex items-center gap-2">
+          <span>Сортировка:</span>
+          <select id="sort-select" class="bg-white border border-[var(--border-subtle)] rounded-md px-2 py-1 text-xs text-[var(--pine-deep)] font-medium focus:outline-none">
+            <option value="dist-asc">По возрастанию дистанции</option>
+            <option value="dist-desc">По убыванию дистанции</option>
+            <option value="time-asc">По времени старта (ранее)</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Cards Grid View -->
+    <main id="cards-view" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+
+      <!-- CARD 0: 10 KM -->
+      <article data-category="urban" data-dist="10" data-time="11" class="route-card bg-white rounded-xl border border-[var(--border-subtle)] p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+        <!-- Accent Top Bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-[#7e22ce]"></div>
+
+        <div>
+          <!-- Header info -->
+          <div class="flex items-start justify-between gap-2 mb-3 pt-1">
+            <div class="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-[#7e22ce] font-display font-bold text-sm">
+              <span class="text-lg">10</span> км
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-semibold">
+              Городской • С детьми
+            </span>
+          </div>
+
+          <h2 class="text-lg font-bold text-[var(--pine-deep)] mb-1 group-hover:text-[#7e22ce] transition">
+            Исетский променад
+          </h2>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed mb-4">
+            Пологий городской маршрут через Харитоновский сад, набережную Исети и смотровую Метеогорку. Доступен для прогулок с колясками.
+          </p>
+
+          <!-- Elevation Sparkline Profile -->
+          <div class="bg-stone-50 rounded-lg p-3 border border-stone-200/60 mb-4">
+            <div class="flex justify-between items-center text-xs text-[var(--text-muted)] mb-1">
+              <span>Профиль высот</span>
+              <span class="font-semibold text-[var(--pine-deep)] tabular-nums">+65 м</span>
+            </div>
+            <svg viewBox="0 0 200 40" class="w-full h-10 overflow-visible" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="grad-10" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#7e22ce" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#7e22ce" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,38 Q 50,32 100,24 T 150,22 T 200,36 L 200,40 L 0,40 Z" fill="url(#grad-10)" />
+              <path d="M 0,38 Q 50,32 100,24 T 150,22 T 200,36" fill="none" stroke="#7e22ce" stroke-width="2.5" stroke-linecap="round" />
+              <circle cx="100" cy="24" r="3" fill="#7e22ce" />
+            </svg>
+            <div class="flex justify-between text-[11px] text-[var(--text-muted)] mt-1 tabular-nums">
+              <span>Старт УрФУ</span>
+              <span>КП «Харитонов»</span>
+              <span>Финиш</span>
+            </div>
+          </div>
+
+          <!-- Key Metrics Matrix -->
+          <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Стартовое окно</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">11:00 — 13:00</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Покрытие</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">90% асфальт, парки</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Точки чая/воды</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">1 КП (чай, вода)</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Время в пути</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">~2.5 – 3.5 ч</div>
+            </div>
+          </div>
+
+          <!-- Escape / Dropout Point (Точка схода) -->
+          <div class="mb-4 text-[11px] p-2 rounded bg-purple-50 border border-purple-100 text-purple-900">
+            <span class="font-bold">🚌 Точка схода:</span> ост. «Харитоновский сад», трамваи 4, 18, метро «Динамо»
+          </div>
+        </div>
+
+        <!-- Footer / CTA -->
+        <div class="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
+          <div>
+            <div class="text-[11px] text-[var(--text-muted)]">Взнос участника</div>
+            <div class="text-base font-bold font-display tabular-nums text-[var(--pine-deep)]">400 ₽</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="openModal('10')" class="text-xs px-2.5 py-2 rounded-md bg-stone-100 hover:bg-stone-200 text-[var(--pine-deep)] font-medium transition" title="Детали и трек">
+              ℹ️ Трек
+            </button>
+            <button onclick="startRegister('10', 'Исетский променад')" class="text-xs font-semibold px-3.5 py-2 rounded-md bg-[#7e22ce] hover:bg-purple-800 text-white transition shadow-sm active:scale-95">
+              Выбрать
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 1: 17 KM -->
+      <article data-category="easy" data-dist="17" data-time="9" class="route-card bg-white rounded-xl border border-[var(--border-subtle)] p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+        <!-- Accent Top Bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-[#15803d]"></div>
+
+        <div>
+          <!-- Header info -->
+          <div class="flex items-start justify-between gap-2 mb-3 pt-1">
+            <div class="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-[#15803d] font-display font-bold text-sm">
+              <span class="text-lg">17</span> км
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded bg-stone-100 text-[var(--text-muted)] font-medium">
+              Семейный / Начинающий
+            </span>
+          </div>
+
+          <h2 class="text-lg font-bold text-[var(--pine-deep)] mb-1 group-hover:text-[#15803d] transition">
+            Шарташская кругосветка
+          </h2>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed mb-4">
+            Живописные сосновые тропы вдоль берега озера Шарташ. Идеальный выбор для первого знакомства, прогулок с детьми и четвероногими спутниками.
+          </p>
+
+          <!-- Elevation Sparkline Profile -->
+          <div class="bg-stone-50 rounded-lg p-3 border border-stone-200/60 mb-4">
+            <div class="flex justify-between items-center text-xs text-[var(--text-muted)] mb-1">
+              <span>Профиль высот</span>
+              <span class="font-semibold text-[var(--pine-deep)] tabular-nums">+115 м</span>
+            </div>
+            <svg viewBox="0 0 200 40" class="w-full h-10 overflow-visible" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="grad-17" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#15803d" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#15803d" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,32 Q 30,28 60,20 T 110,22 T 160,18 T 200,32 L 200,40 L 0,40 Z" fill="url(#grad-17)" />
+              <path d="M 0,32 Q 30,28 60,20 T 110,22 T 160,18 T 200,32" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" />
+              <!-- Points -->
+              <circle cx="60" cy="20" r="3" fill="#15803d" />
+              <circle cx="160" cy="18" r="3" fill="#15803d" />
+            </svg>
+            <div class="flex justify-between text-[11px] text-[var(--text-muted)] mt-1 tabular-nums">
+              <span>Старт УрФУ</span>
+              <span>КП «Пески»</span>
+              <span>Финиш</span>
+            </div>
+          </div>
+
+          <!-- Key Metrics Matrix -->
+          <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Стартовое окно</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">09:00 — 12:00</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Покрытие</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">85% лес / 15% парк</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Точки чая/воды</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">2 КП с питанием</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Время в пути</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">~3.5 – 5.0 ч</div>
+            </div>
+          </div>
+
+          <!-- Escape / Dropout Point (Точка схода) -->
+          <div class="mb-4 text-[11px] p-2 rounded bg-emerald-50 border border-emerald-100 text-emerald-900">
+            <span class="font-bold">🚌 Точка схода:</span> ост. «Пески» (авт. 25, 48) или ост. «Изоплит» (авт. 112)
+          </div>
+        </div>
+
+        <!-- Footer / CTA -->
+        <div class="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
+          <div>
+            <div class="text-[11px] text-[var(--text-muted)]">Взнос участника</div>
+            <div class="text-base font-bold font-display tabular-nums text-[var(--pine-deep)]">450 ₽</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="openModal('17')" class="text-xs px-2.5 py-2 rounded-md bg-stone-100 hover:bg-stone-200 text-[var(--pine-deep)] font-medium transition" title="Детали и трек">
+              ℹ️ Трек
+            </button>
+            <button onclick="startRegister('17', 'Шарташская кругосветка')" class="text-xs font-semibold px-3.5 py-2 rounded-md bg-[#15803d] hover:bg-emerald-800 text-white transition shadow-sm active:scale-95">
+              Выбрать
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 2: 33 KM -->
+      <article data-category="medium" data-dist="33" data-time="8" class="route-card bg-white rounded-xl border border-[var(--border-subtle)] p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+        <!-- Accent Top Bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-[#1d4ed8]"></div>
+
+        <div>
+          <!-- Header info -->
+          <div class="flex items-start justify-between gap-2 mb-3 pt-1">
+            <div class="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-[#1d4ed8] font-display font-bold text-sm">
+              <span class="text-lg">33</span> км
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded bg-stone-100 text-[var(--text-muted)] font-medium">
+              Оптимальный хайкинг
+            </span>
+          </div>
+
+          <h2 class="text-lg font-bold text-[var(--pine-deep)] mb-1 group-hover:text-[#1d4ed8] transition">
+            В Новокольцовский
+          </h2>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed mb-4">
+            Контрастный маршрут через Синие камни, лесопарк им. Лесоводов России к ультрасовременному кампусу УрФУ и финиш через смотровую Метеогорку.
+          </p>
+
+          <!-- Elevation Sparkline Profile -->
+          <div class="bg-stone-50 rounded-lg p-3 border border-stone-200/60 mb-4">
+            <div class="flex justify-between items-center text-xs text-[var(--text-muted)] mb-1">
+              <span>Профиль высот</span>
+              <span class="font-semibold text-[var(--pine-deep)] tabular-nums">+245 м</span>
+            </div>
+            <svg viewBox="0 0 200 40" class="w-full h-10 overflow-visible" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="grad-33" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,35 Q 35,28 70,14 T 120,30 T 170,12 T 200,34 L 200,40 L 0,40 Z" fill="url(#grad-33)" />
+              <path d="M 0,35 Q 35,28 70,14 T 120,30 T 170,12 T 200,34" fill="none" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round" />
+              <!-- Points -->
+              <circle cx="70" cy="14" r="3" fill="#1d4ed8" />
+              <circle cx="120" cy="30" r="3" fill="#1d4ed8" />
+              <circle cx="170" cy="12" r="3" fill="#1d4ed8" />
+            </svg>
+            <div class="flex justify-between text-[11px] text-[var(--text-muted)] mt-1 tabular-nums">
+              <span>Старт УрФУ</span>
+              <span>Кампус УрФУ</span>
+              <span>Метеогорка</span>
+            </div>
+          </div>
+
+          <!-- Key Metrics Matrix -->
+          <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Стартовое окно</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">08:00 — 11:00</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Покрытие</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">60% лес / 40% город</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Точки чая/воды</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">3 КП с питанием</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Время в пути</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">~6.5 – 8.5 ч</div>
+            </div>
+          </div>
+
+          <!-- Escape / Dropout Point (Точка схода) -->
+          <div class="mb-4 text-[11px] p-2 rounded bg-blue-50 border border-blue-100 text-blue-900">
+            <span class="font-bold">🚌 Точка схода:</span> ост. «Кампус Новокольцовский» (авт. 01, 44, 56) или ост. «Метеогорка»
+          </div>
+        </div>
+
+        <!-- Footer / CTA -->
+        <div class="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
+          <div>
+            <div class="text-[11px] text-[var(--text-muted)]">Взнос участника</div>
+            <div class="text-base font-bold font-display tabular-nums text-[var(--pine-deep)]">500 ₽</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="openModal('33')" class="text-xs px-2.5 py-2 rounded-md bg-stone-100 hover:bg-stone-200 text-[var(--pine-deep)] font-medium transition" title="Детали и трек">
+              ℹ️ Трек
+            </button>
+            <button onclick="startRegister('33', 'В Новокольцовский')" class="text-xs font-semibold px-3.5 py-2 rounded-md bg-[#1d4ed8] hover:bg-blue-800 text-white transition shadow-sm active:scale-95">
+              Выбрать
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 3: 50 KM -->
+      <article data-category="hard" data-dist="50" data-time="7" class="route-card bg-white rounded-xl border border-[var(--border-subtle)] p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+        <!-- Accent Top Bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-[#c2410c]"></div>
+
+        <div>
+          <!-- Header info -->
+          <div class="flex items-start justify-between gap-2 mb-3 pt-1">
+            <div class="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-md bg-orange-50 text-[#c2410c] font-display font-bold text-sm">
+              <span class="text-lg">50</span> км
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-semibold">
+              Ультрамарафон • Вызов
+            </span>
+          </div>
+
+          <h2 class="text-lg font-bold text-[var(--pine-deep)] mb-1 group-hover:text-[#c2410c] transition">
+            Классика «50 км»
+          </h2>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed mb-4">
+            Главный легендарный маршрут фестиваля с 1984 года. Глубокие лесные просеки, Жулановский пруд, Сарапульский кордон и проверка на прочность.
+          </p>
+
+          <!-- Elevation Sparkline Profile -->
+          <div class="bg-stone-50 rounded-lg p-3 border border-stone-200/60 mb-4">
+            <div class="flex justify-between items-center text-xs text-[var(--text-muted)] mb-1">
+              <span>Профиль высот</span>
+              <span class="font-semibold text-[var(--pine-deep)] tabular-nums">+430 м</span>
+            </div>
+            <svg viewBox="0 0 200 40" class="w-full h-10 overflow-visible" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="grad-50" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#c2410c" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#c2410c" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M 0,35 Q 25,30 50,18 T 90,8 T 130,26 T 170,10 T 200,35 L 200,40 L 0,40 Z" fill="url(#grad-50)" />
+              <path d="M 0,35 Q 25,30 50,18 T 90,8 T 130,26 T 170,10 T 200,35" fill="none" stroke="#c2410c" stroke-width="2.5" stroke-linecap="round" />
+              <!-- Points -->
+              <circle cx="50" cy="18" r="3" fill="#c2410c" />
+              <circle cx="90" cy="8" r="3" fill="#c2410c" />
+              <circle cx="170" cy="10" r="3" fill="#c2410c" />
+            </svg>
+            <div class="flex justify-between text-[11px] text-[var(--text-muted)] mt-1 tabular-nums">
+              <span>Старт УрФУ</span>
+              <span>Жуланов пруд</span>
+              <span>Сарапулка</span>
+            </div>
+          </div>
+
+          <!-- Key Metrics Matrix -->
+          <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Стартовое окно</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">07:00 — 09:00</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Покрытие</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">75% тайга / 25% грунт</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Точки чая/воды</div>
+              <div class="font-bold text-[var(--pine-deep)] mt-0.5">5 КП + медики</div>
+            </div>
+            <div class="p-2 rounded bg-stone-50 border border-stone-100">
+              <div class="text-[var(--text-muted)] text-[11px]">Время в пути</div>
+              <div class="font-bold text-[var(--pine-deep)] tabular-nums mt-0.5">~10.0 – 13.5 ч</div>
+            </div>
+          </div>
+
+          <!-- Escape / Dropout Point (Точка схода) -->
+          <div class="mb-4 text-[11px] p-2 rounded bg-orange-50 border border-orange-100 text-orange-900">
+            <span class="font-bold">🚌 Точка схода:</span> КП-2 «Технопарк» (авт. 56), Сарапульский кордон (дежурный УАЗ оргкомитета)
+          </div>
+        </div>
+
+        <!-- Footer / CTA -->
+        <div class="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
+          <div>
+            <div class="text-[11px] text-[var(--text-muted)]">Взнос участника</div>
+            <div class="text-base font-bold font-display tabular-nums text-[var(--pine-deep)]">600 ₽</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="openModal('50')" class="text-xs px-2.5 py-2 rounded-md bg-stone-100 hover:bg-stone-200 text-[var(--pine-deep)] font-medium transition" title="Детали и трек">
+              ℹ️ Трек
+            </button>
+            <button onclick="startRegister('50', 'Классика 50 км')" class="text-xs font-semibold px-3.5 py-2 rounded-md bg-[#c2410c] hover:bg-orange-800 text-white transition shadow-sm active:scale-95">
+              Выбрать
+            </button>
+          </div>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- Comparison Table View (Toggled on Demand) -->
+    <section id="table-view" class="hidden bg-white rounded-xl border border-[var(--border-subtle)] overflow-x-auto shadow-sm p-4">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="border-b border-[var(--border-subtle)] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+            <th class="py-3 px-3">Параметр</th>
+            <th class="py-3 px-3 text-[#7e22ce]">10 км «Исетский»</th>
+            <th class="py-3 px-3 text-[#15803d]">17 км «Шарташ»</th>
+            <th class="py-3 px-3 text-[#1d4ed8]">33 км «Новокольцовский»</th>
+            <th class="py-3 px-3 text-[#c2410c]">50 км «Классика»</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[var(--border-subtle)] text-[var(--pine-deep)]">
+          <tr>
+            <td class="py-2.5 px-3 font-medium text-[var(--text-muted)]">Рекомендуемый уровень</td>
+            <td class="py-2.5 px-3">Семьи с колясками, дети</td>
+            <td class="py-2.5 px-3">Семьи, дети, новички</td>
+            <td class="py-2.5 px-3">Опытные пешеходы</td>
+            <td class="py-2.5 px-3 font-semibold text-orange-700">Высокая выносливость</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 px-3 font-medium text-[var(--text-muted)]">Окно старта</td>
+            <td class="py-2.5 px-3 tabular-nums">11:00 — 13:00</td>
+            <td class="py-2.5 px-3 tabular-nums">09:00 — 12:00</td>
+            <td class="py-2.5 px-3 tabular-nums">08:00 — 11:00</td>
+            <td class="py-2.5 px-3 tabular-nums">07:00 — 09:00</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 px-3 font-medium text-[var(--text-muted)]">Набор высоты</td>
+            <td class="py-2.5 px-3 tabular-nums">+65 м (пологий)</td>
+            <td class="py-2.5 px-3 tabular-nums">+115 м</td>
+            <td class="py-2.5 px-3 tabular-nums">+245 м</td>
+            <td class="py-2.5 px-3 tabular-nums font-bold">+430 м</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 px-3 font-medium text-[var(--text-muted)]">Пункты чая и воды</td>
+            <td class="py-2.5 px-3">1 КП (Харитонов сад)</td>
+            <td class="py-2.5 px-3">2 КП («Пески», «Изоплит»)</td>
+            <td class="py-2.5 px-3">3 КП (+ студ. кампус)</td>
+            <td class="py-2.5 px-3">5 КП (+ Сарапулка, медики)</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 px-3 font-medium text-[var(--text-muted)]">Ориентировочное время</td>
+            <td class="py-2.5 px-3 tabular-nums">2.5 — 3.5 часов</td>
+            <td class="py-2.5 px-3 tabular-nums">3.5 — 5.0 часов</td>
+            <td class="py-2.5 px-3 tabular-nums">6.5 — 8.5 часов</td>
+            <td class="py-2.5 px-3 tabular-nums">10 — 13.5 часов</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 px-3 font-medium text-[var(--text-muted)]">Точки схода (транспорт)</td>
+            <td class="py-2.5 px-3">ост. «Харитоновский сад», метро</td>
+            <td class="py-2.5 px-3">ост. «Пески», «Изоплит»</td>
+            <td class="py-2.5 px-3">Кампус (авт. 01, 56), Метеогорка</td>
+            <td class="py-2.5 px-3">Технопарк, эвако-УАЗ оргкомитета</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 px-3 font-medium text-[var(--text-muted)]">Стоимость онлайн</td>
+            <td class="py-2.5 px-3 font-bold tabular-nums">400 ₽</td>
+            <td class="py-2.5 px-3 font-bold tabular-nums">450 ₽</td>
+            <td class="py-2.5 px-3 font-bold tabular-nums">500 ₽</td>
+            <td class="py-2.5 px-3 font-bold tabular-nums">600 ₽</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Registration & Details Modal Drawer -->
+    <div id="route-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+      <div class="bg-white rounded-xl border border-[var(--border-subtle)] max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in duration-200">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-700 text-lg font-bold">
+          ✕
+        </button>
+
+        <div class="flex items-center gap-2 mb-2">
+          <span id="modal-badge" class="px-2.5 py-0.5 rounded text-xs font-bold text-white bg-emerald-600">
+            17 км
+          </span>
+          <span id="modal-subtitle" class="text-xs text-[var(--text-muted)]">
+            Детализация маршрута
+          </span>
+        </div>
+
+        <h3 id="modal-title" class="text-xl font-bold font-display text-[var(--pine-deep)] mb-3">
+          Шарташская кругосветка
+        </h3>
+
+        <div id="modal-content" class="text-xs text-[var(--text-muted)] space-y-3 mb-5">
+          <!-- Injected dynamically -->
+        </div>
+
+        <!-- Checkpoints List -->
+        <div class="bg-stone-50 rounded-lg p-3 border border-stone-200/60 mb-5 text-xs">
+          <div class="font-semibold text-[var(--pine-deep)] mb-2 flex items-center justify-between">
+            <span>Контрольные пункты (КП) и сервис:</span>
+            <span class="text-emerald-700">Бесплатный чай и вода</span>
+          </div>
+          <ul id="modal-checkpoints" class="space-y-1 text-stone-600">
+            <!-- Injected -->
+          </ul>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 pt-3 border-t border-[var(--border-subtle)]">
+          <button id="modal-gpx-btn" onclick="downloadGpxMock()" class="text-xs font-medium px-3.5 py-2 rounded-md bg-stone-100 hover:bg-stone-200 text-[var(--pine-deep)] flex items-center gap-1.5 transition">
+            <span>🗺️</span> Скачать GPX-трек
+          </button>
+          <button id="modal-cta-btn" onclick="proceedToCheckout()" class="text-xs font-semibold px-5 py-2.5 rounded-md bg-[#132219] hover:bg-emerald-900 text-white transition shadow active:scale-95">
+            Зарегистрироваться онлайн
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-[#132219] text-white text-xs px-4 py-3 rounded-lg shadow-xl flex items-center gap-2 border border-emerald-500/30">
+      <span class="text-emerald-400 font-bold">✓</span>
+      <span id="toast-msg">Маршрут выбран!</span>
+    </div>
+
+  </div>
+
+  <script>
+    const routesData = {
+      '10': {
+        title: 'Исетский променад',
+        dist: '10 км',
+        badgeColor: 'bg-[#7e22ce]',
+        desc: 'Пологий и комфортный городской маршрут для всей семьи. Проходит через живописные парки, набережную Исети и смотровую Метеогорку.',
+        checkpoints: [
+          'Старт: Главный корпус УрФУ (Мира, 19)',
+          'КП 1 (5 км): Харитоновский сад — чай, вода, детская площадка',
+          'Точка схода: Ост. «Харитоновский сад» / ст. метро «Динамо»',
+          'Финиш (10 км): Стадион УрФУ — памятный литой знак и чай с пряником'
+        ],
+        price: '400 ₽'
+      },
+      '17': {
+        title: 'Шарташская кругосветка',
+        dist: '17 км',
+        badgeColor: 'bg-[#15803d]',
+        desc: 'Семейная классика по сосновому лесопарку Шарташ. Рельеф ровный, чистый лесной воздух, береговая линия озера и удобные места отдыха.',
+        checkpoints: [
+          'Старт: Площадь перед главным корпусом УрФУ (Мира, 19)',
+          'КП 1 (7 км): Мыс Рундук — горячий чай, питьевая вода',
+          'КП 2 (12 км): Изоплит — чай с лимоном, пункт первой помощи',
+          'Финиш: Стадион УрФУ — памятный литой значок и диплом финишера'
+        ],
+        price: '450 ₽'
+      },
+      '33': {
+        title: 'В Новокольцовский',
+        dist: '33 км',
+        badgeColor: 'bg-[#1d4ed8]',
+        desc: 'Маршрут для уверенных в себе ходоков. Соединяет историческую часть города с восточными лесопарками и новым университетским кампусом мирового уровня.',
+        checkpoints: [
+          'Старт: Площадь перед главным корпусом УрФУ (Мира, 19)',
+          'КП 1 (9 км): Синие Камни — точка гидратации и волонтерский пост',
+          'КП 2 (18 км): Кампус Новокольцовский — горячий чай, фрукты, отдых',
+          'КП 3 (26 км): Метеогорка — смотровая площадка, чай, проверка карт',
+          'Финиш: Стадион УрФУ — вручение традиционного памятного значка'
+        ],
+        price: '500 ₽'
+      },
+      '50': {
+        title: 'Классика «50 км»',
+        dist: '50 км',
+        badgeColor: 'bg-[#c2410c]',
+        desc: 'Культовая уральская ультравёрста. 50 километров по лесным просекам, берегам водоёмов и старинным просекам вокруг Екатеринбурга.',
+        checkpoints: [
+          'Старт: Площадь перед главным корпусом УрФУ (Мира, 19)',
+          'КП 1 (11 км): Жулановский пруд — горячий чай, вафли',
+          'КП 2 (22 км): Технопарк «Университетский» — вода, медпост',
+          'КП 3 (34 км): Сарапульский кордон — горячее питание, сушки, фельдшер',
+          'КП 4 (42 км): Лесопарк Лесоводов России — чай с травами',
+          'Финиш: Стадион УрФУ — золотистый значок уральского ходока'
+        ],
+        price: '600 ₽'
+      }
+    };
+
+    let activeRouteId = '17';
+
+    // Filters logic
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.route-card');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => {
+          b.classList.remove('active', 'bg-[#132219]', 'text-white');
+          b.classList.add('bg-white', 'text-[var(--text-muted)]');
+        });
+        btn.classList.add('active', 'bg-[#132219]', 'text-white');
+        btn.classList.remove('bg-white', 'text-[var(--text-muted)]');
+
+        const filter = btn.dataset.filter;
+        cards.forEach(card => {
+          if (filter === 'all' || card.dataset.category === filter) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+
+    // Sort logic
+    document.getElementById('sort-select').addEventListener('change', (e) => {
+      const container = document.getElementById('cards-view');
+      const cardsArr = Array.from(cards);
+      const val = e.target.value;
+
+      cardsArr.sort((a, b) => {
+        if (val === 'dist-asc') return (+a.dataset.dist) - (+b.dataset.dist);
+        if (val === 'dist-desc') return (+b.dataset.dist) - (+a.dataset.dist);
+        if (val === 'time-asc') return (+a.dataset.time) - (+b.dataset.time);
+      });
+
+      cardsArr.forEach(c => container.appendChild(c));
+    });
+
+    // Toggle view (Cards vs Table)
+    const toggleBtn = document.getElementById('toggle-view-btn');
+    const cardsView = document.getElementById('cards-view');
+    const tableView = document.getElementById('table-view');
+    let isTableView = false;
+
+    toggleBtn.addEventListener('click', () => {
+      isTableView = !isTableView;
+      if (isTableView) {
+        cardsView.classList.add('hidden');
+        tableView.classList.remove('hidden');
+        toggleBtn.textContent = '🃏 Сетка карточек';
+      } else {
+        cardsView.classList.remove('hidden');
+        tableView.classList.add('hidden');
+        toggleBtn.textContent = '📊 Сравнение параметров';
+      }
+    });
+
+    // Modal Drawer logic
+    function openModal(id) {
+      activeRouteId = id;
+      const data = routesData[id];
+      if (!data) return;
+
+      const badge = document.getElementById('modal-badge');
+      badge.textContent = data.dist;
+      badge.className = `px-2.5 py-0.5 rounded text-xs font-bold text-white ${data.badgeColor}`;
+
+      document.getElementById('modal-title').textContent = data.title;
+      document.getElementById('modal-content').innerHTML = `
+        <p class="leading-relaxed">${data.desc}</p>
+        <div class="flex items-center gap-3 pt-2 text-stone-700">
+          <span>💰 Стоимость слота: <strong>${data.price}</strong></span>
+          <span>🌲 Сезон 2026</span>
+        </div>
+      `;
+
+      const list = document.getElementById('modal-checkpoints');
+      list.innerHTML = data.checkpoints.map(cp => `<li class="flex items-center gap-1.5"><span class="text-emerald-600 font-bold">•</span> ${cp}</li>`).join('');
+
+      document.getElementById('route-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('route-modal').classList.add('hidden');
+    }
+
+    function downloadGpxMock() {
+      showToast(`GPX-трек для маршрута ${routesData[activeRouteId].dist} сформирован`);
+    }
+
+    function startRegister(id, name) {
+      activeRouteId = id;
+      localStorage.setItem('mp_selected_route', id);
+      window.location.href = `user_cabinet.html?route=${encodeURIComponent(id)}`;
+    }
+
+    function proceedToCheckout() {
+      closeModal();
+      localStorage.setItem('mp_selected_route', activeRouteId);
+      window.location.href = `user_cabinet.html?route=${encodeURIComponent(activeRouteId)}`;
+    }
+
+    // Modal dismiss listeners
+    document.getElementById('route-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'route-modal') closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = text;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+  </script>
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>

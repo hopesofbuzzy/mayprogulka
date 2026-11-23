@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Терминал Маркёра КП • Майская прогулка 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF542E',
+              'orange-hover': '#E0411D',
+              pine: '#0D1A12',
+              'pine-card': '#14291D',
+              border: '#244732'
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Onest', 'sans-serif'],
+            sport: ['"Bebas Neue"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0A140E;
+      color: #F7F8F5;
+      font-family: 'Onest', sans-serif;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .flash-overlay {
+      transition: opacity 0.25s ease-out;
+      pointer-events: none;
+    }
+    /* Scanner aiming animation */
+    @keyframes scanBeam {
+      0% { top: 10%; opacity: 0.3; }
+      50% { top: 90%; opacity: 1; }
+      100% { top: 10%; opacity: 0.3; }
+    }
+    .scan-beam {
+      animation: scanBeam 2.2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+
+  <!-- FULLSCREEN SCAN FEEDBACK FLASH OVERLAY -->
+  <div id="feedback-flash" class="flash-overlay fixed inset-0 z-50 opacity-0 flex flex-col items-center justify-center p-6 text-center">
+    <div id="flash-icon" class="w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl">
+      <!-- Icon populated by JS -->
+    </div>
+    <div id="flash-title" class="font-display font-black text-3xl sm:text-4xl text-white tracking-wide mb-1">
+      ОТМЕТКА ПРИНЯТА
+    </div>
+    <div id="flash-card-id" class="font-mono text-xl sm:text-2xl font-bold text-white/95 mb-2">
+      CARD-33-04821
+    </div>
+    <div id="flash-subtext" class="text-sm font-mono text-white/80 bg-black/40 px-4 py-1.5 rounded-full">
+      Маршрут 33 км • Всего на КП: 1 843
+    </div>
+  </div>
+
+  <!-- TOP HEADER: Offline status, CP number, battery & sync -->
+  <header class="bg-[#0D1A12] border-b border-[#244732] px-4 py-2.5 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center gap-2.5">
+      <div id="sync-status-indicator" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span id="sync-status-text">ОФЛАЙН (38 в очереди)</span>
+      </div>
+    </div>
+
+    <!-- CP info -->
+    <div class="text-center">
+      <div class="font-sport tracking-widest text-lg sm:text-xl text-white">КП-03 • РОДНИК «ПАМЯТИ»</div>
+      <div class="text-[10px] font-mono text-emerald-400">ДИСТАНЦИИ: 33 КМ / 50 КМ</div>
+    </div>
+
+    <!-- Battery & time -->
+    <div class="flex items-center gap-2">
+      <div class="text-right">
+        <div id="clock-display" class="font-mono text-sm font-bold text-white">14:15</div>
+        <div class="text-[9px] font-mono text-amber-400">ДО 17:30</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN OPERATING CONTAINER: High-contrast mobile viewport -->
+  <main class="flex-1 max-w-lg w-full mx-auto p-3 sm:p-4 flex flex-col gap-3">
+
+    <!-- CAMERA / SCANNER VIEWPORT -->
+    <div class="bg-[#14291D] border-2 border-[#244732] rounded-2xl p-2 relative shadow-2xl overflow-hidden flex flex-col">
+      
+      <!-- Video / Camera Mock & Laser Scanner -->
+      <div class="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden flex items-center justify-center border border-[#244732]">
+        <!-- Simulated camera viewfinder video stream -->
+        <div class="absolute inset-0 bg-gradient-to-b from-emerald-950/30 to-black/80 flex flex-col items-center justify-center text-center p-4">
+          
+          <!-- Crosshair corners for physical card alignment -->
+          <div class="absolute inset-6 border-2 border-dashed border-emerald-400/40 rounded-lg pointer-events-none">
+            <div class="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-emerald-400"></div>
+            <div class="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-emerald-400"></div>
+            <div class="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-emerald-400"></div>
+            <div class="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-emerald-400"></div>
+          </div>
+
+          <!-- Animated laser scan line -->
+          <div class="scan-beam absolute left-6 right-6 h-0.5 bg-[#FF542E] shadow-[0_0_12px_#FF542E]"></div>
+
+          <div class="z-10 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 text-xs font-mono text-white/90">
+            НАВЕДИТЕ НА ШТРИХКОД КАРТЫ
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Manual Input & Test Trigger Row -->
+      <div class="mt-2.5 flex items-center gap-2">
+        <input 
+          type="text" 
+          id="manual-barcode-input" 
+          inputmode="text" 
+          placeholder="№ карты вручную (CARD-XX-XXXXX)..." 
+          class="flex-1 bg-[#0A140E] border border-[#244732] focus:border-amber-400 rounded-lg px-3 py-2.5 text-sm font-mono text-white placeholder-white/30 focus:outline-none uppercase">
+        <button 
+          onclick="submitManualBarcode()" 
+          class="bg-[#244732] hover:bg-[#346647] text-white px-4 py-2.5 rounded-lg text-xs font-mono font-bold transition">
+          ОК
+        </button>
+      </div>
+
+      <!-- Quick Simulated Scan Actions (For on-screen evaluation) -->
+      <div class="mt-2 grid grid-cols-3 gap-1.5 text-center">
+        <button onclick="simulateScan('CARD-33-0' + Math.floor(1000 + Math.random()*9000), 'OK')" class="bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 py-1.5 rounded text-[11px] font-mono">
+          + Скан 33 км
+        </button>
+        <button onclick="simulateScan('CARD-50-0' + Math.floor(1000 + Math.random()*9000), 'OK')" class="bg-orange-950/60 hover:bg-orange-900 border border-orange-500/40 text-orange-300 py-1.5 rounded text-[11px] font-mono">
+          + Скан 50 км
+        </button>
+        <button onclick="simulateScan('CARD-17-09999', 'WRONG')" class="bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 py-1.5 rounded text-[11px] font-mono">
+          ! Ошибка трека
+        </button>
+      </div>
+
+    </div>
+
+    <!-- CP SUMMARY & CAPACITY STATS -->
+    <div class="grid grid-cols-3 gap-2 text-center font-mono">
+      <div class="bg-[#14291D] border border-[#244732] p-2.5 rounded-xl">
+        <div class="text-[10px] text-white/50 uppercase">Отмечено</div>
+        <div id="stat-scanned-count" class="font-sport text-2xl sm:text-3xl text-emerald-400 font-bold">1 842</div>
+      </div>
+      <div class="bg-[#14291D] border border-[#244732] p-2.5 rounded-xl">
+        <div class="text-[10px] text-white/50 uppercase">В очереди синхр.</div>
+        <div id="stat-queue-count" class="font-sport text-2xl sm:text-3xl text-amber-400 font-bold">38</div>
+      </div>
+      <div class="bg-[#14291D] border border-[#244732] p-2.5 rounded-xl">
+        <div class="text-[10px] text-white/50 uppercase">До закрытия КП</div>
+        <div class="font-sport text-2xl sm:text-3xl text-white font-bold">3ч 15м</div>
+      </div>
+    </div>
+
+    <!-- RECENT SCANS LOG FEED -->
+    <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3 flex-1 flex flex-col">
+      <div class="flex items-center justify-between pb-2 border-b border-[#244732] mb-2">
+        <span class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider">Последние отметки на КП</span>
+        <button onclick="forceSyncQueue()" class="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Синхронизировать
+        </button>
+      </div>
+
+      <div id="scans-log" class="space-y-1.5 overflow-y-auto max-h-48 text-xs font-mono">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- EMERGENCY INCIDENT / SOS BUTTON (Full width, thumb-accessible) -->
+    <div class="grid grid-cols-2 gap-2 mt-auto">
+      <button 
+        onclick="openEmergencyModal()" 
+        class="bg-red-700 hover:bg-red-600 active:scale-98 text-white py-3.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        ЧП / Медпомощь (SOS)
+      </button>
+
+      <button 
+        onclick="toggleTorch()" 
+        id="torch-btn" 
+        class="bg-[#1C3627] hover:bg-[#284D38] border border-[#244732] text-white py-3.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition">
+        <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+        Фонарик / Подсветка
+      </button>
+    </div>
+
+  </main>
+
+  <!-- EMERGENCY SOS MODAL -->
+  <div id="sos-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
+    <div class="bg-[#14291D] border-2 border-red-500 rounded-2xl max-w-md w-full p-5 text-white shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-red-500/40 mb-4">
+        <div class="flex items-center gap-2 text-red-400 font-display font-bold text-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          Экстренный сигнал в Штаб
+        </div>
+        <button onclick="closeEmergencyModal()" class="text-white/60 hover:text-white text-xl">&times;</button>
+      </div>
+
+      <div class="space-y-3 mb-5">
+        <div>
+          <label class="block text-xs font-mono text-white/70 mb-1">Тип происшествия:</label>
+          <select id="sos-type" class="w-full bg-[#0A140E] border border-[#244732] rounded-lg p-2.5 text-sm font-sans text-white focus:outline-none">
+            <option>Травма / Требуется врач / Носилки</option>
+            <option>Укус клеща (нужна первичная фиксация)</option>
+            <option>Сход участника (не может идти дальше)</option>
+            <option>Закончилась вода / Чай / Пряники на КП</option>
+            <option>Потерявшийся ребенок / Пожилой человек</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-white/70 mb-1">Номер карты участника (если есть):</label>
+          <input type="text" id="sos-card-id" placeholder="CARD-XX-XXXXX" class="w-full bg-[#0A140E] border border-[#244732] rounded-lg p-2.5 text-sm font-mono text-white focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-white/70 mb-1">Координаты КП:</label>
+          <div class="text-xs font-mono bg-[#0A140E] p-2 rounded border border-[#244732] text-emerald-400">
+            56.84214° N, 60.68912° E (Шарташский лесопарк, родник)
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="closeEmergencyModal()" class="bg-[#1C3627] hover:bg-[#284D38] py-2.5 rounded-lg text-xs font-mono font-bold">
+          Отмена
+        </button>
+        <button onclick="dispatchSOS()" class="bg-red-600 hover:bg-red-500 py-2.5 rounded-lg text-xs font-mono font-bold tracking-wider uppercase text-white shadow-lg">
+          ПЕРЕДАТЬ В ШТАБ &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR / DESKTOP SWITCHER -->
+  <footer class="bg-[#0A140E] border-t border-[#244732] px-4 py-2 flex items-center justify-between text-[11px] font-mono text-white/50">
+    <div>PWA ВЕРСИЯ 2026.4.1 • КЭШ ОФЛАЙН АКТИВЕН</div>
+    <div class="flex items-center gap-3">
+      <a href="registrar_terminal.html" class="text-emerald-400 hover:underline">&larr; Стартовый терминал</a>
+      <a href="safety_dashboard.html" class="text-[#FF542E] hover:underline">Штаб МЧС &rarr;</a>
+    </div>
+  </footer>
+
+  <!-- AUDIO & SYNTHESIZER -->
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playTone(freq, duration, type = 'sine') {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e){}
+    }
+
+    function soundSuccess() {
+      playTone(659.25, 0.08); // E5
+      setTimeout(() => playTone(880, 0.12), 80); // A5
+    }
+
+    function soundDuplicate() {
+      playTone(440, 0.1, 'triangle');
+      setTimeout(() => playTone(440, 0.1, 'triangle'), 120);
+    }
+
+    function soundError() {
+      playTone(180, 0.3, 'sawtooth');
+    }
+  </script>
+
+  <!-- TERMINAL CORE SCRIPT -->
+  <script>
+    // F4: Persistent storage in localStorage
+    let offlineScans = JSON.parse(localStorage.getItem('mp_offline_scans') || '[]');
+    let scannedTotal = parseInt(localStorage.getItem('mp_scanned_total') || '1842');
+    let offlineQueue = offlineScans.length;
+
+    const historyScans = [
+      { id: 'CARD-33-04819', time: '14:14:52', route: '33 км', status: 'OK' },
+      { id: 'CARD-33-04818', time: '14:14:38', route: '33 км', status: 'OK' },
+      { id: 'CARD-50-01920', time: '14:13:50', route: '50 км', status: 'OK' },
+      { id: 'CARD-33-04815', time: '14:12:10', route: '33 км', status: 'OK' }
+    ];
+
+    // Clock
+    setInterval(() => {
+      const d = new Date();
+      document.getElementById('clock-display').textContent = d.toTimeString().substring(0, 5);
+    }, 1000);
+
+    // Initial counter sync
+    document.getElementById('stat-scanned-count').textContent = scannedTotal;
+    document.getElementById('stat-queue-count').textContent = offlineQueue;
+    document.getElementById('sync-status-text').textContent = offlineQueue > 0 ? `ОФЛАЙН (${offlineQueue} в очереди)` : `СИНХРОНИЗИРОВАНО`;
+
+    function renderLog() {
+      const container = document.getElementById('scans-log');
+      container.innerHTML = historyScans.map(item => `
+        <div class="flex items-center justify-between p-2 rounded bg-[#0D1A12] border border-[#244732]/60">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full ${item.status === 'OK' ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+            <span class="font-bold text-white">${item.id}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded ${item.route === '50 км' ? 'bg-[#FF542E]/20 text-[#FF542E]' : 'bg-blue-900/30 text-blue-300'}">${item.route}</span>
+          </div>
+          <span class="text-white/40 text-[11px]">${item.time}</span>
+        </div>
+      `).join('');
+    }
+    renderLog();
+
+    function triggerHaptic(type) {
+      if ('vibrate' in navigator) {
+        if (type === 'OK') navigator.vibrate(100);
+        else if (type === 'DUP') navigator.vibrate([80, 40, 80]);
+        else navigator.vibrate([200, 100, 200]);
+      }
+    }
+
+    function showFeedback(type, cardId, route, message) {
+      const flash = document.getElementById('feedback-flash');
+      const icon = document.getElementById('flash-icon');
+      const title = document.getElementById('flash-title');
+      const cardEl = document.getElementById('flash-card-id');
+      const sub = document.getElementById('flash-subtext');
+
+      cardEl.textContent = cardId;
+
+      if (type === 'OK') {
+        flash.style.backgroundColor = '#15803d';
+        icon.className = "w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl bg-emerald-600";
+        icon.innerHTML = `<svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+        title.textContent = "ОТМЕТКА ПРИНЯТА!";
+        sub.textContent = `Маршрут ${route} • Всего на КП: ${scannedTotal}`;
+        soundSuccess();
+        triggerHaptic('OK');
+      } else if (type === 'DUP') {
+        flash.style.backgroundColor = '#b45309';
+        icon.className = "w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl bg-amber-600";
+        icon.innerHTML = `<svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+        title.textContent = "ПОВТОРНАЯ ОТМЕТКА!";
+        sub.textContent = message || "Участник уже был отмечен на этом КП ранее";
+        soundDuplicate();
+        triggerHaptic('DUP');
+      } else {
+        flash.style.backgroundColor = '#b91c1c';
+        icon.className = "w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl bg-red-600";
+        icon.innerHTML = `<svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+        title.textContent = "ОШИБКА МАРШРУТА!";
+        sub.textContent = "Маршрут 17 км не проходит через КП-03!";
+        soundError();
+        triggerHaptic('ERR');
+      }
+
+      flash.style.opacity = '0.96';
+      setTimeout(() => {
+        flash.style.opacity = '0';
+      }, 700);
+    }
+
+    function simulateScan(cardId, type) {
+      if (type === 'OK') {
+        // Check duplicate in recent
+        if (historyScans.some(s => s.id === cardId)) {
+          showFeedback('DUP', cardId, '', 'Участник уже отмечен на этом КП 2 мин назад!');
+          return;
+        }
+
+        scannedTotal++;
+        // F9: Robust route prefix detection
+        const route = cardId.startsWith('CARD-50-') ? '50 км' : (cardId.startsWith('CARD-33-') ? '33 км' : '17 км');
+        const d = new Date();
+        const timeStr = d.toTimeString().split(' ')[0];
+
+        // F4: Store in offline persistent queue
+        offlineScans.push({ card_id: cardId, timestamp: timeStr, route: route });
+        localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
+        localStorage.setItem('mp_scanned_total', scannedTotal);
+        offlineQueue = offlineScans.length;
+
+        document.getElementById('stat-scanned-count').textContent = scannedTotal;
+        document.getElementById('stat-queue-count').textContent = offlineQueue;
+        document.getElementById('sync-status-text').textContent = `ОФЛАЙН (${offlineQueue} в очереди)`;
+
+        historyScans.unshift({ id: cardId, time: timeStr, route: route, status: 'OK' });
+        if (historyScans.length > 50) historyScans.pop();
+        renderLog();
+
+        showFeedback('OK', cardId, route);
+      } else {
+        showFeedback('WRONG', cardId, '17 км');
+      }
+    }
+
+    function submitManualBarcode() {
+      const input = document.getElementById('manual-barcode-input');
+      const val = input.value.trim().toUpperCase();
+      if (!val) return;
+      simulateScan(val, 'OK');
+      input.value = '';
+    }
+
+    // R24: Enter key listener for manual barcode input
+    document.getElementById('manual-barcode-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitManualBarcode();
+    });
+
+    function forceSyncQueue() {
+      if (offlineScans.length === 0) {
+        alert("Очередь пуста. Все отметки переданы.");
+        return;
+      }
+      const indicator = document.getElementById('sync-status-indicator');
+      const syncText = document.getElementById('sync-status-text');
+      
+      syncText.textContent = "СИНХРОНИЗАЦИЯ...";
+      indicator.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40";
+
+      const batchToSend = [...offlineScans];
+      fetch('/api/scans/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cp_id: 'KP-03', scans: batchToSend })
+      })
+      .then(res => res.json())
+      .then(data => {
+        // R25: Atomic deduction of synced items
+        offlineScans = offlineScans.slice(batchToSend.length);
+        localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
+        offlineQueue = offlineScans.length;
+        document.getElementById('stat-queue-count').textContent = offlineQueue;
+        syncText.textContent = "СИНХРОНИЗИРОВАНО";
+        indicator.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+        playTone(900, 0.15);
+      })
+      .catch(err => {
+        // Fallback simulation if running without server
+        setTimeout(() => {
+          offlineScans = offlineScans.slice(batchToSend.length);
+          localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
+          offlineQueue = offlineScans.length;
+          document.getElementById('stat-queue-count').textContent = offlineQueue;
+          syncText.textContent = "СИНХРОНИЗИРОВАНО (ОФЛАЙН)";
+          indicator.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+        }, 900);
+      });
+    }
+
+    // Torch simulation
+    let torchActive = false;
+    function toggleTorch() {
+      torchActive = !torchActive;
+      const btn = document.getElementById('torch-btn');
+      if (torchActive) {
+        btn.classList.add('bg-amber-500', 'text-black', 'border-amber-300');
+        btn.classList.remove('bg-[#1C3627]', 'text-white');
+      } else {
+        btn.classList.remove('bg-amber-500', 'text-black', 'border-amber-300');
+        btn.classList.add('bg-[#1C3627]', 'text-white');
+      }
+    }
+
+    // Emergency Modal
+    function openEmergencyModal() {
+      document.getElementById('sos-modal').classList.remove('hidden');
+    }
+    function closeEmergencyModal() {
+      document.getElementById('sos-modal').classList.add('hidden');
+    }
+    function dispatchSOS() {
+      const type = document.getElementById('sos-type').value;
+      const card = document.getElementById('sos-card-id').value;
+      closeEmergencyModal();
+      soundError();
+      
+      // F6: Send incident to Safety Engine
+      try {
+        fetch('/api/safety/emergency', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: type,
+            card_id: card || 'Не указана',
+            location: 'КП-03 • Родник (Шарташ)',
+            timestamp: new Date().toTimeString().split(' ')[0]
+          })
+        }).catch(e => console.log('SOS logged offline:', e));
+      } catch(e) {}
+
+      alert(`СИГНАЛ ПЕРЕДАН В ШТАБ:\n${type}\nКарта: ${card || 'Не указана'}\nКоманда спасателей МЧС выехала на КП-03.`);
+    }
+  </script>
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>

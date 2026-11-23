@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Станция наборщика OCR • Майская прогулка 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF542E',
+              'orange-hover': '#E0411D',
+              pine: '#0D1A12',
+              'pine-card': '#14291D',
+              'pine-light': '#1C3828',
+              border: '#244732'
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Onest', 'sans-serif'],
+            sport: ['"Bebas Neue"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0A140E;
+      color: #F7F8F5;
+      font-family: 'Onest', sans-serif;
+    }
+    .low-confidence {
+      background-color: rgba(245, 158, 11, 0.15) !important;
+      border-color: #f59e0b !important;
+    }
+    .field-active {
+      box-shadow: 0 0 0 2px #FF542E !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#FF542E] selection:text-white">
+
+  <!-- TOP APP BAR -->
+  <header class="bg-[#0D1A12] border-b border-[#244732] px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+        <h1 class="font-sport tracking-wider text-xl text-white">СТАНЦИЯ НАБОРЩИКА • AI-OCR VALIDATION</h1>
+      </div>
+      <div class="hidden md:flex items-center gap-2 text-xs font-mono text-emerald-400 bg-[#14291D] px-3 py-1 rounded border border-[#244732]">
+        <span>ПАЧКА #14 (Бумажные анкеты старта)</span>
+        <span class="text-white/30">•</span>
+        <span>ОБРАБОТАНО: 84 / 120 (70%)</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <div class="hidden sm:block text-right font-mono">
+        <div class="text-xs text-emerald-400 font-bold">СКОРОСТЬ: 4.8 СЕК / АНКЕТА</div>
+        <div class="text-[10px] text-white/50">ТОЧНОСТЬ НЕЙРОСЕТИ: 94.2%</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="safety_dashboard.html" class="text-xs font-mono text-emerald-400 hover:underline">Штаб &rarr;</a>
+        <a href="user_cabinet.html" class="text-xs font-mono text-white/70 hover:underline">Кабинет &rarr;</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN SPLIT WORKSPACE: Scan viewer on left (6 cols), Verified Form on right (6 cols) -->
+  <main class="flex-1 max-w-[1750px] w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+    <!-- LEFT: SCAN PREVIEW WITH OCR BOUNDING BOX & ZOOM (6 Cols) -->
+    <section class="lg:col-span-6 bg-[#14291D] border-2 border-[#244732] rounded-xl p-4 shadow-xl flex flex-col gap-3">
+      <div class="flex items-center justify-between pb-2 border-b border-[#244732]">
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <span class="font-bold text-white">СКАН: АНКЕТА #085</span>
+          <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px]">
+            ТРЕБУЕТ ПРОВЕРКИ (2 поля)
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs font-mono">
+          <button onclick="rotateImage()" class="bg-[#1C3828] hover:bg-[#284F39] text-white px-2.5 py-1 rounded border border-[#244732]">
+            Поворот 90° (Alt+R)
+          </button>
+          <button onclick="zoomToggle()" class="bg-[#1C3828] hover:bg-[#284F39] text-white px-2.5 py-1 rounded border border-[#244732]">
+            Лупа 150%
+          </button>
+        </div>
+      </div>
+
+      <!-- IMAGE CANVAS CONTAINER (Interactive form simulation) -->
+      <div class="relative w-full h-[580px] bg-[#0A140E] border border-[#244732] rounded-lg overflow-hidden flex items-center justify-center select-none" id="scan-viewport">
+        
+        <!-- Synthetic high-fidelity paper questionnaire representation -->
+        <div id="paper-scan-mock" class="w-[92%] h-[94%] bg-[#FDFBF7] text-neutral-900 p-6 rounded shadow-2xl relative font-sans transition-transform duration-200">
+          
+          <!-- Header of paper blank -->
+          <div class="border-b-2 border-black pb-3 mb-4 flex items-center justify-between">
+            <div>
+              <div class="text-[11px] font-bold tracking-widest uppercase text-neutral-600">Всероссийский традиционный физкультурный праздник</div>
+              <div class="text-xl font-black tracking-tight text-neutral-900 font-display">«МАЙСКАЯ ПРОГУЛКА — 2026»</div>
+            </div>
+            <div class="border-2 border-black px-3 py-1 font-mono font-bold text-base bg-neutral-100">
+              № 042189
+            </div>
+          </div>
+
+          <!-- Handwritten field mockup boxes with bounding box indicator -->
+          <div class="space-y-3 text-xs">
+            
+            <!-- FIO Row -->
+            <div id="box-fio" class="p-2 rounded border border-neutral-300 relative transition-all">
+              <span class="text-[10px] text-neutral-500 uppercase block font-bold">1. Фамилия, Имя, Отчество (печатными буквами):</span>
+              <div class="font-mono text-base font-bold tracking-wider text-blue-900 mt-1">
+                С М И Р Н О В &nbsp; А Л Е К С А Н Д Р &nbsp; С Е Р Г Е Е В И Ч
+              </div>
+            </div>
+
+            <!-- Birth date & Gender -->
+            <div class="grid grid-cols-2 gap-3">
+              <div id="box-birth" class="p-2 rounded border border-neutral-300 relative transition-all">
+                <span class="text-[10px] text-neutral-500 uppercase block font-bold">2. Дата рождения:</span>
+                <div class="font-mono text-base font-bold tracking-wider text-blue-900 mt-1">
+                  1 4 . 0 6 . 1 9 9 2
+                </div>
+              </div>
+              <div id="box-gender" class="p-2 rounded border border-neutral-300 relative transition-all">
+                <span class="text-[10px] text-neutral-500 uppercase block font-bold">3. Пол:</span>
+                <div class="font-mono text-base font-bold tracking-wider text-blue-900 mt-1">
+                  [X] Мужской &nbsp;&nbsp; [ ] Женский
+                </div>
+              </div>
+            </div>
+
+            <!-- Phone (Target for low confidence mock) -->
+            <div id="box-phone" class="p-2 rounded border-2 border-amber-500 bg-amber-50/70 relative transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] text-amber-900 uppercase block font-bold">4. Номер телефона (сомнительное распознавание):</span>
+                <span class="text-[9px] font-mono bg-amber-500 text-black px-1.5 py-0.2 rounded font-bold">Conf: 62%</span>
+              </div>
+              <div class="font-mono text-base font-bold tracking-wider text-amber-950 mt-1 underline decoration-wavy decoration-amber-600">
+                +7 &nbsp; 9 1 2 &nbsp; 6 4 ? ? 1 9 0
+              </div>
+            </div>
+
+            <!-- City & University -->
+            <div class="grid grid-cols-2 gap-3">
+              <div id="box-city" class="p-2 rounded border border-neutral-300 relative transition-all">
+                <span class="text-[10px] text-neutral-500 uppercase block font-bold">5. Город проживания:</span>
+                <div class="font-mono text-base font-bold tracking-wider text-blue-900 mt-1">
+                  Е К А Т Е Р И Н Б У Р Г
+                </div>
+              </div>
+              <div id="box-route" class="p-2 rounded border border-neutral-300 relative transition-all">
+                <span class="text-[10px] text-neutral-500 uppercase block font-bold">6. Дистанция:</span>
+                <div class="font-mono text-base font-bold tracking-wider text-blue-900 mt-1">
+                  [ ] 10 &nbsp; [ ] 17 &nbsp; [X] 33 &nbsp; [ ] 50
+                </div>
+              </div>
+            </div>
+
+            <!-- Experience -->
+            <div id="box-exp" class="p-2 rounded border border-neutral-300 relative transition-all">
+              <span class="text-[10px] text-neutral-500 uppercase block font-bold">7. В какой раз участвуете:</span>
+              <div class="font-mono text-base font-bold tracking-wider text-blue-900 mt-1">
+                4 - й &nbsp; р а з
+              </div>
+            </div>
+
+            <!-- Personal signature stamp -->
+            <div class="border-t border-neutral-300 pt-2 flex items-center justify-between text-[10px] text-neutral-600">
+              <div>Согласие 152-ФЗ: [X] Подписано</div>
+              <div class="font-mono text-blue-950 italic font-bold">Подпись: Смирнов А.С.</div>
+            </div>
+
+          </div>
+
+          <!-- Active Field Overlay Box (Moved dynamically by JS) -->
+          <div id="ocr-highlight-rect" class="absolute border-2 border-[#FF542E] bg-[#FF542E]/10 pointer-events-none rounded transition-all duration-150 shadow-[0_0_15px_rgba(255,84,46,0.5)]"></div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM CONTROL BAR FOR SCANNER -->
+      <div class="flex items-center justify-between text-xs font-mono text-white/60">
+        <div>Качество скана: 300 DPI • Отклонение: 0.4° (Выровнено)</div>
+        <div class="flex items-center gap-2">
+          <button onclick="flagDefect()" class="text-red-400 hover:underline">
+            Брак / Нечитаемо (Alt+D)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: EDITABLE FORM FIELDS (6 Cols) -->
+    <section class="lg:col-span-6 bg-[#14291D] border-2 border-[#244732] rounded-xl p-4 sm:p-5 shadow-xl flex flex-col justify-between min-h-[640px]">
+      
+      <div>
+        <!-- Card Title & Confident metrics -->
+        <div class="flex items-center justify-between pb-3 border-b border-[#244732] mb-4">
+          <div>
+            <h2 class="font-display font-bold text-lg text-white">Верификация полей анкеты</h2>
+            <p class="text-xs font-mono text-white/50">Используйте <kbd class="bg-[#1C3828] text-white px-1.5 py-0.5 rounded">Tab</kbd> для перехода между полями</p>
+          </div>
+          <div class="text-right font-mono">
+            <span class="px-2.5 py-1 rounded bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-xs font-bold">
+              Общая уверенность: 89%
+            </span>
+          </div>
+        </div>
+
+        <!-- FORM INPUTS (F2: Form submit does not advance sheet on Enter; only Ctrl+Enter advances) -->
+        <form id="typist-form" class="space-y-3 font-mono text-xs" onsubmit="event.preventDefault();">
+          
+          <!-- FIO Fields -->
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-white/60 mb-1 text-[11px] font-sans">Фамилия <span class="text-emerald-400 font-mono">(98%)</span></label>
+              <input type="text" id="inp-surname" value="СМИРНОВ" onfocus="highlightBox('box-fio')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none uppercase">
+            </div>
+            <div>
+              <label class="block text-white/60 mb-1 text-[11px] font-sans">Имя <span class="text-emerald-400 font-mono">(97%)</span></label>
+              <input type="text" id="inp-name" value="АЛЕКСАНДР" onfocus="highlightBox('box-fio')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none uppercase">
+            </div>
+            <div>
+              <label class="block text-white/60 mb-1 text-[11px] font-sans">Отчество <span class="text-emerald-400 font-mono">(95%)</span></label>
+              <input type="text" id="inp-patronymic" value="СЕРГЕЕВИЧ" onfocus="highlightBox('box-fio')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none uppercase">
+            </div>
+          </div>
+
+          <!-- Birth Date & Gender -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-white/60 mb-1 text-[11px] font-sans">Дата рождения <span class="text-emerald-400 font-mono">(96%)</span></label>
+              <input type="text" id="inp-birth" value="14.06.1992" onfocus="highlightBox('box-birth')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-white/60 mb-1 text-[11px] font-sans">Пол <span class="text-emerald-400 font-mono">(100%)</span></label>
+              <select id="inp-gender" onfocus="highlightBox('box-gender')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none">
+                <option value="M" selected>Мужской</option>
+                <option value="F">Женский</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Phone Number (Highlighted as low confidence) -->
+          <div class="p-2.5 rounded-lg border-2 border-amber-500/80 bg-amber-950/20">
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-amber-300 text-[11px] font-sans font-bold flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Номер телефона (Низкая уверенность OCR)
+              </label>
+              <span class="text-amber-400 font-bold font-mono text-[10px]">62% • Проверьте цифры!</span>
+            </div>
+            <input 
+              type="text" 
+              id="inp-phone" 
+              autofocus 
+              value="+7 (912) 648-21-90" 
+              onfocus="highlightBox('box-phone')" 
+              class="w-full bg-[#0A140E] border-2 border-amber-400 rounded px-3 py-2 text-amber-200 text-sm font-mono font-bold focus:border-[#FF542E] focus:outline-none">
+          </div>
+
+          <!-- City & Distance -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-white/60 mb-1 text-[11px] font-sans">Город <span class="text-emerald-400 font-mono">(99%)</span></label>
+              <input type="text" id="inp-city" value="Екатеринбург" onfocus="highlightBox('box-city')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-white/60 mb-1 text-[11px] font-sans">Дистанция <span class="text-emerald-400 font-mono">(95%)</span></label>
+              <select id="inp-route" onfocus="highlightBox('box-route')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none">
+                <option value="10">10 км • Семейный</option>
+                <option value="17">17 км • Шарташ</option>
+                <option value="33" selected>33 км • Кампус</option>
+                <option value="50">50 км • Классика</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Times participated -->
+          <div>
+            <label class="block text-white/60 mb-1 text-[11px] font-sans">Опыт участия (раз) <span class="text-emerald-400 font-mono">(91%)</span></label>
+            <input type="number" id="inp-times" value="4" onfocus="highlightBox('box-exp')" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none">
+          </div>
+
+        </form>
+      </div>
+
+      <!-- APPROVE BUTTON & HOTKEYS -->
+      <div class="mt-6 pt-4 border-t border-[#244732]">
+        <div class="flex items-center justify-between mb-3 text-xs font-mono text-white/60">
+          <span>Горячая клавиша:</span>
+          <span class="text-white font-bold"><kbd class="bg-[#1C3828] text-white px-1.5 py-0.5 rounded border border-[#244732]">Ctrl + Enter</kbd> Подтвердить и следующий</span>
+        </div>
+
+        <button 
+          type="button" 
+          onclick="approveSheet()" 
+          class="w-full bg-[#FF542E] hover:bg-[#E0411D] active:scale-98 text-white py-3.5 rounded-xl font-display font-bold text-sm tracking-wide shadow-lg transition flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+          ПОДТВЕРДИТЬ И ПЕРЕЙТИ К АНКЕТЕ #086 &rarr;
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#0D1A12] border-t border-[#244732] px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs font-mono text-white/50">
+    <div>AI-OCR ENGINE: PP-OCRV6 MEDIUM ONNX • CUDA HARDWARE ACCELERATION</div>
+    <div class="flex items-center gap-3">
+      <a href="registrar_terminal.html" class="text-emerald-400 hover:underline">Стартовый терминал &rarr;</a>
+    </div>
+  </footer>
+
+  <!-- SCRIPT -->
+  <script>
+    let currentSheetNum = 85;
+
+    function highlightBox(elementId) {
+      const box = document.getElementById(elementId);
+      const rect = document.getElementById('ocr-highlight-rect');
+      if (box && rect) {
+        rect.style.top = box.offsetTop + 'px';
+        rect.style.left = box.offsetLeft + 'px';
+        rect.style.width = box.offsetWidth + 'px';
+        rect.style.height = box.offsetHeight + 'px';
+      }
+    }
+
+    // Default highlight on phone box
+    window.addEventListener('load', () => {
+      highlightBox('box-phone');
+    });
+
+    // Hotkey handler (Ctrl+Enter to approve)
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        approveSheet();
+      } else if (e.altKey && e.code === 'KeyR') {
+        e.preventDefault();
+        rotateImage();
+      } else if (e.altKey && e.code === 'KeyD') {
+        e.preventDefault();
+        flagDefect();
+      }
+    });
+
+    let currentRotation = 0;
+    let isZoomed = false;
+
+    // F4: Unified transform function preserving both rotation and 150% zoom
+    function updateScanTransform() {
+      const scale = isZoomed ? 1.5 : 1.0;
+      document.getElementById('paper-scan-mock').style.transform = `rotate(${currentRotation}deg) scale(${scale})`;
+    }
+
+    function rotateImage() {
+      currentRotation = (currentRotation + 90) % 360;
+      updateScanTransform();
+    }
+
+    function zoomToggle() {
+      isZoomed = !isZoomed;
+      updateScanTransform();
+    }
+
+    function flagDefect() {
+      alert("Анкета помечена как брак (нечитаемый бланк / пятна / разрыв). Передано старшему оператору.");
+      nextSheet();
+    }
+
+    // F8: Shared AudioContext singleton instance
+    let sharedAudioCtx = null;
+    function playApproveChime() {
+      try {
+        if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+        const osc = sharedAudioCtx.createOscillator();
+        const gain = sharedAudioCtx.createGain();
+        osc.frequency.setValueAtTime(800, sharedAudioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, sharedAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, sharedAudioCtx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(sharedAudioCtx.destination);
+        osc.start();
+        osc.stop(sharedAudioCtx.currentTime + 0.1);
+      } catch(e) {}
+    }
+
+    // F9: Validation check for incomplete phone numbers before approval
+    function approveSheet() {
+      const phone = document.getElementById('inp-phone').value;
+      if (phone.includes('?') || phone.replace(/\D/g, '').length < 10) {
+        alert("ВНИМАНИЕ: Номер телефона содержит нераспознанные символы (?) или не полон!\nИсправьте номер перед подтверждением анкеты.");
+        document.getElementById('inp-phone').focus();
+        return;
+      }
+
+      playApproveChime();
+      nextSheet();
+    }
+
+    // F5: Synchronize both form inputs AND scan paper mock on sheet advance
+    function nextSheet() {
+      currentSheetNum++;
+      alert(`Анкета #${currentSheetNum - 1} успешно сохранена в базу данных!\nЗагрузка анкеты #${currentSheetNum}...`);
+
+      // Update paper mock scan content to match Applicant 2
+      const paperFio = document.querySelector('#box-fio .font-mono');
+      if (paperFio) paperFio.innerHTML = "К О З Л О В А &nbsp; И Р И Н А &nbsp; А Н Д Р Е Е В Н А";
+      
+      const paperBirth = document.querySelector('#box-birth .font-mono');
+      if (paperBirth) paperBirth.innerHTML = "0 8 . 1 1 . 1 9 9 8";
+
+      const paperPhone = document.querySelector('#box-phone .font-mono');
+      if (paperPhone) paperPhone.innerHTML = "+7 &nbsp; 9 0 2 &nbsp; 1 1 5 &nbsp; 4 4 &nbsp; 3 3";
+
+      const paperCity = document.querySelector('#box-city .font-mono');
+      if (paperCity) paperCity.innerHTML = "Н И Ж Н И Й &nbsp; Т А Г И Л";
+
+      // Update form fields
+      document.getElementById('inp-surname').value = 'КОЗЛОВА';
+      document.getElementById('inp-name').value = 'ИРИНА';
+      document.getElementById('inp-patronymic').value = 'АНДРЕЕВНА';
+      document.getElementById('inp-birth').value = '08.11.1998';
+      document.getElementById('inp-gender').value = 'F';
+      document.getElementById('inp-phone').value = '+7 (902) 115-44-33';
+      document.getElementById('inp-city').value = 'Нижний Тагил';
+      document.getElementById('inp-route').value = '17';
+      document.getElementById('inp-times').value = '2';
+
+      highlightBox('box-fio');
+    }
+  </script>
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>

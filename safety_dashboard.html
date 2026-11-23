@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Штаб Безопасности • Safety Engine • Майская прогулка 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF542E',
+              'orange-hover': '#E0411D',
+              pine: '#0D1A12',
+              'pine-card': '#13281C',
+              'pine-light': '#1D3B2A',
+              border: '#274E37'
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Onest', 'sans-serif'],
+            sport: ['"Bebas Neue"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0A140E;
+      color: #F7F8F5;
+      font-family: 'Onest', sans-serif;
+    }
+    .pulse-slow {
+      animation: pulseAlert 2.5s infinite;
+    }
+    @keyframes pulseAlert {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#FF542E] selection:text-white">
+
+  <!-- COMMAND CENTER TOP HEADER -->
+  <header class="bg-[#0D1A12] border-b border-[#274E37] px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40 shadow-lg">
+    <div class="flex items-center gap-4 sm:gap-6">
+      <div class="flex items-center gap-3">
+        <span class="w-3.5 h-3.5 rounded-full bg-red-500 animate-ping"></span>
+        <h1 class="font-sport tracking-wider text-2xl sm:text-3xl text-white">ШТАБ БЕЗОПАСНОСТИ • SAFETY ENGINE</h1>
+      </div>
+      <div class="hidden lg:flex items-center gap-2 text-xs font-mono bg-[#162E20] border border-[#274E37] px-3 py-1 rounded-md text-emerald-400">
+        <span class="font-bold">МЧС / МЕДИЦИНА КАТАСТРОФ:</span> НА СВЯЗИ 12 ЭКИПАЖЕЙ
+      </div>
+    </div>
+
+    <!-- Right: Sun schedule, live clock, switcher -->
+    <div class="flex items-center gap-4 sm:gap-6">
+      <div class="text-right">
+        <div class="flex items-center gap-2 justify-end">
+          <span class="text-xs font-mono text-amber-400">ЗАХОД СОЛНЦА: <strong>21:30</strong></span>
+          <span class="text-white/30">•</span>
+          <span class="text-xs font-mono text-red-400">ФИНИШ: <strong>22:00</strong></span>
+        </div>
+        <div id="live-time" class="font-mono text-xl sm:text-2xl font-bold tracking-wider text-white">16:48:30</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="registrar_terminal.html" class="text-xs font-mono text-emerald-300 hover:text-white bg-[#1A3825] px-3 py-2 rounded border border-[#274E37] transition">
+          Старт &rarr;
+        </a>
+        <a href="marker_terminal.html" class="text-xs font-mono text-amber-300 hover:text-white bg-[#1A3825] px-3 py-2 rounded border border-[#274E37] transition">
+          КП &rarr;
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT (Dense grid) -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto p-3 sm:p-6 space-y-6">
+
+    <!-- KPI TILES BAR: High Level Operational Numbers -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 font-mono">
+      <div class="bg-[#13281C] border border-[#274E37] p-4 rounded-xl shadow">
+        <div class="text-xs text-white/50 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <span>Стартовало участников</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        </div>
+        <div class="font-sport text-4xl sm:text-5xl text-white font-bold tracking-tight">14 280</div>
+        <div class="text-[11px] text-emerald-400/80 mt-1">100% регистраций выдано</div>
+      </div>
+
+      <div class="bg-[#13281C] border border-[#274E37] p-4 rounded-xl shadow">
+        <div class="text-xs text-white/50 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <span>На маршрутах в лесу</span>
+          <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+        </div>
+        <div class="font-sport text-4xl sm:text-5xl text-sky-400 font-bold tracking-tight">5 842</div>
+        <div class="text-[11px] text-white/60 mt-1">41% от общего потока</div>
+      </div>
+
+      <div class="bg-[#13281C] border border-[#274E37] p-4 rounded-xl shadow">
+        <div class="text-xs text-white/50 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <span>Успешно финишировало</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        </div>
+        <div class="font-sport text-4xl sm:text-5xl text-emerald-400 font-bold tracking-tight">8 426</div>
+        <div class="text-[11px] text-white/60 mt-1">Значков выдано: 8 426 шт</div>
+      </div>
+
+      <!-- RED ALERT BOX: Participants in high-risk zone -->
+      <div class="bg-red-950/40 border-2 border-red-500 p-4 rounded-xl shadow relative overflow-hidden">
+        <div class="text-xs text-red-300 uppercase tracking-wider mb-1 flex items-center justify-between font-bold">
+          <span>Риск опоздания до заката</span>
+          <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+        </div>
+        <div class="font-sport text-4xl sm:text-5xl text-red-400 font-bold tracking-tight">12 <span class="text-xl font-sans text-red-200">чел</span></div>
+        <div class="text-[11px] text-red-300 mt-1 flex items-center gap-1 font-sans">
+          <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          Требуется прозвон / Контроль схода
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: ROUTE FUNNELS & FOREST TRANSIT FLOW -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+      
+      <!-- ROUTE FLOW CARDS (8 Cols) -->
+      <div class="lg:col-span-8 bg-[#13281C] border border-[#274E37] rounded-xl p-4 sm:p-5 shadow">
+        <div class="flex items-center justify-between pb-3 border-b border-[#274E37] mb-4">
+          <h2 class="font-display font-bold text-lg text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Воронка движения участников по дистанциям
+          </h2>
+          <span class="text-xs font-mono text-white/50">Автообновление: каждые 15 сек</span>
+        </div>
+
+        <div class="space-y-4">
+          
+          <!-- Route 50 km (The highest risk route) -->
+          <div class="bg-[#0D1A12] border border-orange-500/30 rounded-lg p-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2 font-mono">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-bold bg-[#FF542E] text-white">50 КМ «КЛАССИКА»</span>
+                <span class="text-xs text-white/70">Стартовало: 1 880 чел.</span>
+              </div>
+              <div class="text-xs text-white/70">
+                Финишировало: <strong class="text-emerald-400">760</strong> | В лесу: <strong class="text-orange-400">1 108</strong> | Зона риска: <strong class="text-red-400">12</strong>
+              </div>
+            </div>
+            
+            <!-- Step by step transit progress -->
+            <div class="grid grid-cols-5 gap-1.5 text-center font-mono text-[11px]">
+              <div class="bg-[#183324] p-2 rounded border border-[#274E37]">
+                <div class="text-white/50">СТАРТ</div>
+                <div class="font-bold text-white mt-0.5">1 880</div>
+                <div class="text-[9px] text-emerald-400">100%</div>
+              </div>
+              <div class="bg-[#183324] p-2 rounded border border-[#274E37]">
+                <div class="text-white/50">КП-1 (14 км)</div>
+                <div class="font-bold text-white mt-0.5">1 865</div>
+                <div class="text-[9px] text-emerald-400">99.2%</div>
+              </div>
+              <div class="bg-[#183324] p-2 rounded border border-[#274E37]">
+                <div class="text-white/50">КП-2 (28 км)</div>
+                <div class="font-bold text-white mt-0.5">1 640</div>
+                <div class="text-[9px] text-emerald-400">87.2%</div>
+              </div>
+              <div class="bg-[#2B1B14] p-2 rounded border border-orange-500/40">
+                <div class="text-orange-300 font-bold">КП-3 (41 км)</div>
+                <div class="font-bold text-orange-400 mt-0.5">920</div>
+                <div class="text-[9px] text-orange-300">Идут сейчас: 720</div>
+              </div>
+              <div class="bg-[#14261C] p-2 rounded border border-emerald-500/40">
+                <div class="text-emerald-300 font-bold">ФИНИШ</div>
+                <div class="font-bold text-emerald-400 mt-0.5">760</div>
+                <div class="text-[9px] text-emerald-400">40.4%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Route 33 km -->
+          <div class="bg-[#0D1A12] border border-blue-500/30 rounded-lg p-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2 font-mono">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-bold bg-[#1D4ED8] text-white">33 КМ «КАМПУС»</span>
+                <span class="text-xs text-white/70">Стартовало: 4 200 чел.</span>
+              </div>
+              <div class="text-xs text-white/70">
+                Финишировало: <strong class="text-emerald-400">2 750</strong> | В лесу: <strong class="text-blue-300">1 450</strong>
+              </div>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 text-center font-mono text-[11px]">
+              <div class="bg-[#183324] p-2 rounded border border-[#274E37]">
+                <div class="text-white/50">СТАРТ</div>
+                <div class="font-bold text-white mt-0.5">4 200</div>
+              </div>
+              <div class="bg-[#183324] p-2 rounded border border-[#274E37]">
+                <div class="text-white/50">КП-1 (10 км)</div>
+                <div class="font-bold text-white mt-0.5">4 180</div>
+              </div>
+              <div class="bg-[#183324] p-2 rounded border border-[#274E37]">
+                <div class="text-white/50">КП-3 (22 км)</div>
+                <div class="font-bold text-white mt-0.5">3 420</div>
+              </div>
+              <div class="bg-[#14261C] p-2 rounded border border-emerald-500/40">
+                <div class="text-emerald-300 font-bold">ФИНИШ</div>
+                <div class="font-bold text-emerald-400 mt-0.5">2 750 (65%)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Route 17 km & 10 km (Summarized) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="bg-[#0D1A12] border border-emerald-500/30 rounded-lg p-3 font-mono">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="px-2 py-0.5 rounded text-xs font-bold bg-[#15803D] text-white">17 КМ «ШАРТАШ»</span>
+                <span class="text-emerald-400 text-xs font-bold">85% финишировало</span>
+              </div>
+              <div class="text-xs text-white/70">Стартовало: 5 800 | Финиш: 4 930 | В лесу: 870</div>
+            </div>
+
+            <div class="bg-[#0D1A12] border border-yellow-500/30 rounded-lg p-3 font-mono">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="px-2 py-0.5 rounded text-xs font-bold bg-amber-500 text-black">10 КМ «СЕМЕЙНЫЙ»</span>
+                <span class="text-emerald-400 text-xs font-bold">98% финишировало</span>
+              </div>
+              <div class="text-xs text-white/70">Стартовало: 2 400 | Финиш: 2 352 | В лесу: 48</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CHECKPOINTS CAPACITY & SUPPLIES (4 Cols) -->
+      <div class="lg:col-span-4 bg-[#13281C] border border-[#274E37] rounded-xl p-4 sm:p-5 shadow flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between pb-3 border-b border-[#274E37] mb-3">
+            <h2 class="font-display font-bold text-base text-white">Состояние Контрольных Пунктов</h2>
+            <span class="text-xs font-mono text-emerald-400">4 КП активны</span>
+          </div>
+
+          <div class="space-y-3 font-mono text-xs">
+            
+            <div class="p-2.5 rounded-lg bg-[#0D1A12] border border-[#274E37]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-white">КП-1 • Калиновка (10/14 км)</span>
+                <span class="text-amber-400 font-bold">Закрытие в 17:00</span>
+              </div>
+              <div class="text-white/60 text-[11px] mb-1.5">Отмечено: 6 045 чел. | На этапе к КП: 15 чел.</div>
+              <div class="flex items-center gap-3 text-[10px] text-white/50">
+                <span>Вода: 120 л</span>
+                <span>Чай: 80 л</span>
+                <span class="text-emerald-400">Пряники: ОК</span>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-lg bg-[#0D1A12] border border-[#274E37]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-white">КП-2 • Берёзовский (28 км)</span>
+                <span class="text-white/70">Закрытие в 18:30</span>
+              </div>
+              <div class="text-white/60 text-[11px] mb-1.5">Отмечено: 1 640 чел. | На этапе к КП: 225 чел.</div>
+              <div class="flex items-center gap-3 text-[10px] text-white/50">
+                <span>Вода: 90 л</span>
+                <span class="text-amber-400">Чай: 20 л (Мало!)</span>
+                <span class="text-emerald-400">Пряники: ОК</span>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-lg bg-[#0D1A12] border border-[#274E37]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-white">КП-3 • Родник «Памяти» (41 км)</span>
+                <span class="text-white/70">Закрытие в 20:00</span>
+              </div>
+              <div class="text-white/60 text-[11px] mb-1.5">Отмечено: 1 842 чел. | Пик нагрузки сейчас</div>
+              <div class="flex items-center gap-3 text-[10px] text-white/50">
+                <span>Вода: 250 л</span>
+                <span>Чай: 140 л</span>
+                <span class="text-emerald-400">Медик: Дежурит</span>
+              </div>
+            </div>
+
+            <!-- F7: Checkpoint 4 (Technopark) -->
+            <div class="p-2.5 rounded-lg bg-[#0D1A12] border border-[#274E37]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-white">КП-4 • Технопарк «Университетский» (45 км)</span>
+                <span class="text-white/70">Закрытие в 21:00</span>
+              </div>
+              <div class="text-white/60 text-[11px] mb-1.5">Отмечено: 1 120 чел. | Подход замыкающих</div>
+              <div class="flex items-center gap-3 text-[10px] text-white/50">
+                <span>Вода: 180 л</span>
+                <span>Чай: 90 л</span>
+                <span class="text-emerald-400">Пряники: ОК</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-[#274E37] flex items-center justify-between text-xs font-mono">
+          <span class="text-white/60">Канал связи:</span>
+          <span class="text-emerald-400 font-bold">Радио 433.100 МГц (Канал 2)</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION 3: SAFETY ENGINE • REAL-TIME INCIDENT & RED ALERT TABLE -->
+    <section class="bg-[#13281C] border-2 border-red-500/60 rounded-xl p-4 sm:p-5 shadow-2xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#274E37] mb-4">
+        <div>
+          <h2 class="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+            SAFETY ENGINE • Контроль участников в зоне риска
+          </h2>
+          <p class="text-xs text-white/60 font-mono mt-0.5">
+            Участники с прогнозом финиша позже заката солнца (21:30) или задержкой между КП свыше 3 часов.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="filter-btn-all" onclick="filterAlerts('all')" class="filter-btn text-xs font-mono px-3 py-1.5 rounded bg-[#FF542E] text-white font-bold transition">
+            Все риски (3)
+          </button>
+          <button id="filter-btn-sunset" onclick="filterAlerts('sunset')" class="filter-btn text-xs font-mono px-3 py-1.5 rounded bg-[#183324] hover:bg-[#204530] text-red-200 border border-red-500/40 transition">
+            После заката (2)
+          </button>
+          <button id="filter-btn-delayed" onclick="filterAlerts('delayed')" class="filter-btn text-xs font-mono px-3 py-1.5 rounded bg-[#183324] hover:bg-[#204530] text-amber-200 border border-amber-500/40 transition">
+            Задержка на этапе (1)
+          </button>
+        </div>
+      </div>
+
+      <!-- ALERTS TABLE -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left font-mono text-xs text-white/80">
+          <thead class="bg-[#0D1A12] text-white/50 uppercase text-[10px] border-b border-[#274E37]">
+            <tr>
+              <th class="p-3">Карта / ФИО</th>
+              <th class="p-3">Дистанция</th>
+              <th class="p-3">Последняя отметка</th>
+              <th class="p-3">Темп ходьбы</th>
+              <th class="p-3">Прогноз финиша</th>
+              <th class="p-3">Уровень риска</th>
+              <th class="p-3 text-right">Действие штаба</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#274E37]" id="alerts-tbody">
+            
+            <!-- Row 1: Extreme sunset risk -->
+            <tr data-risk="sunset" class="alert-row hover:bg-[#183324]/50 transition bg-red-950/20">
+              <td class="p-3">
+                <div class="font-bold text-white">CARD-50-01429</div>
+                <div class="text-[11px] text-white/70">Семенов Владислав (58 лет)</div>
+                <div class="text-[10px] text-emerald-400">Тел: +7 (912) 650-11-22</div>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded font-bold bg-[#FF542E] text-white text-[10px]">50 КМ</span>
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-amber-400">КП-2 (28 км) в 15:40</div>
+                <div class="text-[10px] text-white/50">Прошло 1ч 08м</div>
+              </td>
+              <td class="p-3 text-red-300 font-bold">
+                3.1 км/ч <span class="text-[10px] text-white/40">(Медленно)</span>
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-red-400 text-sm">22:50 (В ТЕМНОТЕ!)</div>
+                <div class="text-[10px] text-red-300">На 1ч 20м позже заката</div>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-red-600/30 text-red-300 border border-red-500">
+                  КРИТИЧЕСКИЙ
+                </span>
+              </td>
+              <td class="p-3 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button onclick="callParticipant('+7 (912) 650-11-22', 'CARD-50-01429', 'Семенов Владислав', '22:50', 'КП-3 Родник')" class="bg-red-700 hover:bg-red-600 text-white px-2.5 py-1.5 rounded text-[11px] font-bold">
+                    Позвонить
+                  </button>
+                  <button onclick="markEvacuation('CARD-50-01429', 'КП-3 Родник')" class="bg-[#1A3825] hover:bg-[#255235] text-white px-2.5 py-1.5 rounded text-[11px] border border-[#274E37]">
+                    Сход на КП-3
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 2: Delayed in transit -->
+            <tr data-risk="delayed" class="alert-row hover:bg-[#183324]/50 transition bg-amber-950/20">
+              <td class="p-3">
+                <div class="font-bold text-white">CARD-33-02104</div>
+                <div class="text-[11px] text-white/70">Морозова Алена + Сын 11 лет</div>
+                <div class="text-[10px] text-emerald-400">Тел: +7 (904) 381-44-01</div>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded font-bold bg-[#1D4ED8] text-white text-[10px]">33 КМ</span>
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-red-400">КП-1 в 13:10 (3ч 38м назад!)</div>
+                <div class="text-[10px] text-red-300">Норматив этапа: 2 часа</div>
+              </td>
+              <td class="p-3 text-white/50">
+                — (Нет отметок)
+              </td>
+              <td class="p-3">
+                <div class="text-amber-400 font-bold">Не рассчитывается</div>
+                <div class="text-[10px] text-white/50">Задержка на переходе КП-1 &rarr; КП-3</div>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-600/30 text-amber-300 border border-amber-500">
+                  ЗАДЕРЖКА НА ЭТАПЕ
+                </span>
+              </td>
+              <td class="p-3 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button onclick="dispatchPatrol('CARD-33-02104', 'Перегон КП-1 -> КП-3')" class="bg-amber-600 hover:bg-amber-500 text-black px-2.5 py-1.5 rounded text-[11px] font-bold">
+                    Направить квадроцикл
+                  </button>
+                  <button onclick="callParticipant('+7 (904) 381-44-01', 'CARD-33-02104', 'Морозова Алена', 'задержка 3.5 часа', 'КП-1 Калиновка')" class="bg-red-700 hover:bg-red-600 text-white px-2.5 py-1.5 rounded text-[11px] font-bold">
+                    Звонок
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 3: Sunset marginal risk -->
+            <tr data-risk="sunset" class="alert-row hover:bg-[#183324]/50 transition">
+              <td class="p-3">
+                <div class="font-bold text-white">CARD-50-00841</div>
+                <div class="text-[11px] text-white/70">Дмитриев Игорь</div>
+                <div class="text-[10px] text-emerald-400">Тел: +7 (922) 111-88-99</div>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded font-bold bg-[#FF542E] text-white text-[10px]">50 КМ</span>
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-white">КП-2 (28 км) в 16:15</div>
+                <div class="text-[10px] text-white/50">Прошло 33 мин</div>
+              </td>
+              <td class="p-3 text-amber-300 font-bold">
+                3.8 км/ч
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-amber-400 text-sm">21:55</div>
+                <div class="text-[10px] text-amber-300">На 25 мин позже заката</div>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-600/30 text-amber-300 border border-amber-500">
+                  СРЕДНИЙ
+                </span>
+              </td>
+              <td class="p-3 text-right">
+                <button onclick="callParticipant('+7 (922) 111-88-99', 'CARD-50-00841', 'Дмитриев Игорь', '21:55', 'КП-2 Берёзовский')" class="bg-[#1A3825] hover:bg-[#255235] text-white px-2.5 py-1.5 rounded text-[11px] border border-[#274E37]">
+                  Позвонить / SMS
+                </button>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM STATUS & EXPORT BAR -->
+  <footer class="bg-[#0D1A12] border-t border-[#274E37] px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-white/60">
+    <div class="flex items-center gap-3">
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span>СИСТЕМА SAFETY ENGINE: ПРЕДИКТИВНЫЙ АНАЛИЗАТОР АКТИВЕН</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button onclick="exportMinistryReport()" class="hover:text-white underline flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        Экспорт сводки для МЧС / Минспорта (CSV)
+      </button>
+      <a href="typist_station.html" class="text-amber-400 hover:underline">Станция наборщика (OCR) &rarr;</a>
+    </div>
+  </footer>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    setInterval(() => {
+      const d = new Date();
+      document.getElementById('live-time').textContent = d.toTimeString().split(' ')[0];
+    }, 1000);
+
+    // F3: Parameterized caller modal
+    function callParticipant(phone, card, name, eta, point) {
+      alert(`СВЯЗЬ С УЧАСТНИКОМ:\nКарта: ${card}\nУчастник: ${name}\nТелефон: ${phone}\n\nРекомендация диспетчера штаба:\n«${name}, по расчетам скорости ваш прогноз финиша — ${eta}. До заката (21:30) вы не успеваете завершить лесной отрезок. Рекомендуем сойти в районе ${point} на городской транспорт».`);
+    }
+
+    function dispatchPatrol(card, location) {
+      alert(`ЭКИПАЖУ МЧС / КВАДРОЦИКЛУ:\nВыезд на локацию: ${location}\nПоиск участника: ${card}\nЗадача: визуальный контакт, проверка самочувствия.`);
+    }
+
+    function markEvacuation(card, point) {
+      alert(`ФИКСАЦИЯ СХОДА С ДИСТАНЦИИ:\nУчастник ${card} снят с дистанции на ${point}.\nСтатус передан в информационную систему финиша.`);
+    }
+
+    // F6: Real CSV report generation and download
+    function exportMinistryReport() {
+      const csvContent = "\uFEFFДата;17 мая 2026\n" +
+        "Событие;43-я традиционная Майская прогулка (Екатеринбург)\n" +
+        "Всего стартовало;14280\n" +
+        "Финишировало;8426\n" +
+        "На маршрутах;5842\n" +
+        "В красной зоне риска;3\n" +
+        "Сходов зафиксировано;18\n" +
+        "Травм легкой степени;3\n" +
+        "Госпитализаций;0\n\n" +
+        "Карта;ФИО;Дистанция;Последнее КП;Темп;Прогноз финиша;Статус\n" +
+        "CARD-50-01429;Семенов Владислав;50 км;КП-2 в 15:40;3.1 км/ч;22:50;Критический (После заката)\n" +
+        "CARD-33-02104;Морозова Алена + Сын;33 км;КП-1 в 13:10;Задержка 3.5 ч;Не рассчитано;Задержка на этапе\n" +
+        "CARD-50-00841;Дмитриев Игорь;50 км;КП-2 в 16:15;3.8 км/ч;21:55;Средний (После заката)\n";
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `mayprogulka_safety_report_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // F1: Functional risk alert filtering
+    function filterAlerts(type) {
+      const rows = document.querySelectorAll('.alert-row');
+      const buttons = document.querySelectorAll('.filter-btn');
+      
+      // Update button styling
+      buttons.forEach(b => {
+        b.className = "filter-btn text-xs font-mono px-3 py-1.5 rounded bg-[#183324] hover:bg-[#204530] text-white border border-[#274E37] transition";
+      });
+      const activeBtn = document.getElementById(`filter-btn-${type}`);
+      if (activeBtn) {
+        activeBtn.className = "filter-btn text-xs font-mono px-3 py-1.5 rounded bg-[#FF542E] text-white font-bold transition";
+      }
+
+      rows.forEach(row => {
+        if (type === 'all') {
+          row.style.display = '';
+        } else if (row.getAttribute('data-risk') === type) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+  </script>
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>
