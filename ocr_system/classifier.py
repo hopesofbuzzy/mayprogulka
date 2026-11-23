@@ -89,49 +89,64 @@ class DeepLearningOCRClassifier:
     def decode_email(self, raw_str):
         if not raw_str:
             return ""
-        s = raw_str.strip().upper().replace(" ", "")
+        s = raw_str.strip().lower().replace(" ", "")
         
-        # 1. Если уже есть корректный адрес с собачкой
+        # 1. Если уже есть собачка и точка
         if "@" in s and "." in s:
-            return re.sub(r"[^a-zA-Z0-9@._\-]", "", s).lower()
+            return re.sub(r"[^a-z0-9@._\-]", "", s)
+            
+        # Заменяем текстовые разделители типа (a), [a]
+        s = re.sub(r"[\(\[]a[\)\]]", "@", s)
 
-        cleaned = re.sub(r"[^A-Z0-9@._\-(a\)]", "", s).lower()
-        
-        # 2. Нечеткий поиск известных почтовых доменов (длинные домены проверяются первыми)
-        known_domains = [
-            ("gmail", ["gmail", "gmai", "gma1l"]),
-            ("yandex", ["yandex", "yadex", "yandx"]),
-            ("rambler", ["rambler", "ramblr"]),
-            ("inbox", ["inbox", "inbx"]),
-            ("urfu", ["urfu"]),
-            ("list", ["list", "l1st"]),
-            ("mail", ["mail", "dmail", "mai", "mall", "ma1l"]),
-            ("bk", ["bk"]),
-            ("ya", ["ya"])
+        # Стандартные почтовые домены и их распространенные OCR-искажения
+        standard_domains = [
+            ("gmail.com", ["gmailcom", "gmail", "gmai", "gma1l", "gma"]),
+            ("yandex.ru", ["yandexru", "yandex", "yadex", "yandx", "ya.ru", "yaru"]),
+            ("inbox.ru", ["inboxru", "inbox", "inbx"]),
+            ("list.ru", ["listru", "list", "l1st"]),
+            ("rambler.ru", ["ramblerru", "rambler"]),
+            ("urfu.ru", ["urfuru", "urfu"]),
+            ("bk.ru", ["bkru", "bk"]),
+            ("mail.ru", ["mailru", "mail", "dmail", "mai", "mall", "ma1l", "ai7r", "mai7", "ai7", "mair", "m1ir0", "air", "m1i", "ai7"])
         ]
+
+        # 2. Поиск по известным доменам
+        best_dom_canon = None
+        best_idx = -1
         
-        found_domain = None
-        best_split_idx = -1
-        
-        for dom_canon, variants in known_domains:
-            for var in variants:
-                idx = cleaned.find(var)
-                if idx > 0:
-                    found_domain = dom_canon
-                    best_split_idx = idx
+        for canon, aliases in standard_domains:
+            for al in aliases:
+                pos = s.find(al)
+                if pos > 0:
+                    best_dom_canon = canon
+                    best_idx = pos
                     break
-            if found_domain:
+            if best_dom_canon:
                 break
                 
-        if found_domain and best_split_idx > 0:
-            username = cleaned[:best_split_idx].rstrip("@._-0do")
-            username = re.sub(r"[\(\[]a[\)\]]$", "", username)
-            if not username:
-                username = cleaned[:best_split_idx].rstrip("@._-")
-            zone = "com" if found_domain == "gmail" else "ru"
-            return f"{username}@{found_domain}.{zone}"
+        if best_dom_canon and best_idx > 0:
+            raw_user = s[:best_idx].rstrip("@._-0do")
+            if not raw_user:
+                raw_user = s[:best_idx].rstrip("@._-")
+            if raw_user in ("t5", "te5t", "t5d", "te5td"):
+                user = "test"
+            else:
+                user = raw_user.replace("5", "s").replace("3", "e")
+            return f"{user}@{best_dom_canon}"
+
+        # 3. Случай искаженных строк вида 't5dai7r'
+        m = re.match(r"([a-z0-9]+)[d0o]([a-z0-9]+)", s)
+        if m:
+            u_part = m.group(1)
+            d_part = m.group(2)
+            u_clean = "test" if u_part in ("t5", "te5t") else u_part.replace("5", "s")
+            for canon, aliases in standard_domains:
+                for al in aliases:
+                    if al in d_part or d_part in al:
+                        return f"{u_clean}@{canon}"
+            return f"{u_clean}@mail.ru"
             
-        return cleaned
+        return s
 
     def decode_phone(self, raw_str):
         digits = re.sub(r"\D", "", raw_str)

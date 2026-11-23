@@ -77,7 +77,7 @@ class FormOCRPipeline:
         patronymic_strip = aligned[280:335, 200:min(w, 800)]
         date_strip = aligned[335:390, 200:min(w, 800)]
         phone_strip = aligned[390:445, 200:min(w, 600)]
-        email_strip = aligned[445:505, 200:min(w, 800)]
+        email_strip = aligned[445:510, 195:min(w, 820)]
         city_strip = aligned[500:555, 200:min(w, 800)]
         prev_strip = aligned[555:610, 235:min(w, 340)]
 
