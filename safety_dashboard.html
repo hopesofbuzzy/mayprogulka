@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api_config.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -555,6 +556,37 @@
         }
       });
     }
+
+    // Dynamic Server Polling for Emergency SOS & Live Scans
+    async function syncSafetyEngine() {
+      try {
+        const resp = await fetch(mpApiUrl('/api/safety/alerts'));
+        if (resp.ok) {
+          const data = await resp.json();
+          // Check emergency alerts
+          if (data.emergencies && data.emergencies.length > 0) {
+            let sosBanner = document.getElementById('sos-live-banner');
+            if (!sosBanner) {
+              sosBanner = document.createElement('div');
+              sosBanner.id = 'sos-live-banner';
+              sosBanner.className = 'bg-red-600 text-white p-3 rounded-xl mb-4 font-mono font-bold text-xs flex items-center justify-between shadow-2xl animate-pulse';
+              document.querySelector('main').prepend(sosBanner);
+            }
+            const latest = data.emergencies[data.emergencies.length - 1];
+            sosBanner.innerHTML = `
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-white animate-ping"></span>
+                <span>🚨 ЭКСТРЕННЫЙ ВЫЗОВ SOS [${latest.id}]: ${latest.type} • Локация: ${latest.location} (Карта: ${latest.card_id}) • Время: ${latest.timestamp}</span>
+              </div>
+              <span class="bg-black/30 px-2.5 py-1 rounded">СТАТУС: В РАБОТЕ</span>
+            `;
+          }
+        }
+      } catch(e) {}
+    }
+
+    setInterval(syncSafetyEngine, 3000);
+    syncSafetyEngine();
   </script>
   <!-- Universal Ecosystem Navigator -->
   <script src="ecosystem_bar.js"></script>

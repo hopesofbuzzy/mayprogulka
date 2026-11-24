@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api_config.js"></script>
+  <script src="html5-qrcode.min.js"></script>
+  <script src="qrcode.min.js"></script>
+  <script src="jsbarcode.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -114,14 +118,30 @@
             autocomplete="off" 
             placeholder="MP2026-XXXXXX..." 
             class="w-full bg-[#0D1A12] border-2 border-emerald-500/50 focus:border-[#FF542E] rounded-lg px-4 py-3.5 text-lg font-mono text-white placeholder-white/20 focus:outline-none focus:ring-4 focus:ring-[#FF542E]/20 transition uppercase tracking-wider">
-          <button 
-            type="button" 
-            onclick="simulateScanTicket()" 
-            title="Эмулировать сканирование билета" 
-            class="absolute right-2 top-2 px-3 py-1.5 bg-[#2A4D37] hover:bg-[#39694B] text-white text-xs font-mono rounded transition flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
-            Тест QR
-          </button>
+          <div class="absolute right-2 top-2 flex items-center gap-1.5">
+            <button 
+              type="button" 
+              onclick="openCameraScanner('form')" 
+              title="Открыть камеру смартфона для сканирования QR билета" 
+              class="px-2.5 py-1.5 bg-[#FF542E] hover:bg-[#E0411D] text-white text-xs font-mono font-bold rounded transition flex items-center gap-1 shadow">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              📷 Камера
+            </button>
+            <button 
+              type="button" 
+              onclick="simulateScanTicket()" 
+              title="Эмулировать сканирование билета" 
+              class="px-2.5 py-1.5 bg-[#2A4D37] hover:bg-[#39694B] text-white text-xs font-mono rounded transition flex items-center gap-1">
+              Тест QR
+            </button>
+            <button 
+              type="button" 
+              onclick="openCardsSheetModal()" 
+              title="Открыть образцы QR-билетов и штрихкодов карт на экране" 
+              class="px-2.5 py-1.5 bg-[#1C3828] hover:bg-[#284F39] text-amber-300 text-xs font-mono font-bold rounded border border-amber-500/40 transition flex items-center gap-1">
+              📋 Образцы карт
+            </button>
+          </div>
         </div>
 
         <!-- Quick lookup buttons for frequent test cases -->
@@ -133,8 +153,11 @@
           <button onclick="loadPreset('MP2026-441209')" class="text-xs bg-[#122419] hover:bg-[#20402C] text-amber-300 px-2 py-1 rounded font-mono border border-[#2A4D37]">
             Не оплачен (17 км)
           </button>
-          <button onclick="loadPreset('MP2026-FAMILY3')" class="text-xs bg-[#122419] hover:bg-[#20402C] text-sky-300 px-2 py-1 rounded font-mono border border-[#2A4D37]">
-            Группа (3 чел)
+          <button onclick="loadPreset('MP2026-FAMILY')" class="text-xs bg-[#122419] hover:bg-[#20402C] text-sky-300 px-2 py-1 rounded font-mono border border-[#2A4D37]">
+            Семья Смирновых (3 чел)
+          </button>
+          <button onclick="loadPreset('MP2026-042189')" class="text-xs bg-[#122419] hover:bg-[#20402C] text-orange-300 px-2 py-1 rounded font-mono border border-[#2A4D37]">
+            Бланк OCR #042189
           </button>
         </div>
       </div>
@@ -159,14 +182,23 @@
             autocomplete="off" 
             placeholder="CARD-XX-XXXXX..." 
             class="w-full bg-[#0D1A12] border-2 border-amber-500/50 focus:border-amber-400 rounded-lg px-4 py-3.5 text-lg font-mono text-white placeholder-white/20 focus:outline-none focus:ring-4 focus:ring-amber-400/20 transition uppercase tracking-wider">
-          <button 
-            type="button" 
-            onclick="simulateScanCard()" 
-            title="Эмулировать сканирование карты" 
-            class="absolute right-2 top-2 px-3 py-1.5 bg-[#2A4D37] hover:bg-[#39694B] text-white text-xs font-mono rounded transition flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
-            Тест Штрихкод
-          </button>
+          <div class="absolute right-2 top-2 flex items-center gap-1.5">
+            <button 
+              type="button" 
+              onclick="openCameraScanner('card')" 
+              title="Открыть камеру смартфона для сканирования штрихкода карты" 
+              class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold rounded transition flex items-center gap-1 shadow">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              📷 Камера
+            </button>
+            <button 
+              type="button" 
+              onclick="simulateScanCard()" 
+              title="Эмулировать сканирование карты" 
+              class="px-2.5 py-1.5 bg-[#2A4D37] hover:bg-[#39694B] text-white text-xs font-mono rounded transition flex items-center gap-1">
+              Тест Штрихкод
+            </button>
+          </div>
         </div>
 
         <div class="mt-3 text-xs text-white/50 flex items-center gap-2">
@@ -174,6 +206,23 @@
           <span id="recommended-pack-tag" class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-900/60 text-emerald-300 border border-emerald-500/40">
             Ожидание выбора анкеты...
           </span>
+        </div>
+
+        <!-- Prominent Link to Route Cards Samples -->
+        <div class="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📋</span>
+            <div>
+              <div class="text-xs font-mono text-amber-300 font-bold">ШТРИХКОДЫ И QR КАРТ МАРШРУТОВ</div>
+              <div class="text-[10px] font-mono text-white/50">Образцы карт 10, 17, 33, 50 км для наведения камеры</div>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            onclick="openCardsSheetModal()" 
+            class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold rounded-lg shadow transition shrink-0">
+            Открыть образцы &rarr;
+          </button>
         </div>
       </div>
 
@@ -291,6 +340,34 @@
               Система автоматически свяжет анкету участника с физической картой и зарегистрирует старт.
             </p>
           </div>
+
+          <!-- Virtual Card / Sticker Simulator for Testing Without Physical Cards -->
+          <div id="virtual-sticker-toolbar" class="bg-[#122419] border border-[#2A4D37] rounded-xl p-3 text-center">
+            <div class="text-[11px] font-mono text-white/60 mb-2">
+              Нет бумажной карты со стикером под рукой? Возьмите виртуальную из свободной пачки:
+            </div>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <button type="button" onclick="simulateScanCard()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs rounded-lg shadow transition">
+                ⚡ Выдать свободную карту (1 клик)
+              </button>
+              <button type="button" onclick="showVirtualStickerForCurrent()" class="px-3.5 py-2 bg-[#1F3D2A] hover:bg-[#2A5339] text-emerald-300 border border-emerald-500/40 font-mono font-bold text-xs rounded-lg transition">
+                🏷️ Сгенерировать штрихкод для камеры
+              </button>
+            </div>
+            <div id="virtual-sticker-box" class="hidden mt-3 bg-white text-black p-3 rounded-xl inline-flex flex-col items-center shadow-lg border-2 border-amber-400">
+              <span id="virtual-sticker-label" class="text-[10px] font-mono text-stone-600 uppercase font-bold mb-1">Свободная карта из пачки</span>
+              <div class="flex flex-wrap items-center justify-center gap-4">
+                <svg id="virtual-sticker-barcode"></svg>
+                <div id="virtual-sticker-qr" class="w-[76px] h-[76px] flex items-center justify-center"></div>
+              </div>
+              <div class="flex items-center gap-2 mt-2">
+                <span id="virtual-sticker-code" class="font-mono font-bold text-xs text-stone-800"></span>
+                <button type="button" id="btn-bind-virtual-sticker" class="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold px-2.5 py-1 rounded">
+                  Привязать эту карту &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- SUCCESS CARD LINKED MODAL / FLASH OVERLAY -->
@@ -331,6 +408,29 @@
     </section>
 
   </main>
+
+  <!-- CAMERA SCANNER MODAL -->
+  <div id="camera-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+    <div class="bg-[#14291D] border-2 border-emerald-500 rounded-2xl max-w-md w-full p-4 relative shadow-2xl flex flex-col items-center">
+      <div class="w-full flex items-center justify-between pb-2 border-b border-[#2A4D37] mb-3">
+        <span id="camera-modal-title" class="text-xs font-mono font-bold text-emerald-400 uppercase">Сканирование камерой</span>
+        <button onclick="closeCameraScanner()" class="text-white/60 hover:text-white text-xl font-bold w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center">&times;</button>
+      </div>
+      <div id="camera-reader-box" class="w-full aspect-square bg-black rounded-xl overflow-hidden relative border border-[#2A4D37] flex items-center justify-center">
+        <div id="qr-reader" class="w-full h-full"></div>
+      </div>
+      <div class="text-[11px] font-mono text-white/70 mt-3 text-center">
+        Наведите камеру смартфона на QR-код билета или штрихкод карты
+      </div>
+      <label class="w-full bg-[#2A4D37] hover:bg-[#39694B] text-emerald-200 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2 cursor-pointer mt-2 border border-emerald-500/30">
+        <input type="file" id="registrar-file-scan" accept="image/*" capture="environment" class="hidden" onchange="handleRegistrarFileScan(event)">
+        📸 Снимок камерой (если видеопоток заблокирован)
+      </label>
+      <button onclick="closeCameraScanner()" class="mt-2 w-full bg-[#1C3828] hover:bg-[#284F39] text-white py-2.5 rounded-xl text-xs font-mono font-bold">
+        Закрыть камеру
+      </button>
+    </div>
+  </div>
 
   <!-- FOOTER NOTIFICATION & QUICK SWITCHER -->
   <footer class="bg-[#0D1A12] border-t border-[#2A4D37] px-4 py-2.5 flex flex-wrap items-center justify-between text-xs font-mono text-white/60">
@@ -486,15 +586,60 @@
       }
     });
 
-    function processTicketLookup(formId) {
+    async function processTicketLookup(formId) {
       if (!formId) return;
       clearTimeout(window.resetTimer);
-      
-      // F7: Reject unknown tickets instead of creating dummy participant
-      const p = database[formId];
+
+      let p = null;
+
+      // 1. Query Unified FastAPI Server first
+      try {
+        const resp = await fetch(mpApiUrl(`/api/participants/${encodeURIComponent(formId)}`));
+        if (resp.ok) {
+          const res = await resp.json();
+          if (res.found && res.target) {
+            const t = res.target;
+            const distNum = String(t.dist || '17');
+            const colors = { '10': '#EAB308', '17': '#15803D', '33': '#1D4ED8', '50': '#C2410C' };
+            
+            p = {
+              formId: t.id,
+              fio: t.family_name ? `${t.family_name.toUpperCase()} (${res.members.length} чел)` : t.fio.toUpperCase(),
+              gender: t.gender,
+              birthYear: parseInt((t.birth || '1990').split('-')[0]),
+              city: t.city,
+              route: t.route,
+              dist: distNum,
+              routeName: t.routeName,
+              routeColor: colors[distNum] || '#15803D',
+              org: t.family_name ? `Семейная группа • ${t.family_name}` : `${t.role || 'Участник'} • ${t.soc || ''}`,
+              phone: t.phone,
+              paid: res.order ? res.order.paid : t.paid,
+              times: 3,
+              isGroup: res.is_group,
+              members: res.members.map(m => ({
+                id: m.id,
+                name: `${m.fio} (${m.role || 'Участник'})`,
+                dist: String(m.dist || '17'),
+                route: m.route,
+                card: m.card_id
+              }))
+            };
+          }
+        }
+      } catch (err) {
+        console.log('Server query error, using local database:', err);
+      }
+
+      // 2. Fallback to local database if server unreachable
+      if (!p) {
+        p = database[formId];
+      }
+
+      // 3. Reject unknown tickets
       if (!p) {
         playErrorBuzzer();
-        alert(`ОШИБКА: Билет "${formId}" не найден в базе регистрации!\nПроверьте QR-код участника или выполните поиск по номеру телефона.`);
+        alert(`ОШИБКА: Билет или номер "${formId}" не найден в базе регистрации!\nПроверьте QR-код участника или выполните поиск по номеру телефона.`);
         formInput.select();
         return;
       }
@@ -514,17 +659,43 @@
       document.getElementById('display-org').textContent = p.org;
       document.getElementById('display-phone').textContent = `Тел: ${p.phone} • Опыт: ${p.times}-я прогулка`;
 
-      // Update recommended card tag
+      // Active member for card issuance
+      let targetDist = p.dist || '33';
+      let targetName = p.fio;
+
+      if (p.isGroup && p.members) {
+        const nextUnassigned = p.members.find(m => !m.card);
+        if (nextUnassigned) {
+          targetDist = nextUnassigned.dist;
+          targetName = nextUnassigned.name;
+        }
+      }
+
+      // Update recommended card box
       const recTag = document.getElementById('recommended-pack-tag');
-      recTag.textContent = `Пачка карт: ${p.route}`;
+      recTag.textContent = `Коробка карт: ${targetDist} км (Серия CARD-${targetDist}-XXXXX)`;
       recTag.style.backgroundColor = p.routeColor + '40';
       recTag.style.color = '#FFFFFF';
+
+      const vsBox = document.getElementById('virtual-sticker-box');
+      if (vsBox) vsBox.classList.add('hidden');
+      const prompt = document.getElementById('action-prompt');
+      if (prompt) {
+        prompt.innerHTML = `
+          <div class="text-amber-400 font-sport text-2xl tracking-wider mb-1 animate-bounce">
+            ШАГ 2: ВЫДАЙТЕ КАРТУ ДЛЯ: ${targetName.toUpperCase()}
+          </div>
+          <p class="text-xs font-mono text-white/70">
+            Возьмите карту серии <strong>CARD-${targetDist}-XXXXX</strong> (${targetDist} км) и отсканируйте её штрихкод.
+          </p>
+        `;
+      }
 
       // Payment logic
       if (p.paid) {
         unpaidActionBox.classList.add('hidden');
         paymentStatusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50";
-        paymentStatusBadge.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ОПЛАЧЕНО ОНЛАЙН`;
+        paymentStatusBadge.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ОПЛАЧЕНО`;
         activateStep2();
       } else {
         unpaidActionBox.classList.remove('hidden');
@@ -539,10 +710,14 @@
         groupBox.classList.remove('hidden');
         const list = document.getElementById('group-list');
         list.innerHTML = p.members.map((m, idx) => `
-          <div class="flex items-center justify-between text-xs bg-[#0D1A12] px-3 py-2 rounded border border-[#2A4D37]">
-            <span class="font-medium text-white">${m.name}</span>
+          <div class="flex items-center justify-between text-xs bg-[#0D1A12] px-3 py-2.5 rounded border ${m.card ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-[#2A4D37]'}">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full ${m.card ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}"></span>
+              <span class="font-medium text-white">${m.name}</span>
+              <span class="text-[10px] bg-stone-800 text-stone-300 px-1.5 py-0.5 rounded font-mono">${m.route}</span>
+            </div>
             <span class="font-mono ${m.card ? 'text-emerald-400 font-bold' : 'text-amber-400'}">
-              ${m.card ? 'Карта: ' + m.card : 'Ожидает карту...'}
+              ${m.card ? 'Карта: ' + m.card : 'Ожидает CARD-' + m.dist + '...'}
             </span>
           </div>
         `).join('');
@@ -563,17 +738,26 @@
       step2Card.classList.remove('ring-2', 'ring-amber-500');
     }
 
-    function markAsPaid(method) {
+    async function markAsPaid(method) {
       if (!currentParticipant) return;
       currentParticipant.paid = true;
       playBeep(1000, 0.1);
       unpaidActionBox.classList.add('hidden');
       paymentStatusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50";
       paymentStatusBadge.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ОПЛАЧЕНО (${method})`;
+      
+      try {
+        await fetch(mpApiUrl('/api/registrar/mark-paid'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lookup_id: currentParticipant.formId, method: method })
+        });
+      } catch(e) {}
+
       activateStep2();
     }
 
-    function linkCardToParticipant(cardId) {
+    async function linkCardToParticipant(cardId) {
       if (!cardId || !currentParticipant) return;
 
       // F3: Guard against duplicate physical card assignment
@@ -584,69 +768,95 @@
         return;
       }
 
-      // F3: Guard against route mismatch
-      const expectedDist = currentParticipant.route.replace(' км', '');
-      if (expectedDist === '50' && !cardId.startsWith('CARD-50-')) {
-        playErrorBuzzer();
-        alert(`ОШИБКА СЕРИИ: Участник идет на 50 км! Выдайте карту серии CARD-50-XXXXX.`);
-        cardInput.select();
-        return;
-      }
-      if (expectedDist === '33' && !cardId.startsWith('CARD-33-')) {
-        playErrorBuzzer();
-        alert(`ОШИБКА СЕРИИ: Участник идет на 33 км! Выдайте карту серии CARD-33-XXXXX.`);
-        cardInput.select();
-        return;
-      }
+      // Determine target member and expected distance
+      let targetPid = currentParticipant.formId;
+      let targetDist = String(currentParticipant.dist || currentParticipant.route.replace(' км', '').trim());
+      let nextMember = null;
 
-      // Group check
       if (currentParticipant.isGroup && currentParticipant.members) {
-        // Prevent duplicate card within same group
-        if (currentParticipant.members.some(m => m.card === cardId)) {
-          playErrorBuzzer();
-          alert(`ОШИБКА: Карта ${cardId} уже назначена другому члену этой группы!`);
-          cardInput.select();
-          return;
-        }
-
-        const nextMember = currentParticipant.members.find(m => !m.card);
+        nextMember = currentParticipant.members.find(m => !m.card);
         if (nextMember) {
-          nextMember.card = cardId;
-          issuedPhysicalCards.add(cardId);
-          playSuccessChime();
-          cardInput.value = '';
-          // re-render group
-          processTicketLookup(currentParticipant.formId);
-          // if still members unassigned, stay on step 2
-          if (currentParticipant.members.some(m => !m.card)) {
-            cardInput.focus();
-            return;
-          }
+          targetPid = nextMember.id;
+          targetDist = String(nextMember.dist || '17');
         }
-      } else {
-        issuedPhysicalCards.add(cardId);
       }
 
-      // F2: Send HTTP POST to FastAPI backend
+      // F3: Strict route prefix validation
+      if (targetDist === '50' && !cardId.startsWith('CARD-50-')) {
+        playErrorBuzzer();
+        alert(`ОШИБКА СЕРИИ: Участник идет на 50 км!\nВыдайте карту серии CARD-50-XXXXX.`);
+        cardInput.select();
+        return;
+      }
+      if (targetDist === '33' && !cardId.startsWith('CARD-33-')) {
+        playErrorBuzzer();
+        alert(`ОШИБКА СЕРИИ: Участник идет на 33 км!\nВыдайте карту серии CARD-33-XXXXX.`);
+        cardInput.select();
+        return;
+      }
+      if (targetDist === '17' && !cardId.startsWith('CARD-17-')) {
+        playErrorBuzzer();
+        alert(`ОШИБКА СЕРИИ: Участник идет на 17 км!\nВыдайте карту серии CARD-17-XXXXX.`);
+        cardInput.select();
+        return;
+      }
+      if (targetDist === '10' && !cardId.startsWith('CARD-10-')) {
+        playErrorBuzzer();
+        alert(`ОШИБКА СЕРИИ: Участник идет на 10 км!\nВыдайте карту серии CARD-10-XXXXX.`);
+        cardInput.select();
+        return;
+      }
+
+      // Assign card
+      issuedPhysicalCards.add(cardId);
+
+      if (nextMember) {
+        nextMember.card = cardId;
+      } else {
+        currentParticipant.card = cardId;
+      }
+
+      // Send to FastAPI backend
       try {
         const formData = new FormData();
         formData.append('form_id', currentParticipant.formId);
         formData.append('card_id', cardId);
-        formData.append('route', currentParticipant.route);
-        fetch('/api/registrar/issue-card', { method: 'POST', body: formData })
-          .then(res => res.json())
-          .then(data => console.log('Server synced:', data))
-          .catch(err => console.log('Offline/Mock mode:', err));
-      } catch(e){}
+        formData.append('route', `${targetDist} км`);
+        formData.append('participant_id', targetPid);
+        const resp = await fetch(mpApiUrl('/api/registrar/issue-card'), { method: 'POST', body: formData });
+        if (!resp.ok) {
+          let errMsg = `Ошибка сервера (${resp.status})`;
+          try {
+            const errJson = await resp.json();
+            if (errJson.detail) errMsg = errJson.detail;
+          } catch (_) {}
+          issuedPhysicalCards.delete(cardId);
+          if (nextMember) nextMember.card = null;
+          else currentParticipant.card = null;
+          playErrorBuzzer();
+          alert(`❌ НЕ УДАЛОСЬ ПРИВЯЗАТЬ КАРТУ:\n${errMsg}\n\nСовет: используйте кнопку «⚡ Выдать свободную карту» или сгенерируйте новую в «Образцах».`);
+          cardInput.select();
+          return;
+        }
+      } catch(e) {
+        console.log('Offline/local card issuance:', e);
+      }
 
-      // Success Chime and Visual Feedback
       playSuccessChime();
       totalCardsIssued++;
       document.getElementById('counter-total').textContent = totalCardsIssued;
+      cardInput.value = '';
 
+      // If group still has unassigned members, continue to next member
+      if (currentParticipant.isGroup && currentParticipant.members && currentParticipant.members.some(m => !m.card)) {
+        processTicketLookup(currentParticipant.formId);
+        cardInput.focus();
+        return;
+      }
+
+      // All cards assigned: Show success overlay and reset
       document.getElementById('success-details').textContent = 
-        `Карта ${cardId} привязана к ${currentParticipant.formId} (${currentParticipant.fio})`;
-      
+        `Карта ${cardId} успешно привязана! Старт зафиксирован.`;
       successOverlay.classList.remove('hidden');
       terminalBody.classList.add('flash-success');
 
@@ -654,7 +864,7 @@
       clearTimeout(window.resetTimer);
       window.resetTimer = setTimeout(() => {
         resetTerminal();
-      }, 1200);
+      }, 1500);
     }
 
     function resetTerminal() {
@@ -665,6 +875,8 @@
       loadedState.classList.add('hidden');
       successOverlay.classList.add('hidden');
       terminalBody.classList.remove('flash-success', 'flash-error');
+      const vsBox = document.getElementById('virtual-sticker-box');
+      if (vsBox) vsBox.classList.add('hidden');
       deactivateStep2();
       formInput.focus();
     }
@@ -677,9 +889,79 @@
       processTicketLookup(randomPreset);
     }
 
+    function getActiveMemberTarget() {
+      let dist = '33';
+      let name = '';
+      if (currentParticipant) {
+        if (currentParticipant.isGroup && currentParticipant.members) {
+          const nextMember = currentParticipant.members.find(m => !m.card);
+          if (nextMember) {
+            dist = nextMember.dist || '17';
+            name = nextMember.name;
+          }
+        } else {
+          dist = currentParticipant.dist || currentParticipant.route.replace(' км', '').trim();
+          name = currentParticipant.fio;
+        }
+      }
+      return { dist: String(dist), name };
+    }
+
+    function generateUnusedCardCode(prefix) {
+      let code;
+      do {
+        const randNum = Math.floor(10000 + Math.random() * 90000);
+        code = `CARD-${prefix}-${randNum}`;
+      } while (issuedPhysicalCards.has(code));
+      return code;
+    }
+
+    function showVirtualStickerForCurrent() {
+      if (!currentParticipant) return;
+      if (!currentParticipant.paid) {
+        playErrorBuzzer();
+        alert('Сначала отметьте оплату взноса (Шаг 1)!');
+        return;
+      }
+      const { dist } = getActiveMemberTarget();
+      const code = generateUnusedCardCode(dist);
+      const box = document.getElementById('virtual-sticker-box');
+      const labelEl = document.getElementById('virtual-sticker-label');
+      const codeEl = document.getElementById('virtual-sticker-code');
+      const qrEl = document.getElementById('virtual-sticker-qr');
+      const bindBtn = document.getElementById('btn-bind-virtual-sticker');
+
+      if (labelEl) labelEl.textContent = `Свободная карта из пачки ${dist} км (можно навести камеру)`;
+      if (codeEl) codeEl.textContent = code;
+      if (typeof JsBarcode !== 'undefined') {
+        JsBarcode('#virtual-sticker-barcode', code, { format: 'CODE128', width: 1.5, height: 42, displayValue: true, fontSize: 11 });
+      }
+      if (qrEl && typeof QRCode !== 'undefined') {
+        qrEl.innerHTML = '';
+        new QRCode(qrEl, { text: code, width: 76, height: 76, correctLevel: QRCode.CorrectLevel.M });
+      }
+      if (bindBtn) {
+        bindBtn.onclick = () => linkCardToParticipant(code);
+      }
+      if (box) box.classList.remove('hidden');
+    }
+
     function simulateScanCard() {
+      if (currentParticipant && !currentParticipant.paid) {
+        playErrorBuzzer();
+        alert('Сначала отметьте оплату взноса (Шаг 1)!');
+        return;
+      }
       const randNum = Math.floor(10000 + Math.random() * 90000);
-      const prefix = currentParticipant ? currentParticipant.route.replace(' км', '') : '33';
+      let prefix = '33';
+      if (currentParticipant) {
+        if (currentParticipant.isGroup && currentParticipant.members) {
+          const nextMember = currentParticipant.members.find(m => !m.card);
+          if (nextMember) prefix = nextMember.dist || '17';
+        } else {
+          prefix = currentParticipant.dist || currentParticipant.route.replace(' км', '').trim();
+        }
+      }
       const fakeCard = `CARD-${prefix}-${randNum}`;
       cardInput.value = fakeCard;
       linkCardToParticipant(fakeCard);
@@ -689,7 +971,331 @@
       formInput.value = code;
       processTicketLookup(code);
     }
+
+    // --- HTML5 LIVE CAMERA SCANNER (Mobile & Web) ---
+    let html5QrScanner = null;
+    let currentScanTarget = 'form';
+
+    async function openCameraScanner(target) {
+      currentScanTarget = target;
+      const hasWebcam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+      if (!hasWebcam) {
+        // Safari iOS over HTTP restricts WebRTC camera streaming.
+        // Directly trigger native iOS camera snapshot!
+        const fileInput = document.getElementById('registrar-file-scan');
+        if (fileInput) fileInput.click();
+        return;
+      }
+
+      const modalTitle = document.getElementById('camera-modal-title');
+      if (modalTitle) {
+        modalTitle.textContent = target === 'form' ? 'Сканирование QR билета' : 'Сканирование штрихкода карты';
+      }
+      document.getElementById('camera-modal').classList.remove('hidden');
+
+      try {
+        if (!html5QrScanner) {
+          html5QrScanner = new Html5Qrcode("qr-reader");
+        }
+        const config = { fps: 15, qrbox: { width: 260, height: 260 } };
+        await html5QrScanner.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => {
+            const code = decodedText.trim().toUpperCase();
+            playSuccessChime();
+            closeCameraScanner();
+            if (currentScanTarget === 'form') {
+              formInput.value = code;
+              processTicketLookup(code);
+            } else {
+              cardInput.value = code;
+              linkCardToParticipant(code);
+            }
+          },
+          (errorMessage) => {
+            // scanning loop...
+          }
+        );
+      } catch (err) {
+        console.log('Camera error, fallback to snapshot:', err);
+        closeCameraScanner();
+        const fileInput = document.getElementById('registrar-file-scan');
+        if (fileInput) fileInput.click();
+      }
+    }
+
+    async function downscaleImage(file, maxDimension = 1000) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const resized = new File([blob], file.name || "scan.jpg", { type: 'image/jpeg' });
+                resolve(resized);
+              } else {
+                resolve(file);
+              }
+            }, 'image/jpeg', 0.92);
+          };
+          img.onerror = () => resolve(file);
+          img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleRegistrarFileScan(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        if (!html5QrScanner) {
+          html5QrScanner = new Html5Qrcode("qr-reader");
+        }
+        const processedFile = await downscaleImage(file, 1000);
+        const decodedText = await html5QrScanner.scanFile(processedFile, false);
+        const code = decodedText.trim().toUpperCase();
+        playSuccessChime();
+        closeCameraScanner();
+        if (currentScanTarget === 'form') {
+          formInput.value = code;
+          processTicketLookup(code);
+        } else {
+          cardInput.value = code;
+          linkCardToParticipant(code);
+        }
+      } catch (err) {
+        alert('Не удалось распознать код на снимке: ' + (err.message || err) + '\n\nСовет: держите камеру ближе к QR-коду или воспользуйтесь кнопкой «Быстрый тест» / «Образцы карт».');
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    async function closeCameraScanner() {
+      document.getElementById('camera-modal').classList.add('hidden');
+      if (html5QrScanner) {
+        try {
+          await html5QrScanner.stop();
+        } catch(e) {}
+      }
+    }
+
+    function openCardsSheetModal() {
+      document.getElementById('cards-sheet-modal').classList.remove('hidden');
+      renderSampleCodes();
+    }
+
+    let samplesRendered = false;
+    function renderSampleCodes() {
+      if (samplesRendered) return;
+      samplesRendered = true;
+
+      // Real QR codes
+      if (typeof QRCode !== 'undefined') {
+        const fBox = document.getElementById('sample-qr-family');
+        if (fBox) {
+          fBox.innerHTML = '';
+          new QRCode(fBox, { text: "MP2026-FAMILY", width: 110, height: 110, correctLevel: QRCode.CorrectLevel.M });
+        }
+        const iBox = document.getElementById('sample-qr-indiv');
+        if (iBox) {
+          iBox.innerHTML = '';
+          new QRCode(iBox, { text: "MP2026-981240", width: 110, height: 110, correctLevel: QRCode.CorrectLevel.M });
+        }
+      }
+
+      // Real Barcodes
+      if (typeof JsBarcode !== 'undefined') {
+        try {
+          JsBarcode("#sample-barcode-33", document.getElementById('sample-code-33').textContent.trim(), { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 11 });
+          JsBarcode("#sample-barcode-17a", document.getElementById('sample-code-17a').textContent.trim(), { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 11 });
+          JsBarcode("#sample-barcode-17b", document.getElementById('sample-code-17b').textContent.trim(), { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 11 });
+          JsBarcode("#sample-barcode-10", document.getElementById('sample-code-10').textContent.trim(), { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 11 });
+          JsBarcode("#sample-barcode-50", document.getElementById('sample-code-50').textContent.trim(), { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 11 });
+        } catch(e) {
+          console.error("Barcode render error:", e);
+        }
+      }
+    }
+
+    function regenerateSampleBarcodes() {
+      const specs = [
+        { key: '33', dist: '33' },
+        { key: '17a', dist: '17' },
+        { key: '17b', dist: '17' },
+        { key: '10', dist: '10' },
+        { key: '50', dist: '50' }
+      ];
+      specs.forEach(({ key, dist }) => {
+        const newCode = generateUnusedCardCode(dist);
+        const textEl = document.getElementById(`sample-code-${key}`);
+        const btnEl = document.getElementById(`sample-btn-${key}`);
+        if (textEl) textEl.textContent = newCode;
+        if (btnEl) btnEl.setAttribute('onclick', `useSampleCode('card', '${newCode}')`);
+        if (typeof JsBarcode !== 'undefined') {
+          JsBarcode(`#sample-barcode-${key}`, newCode, { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 11 });
+        }
+      });
+    }
+
+    function closeCardsSheetModal() {
+      document.getElementById('cards-sheet-modal').classList.add('hidden');
+    }
+
+    function useSampleCode(type, code) {
+      closeCardsSheetModal();
+      if (type === 'form') {
+        formInput.value = code;
+        processTicketLookup(code);
+      } else {
+        cardInput.value = code;
+        linkCardToParticipant(code);
+      }
+    }
+
+    // Auto-open modal if opened with ?open=cards or lookup participant if ?form_id=...
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('open') === 'cards') {
+        openCardsSheetModal();
+      }
+      const formParam = urlParams.get('form_id') || urlParams.get('lookup');
+      if (formParam) {
+        formInput.value = formParam;
+        processTicketLookup(formParam);
+      }
+    });
   </script>
+
+  <!-- MODAL: ВИРТУАЛЬНЫЕ КАРТЫ И QR ДЛЯ СКАНИРОВАНИЯ С ТЕЛЕФОНА -->
+  <div id="cards-sheet-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+    <div class="bg-[#14291D] border-2 border-amber-500 rounded-3xl max-w-2xl w-full p-5 sm:p-6 relative shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+      <div class="w-full flex items-center justify-between pb-3 border-b border-[#2A4D37] mb-4">
+        <div>
+          <span class="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider block">Витрина образцов для демонстрации</span>
+          <h3 class="text-base font-display font-bold text-white">QR-билеты и карты маршрутов</h3>
+          <p class="text-[11px] font-mono text-white/60">Наведите камеру смартфона на эти коды на экране ноутбука для сканирования</p>
+        </div>
+        <button onclick="closeCardsSheetModal()" class="text-white/60 hover:text-white text-xl font-bold w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
+        
+        <!-- Ticket 1: Family QR -->
+        <div class="bg-black/40 border border-[#2A4D37] rounded-xl p-3 flex flex-col items-center text-center">
+          <span class="text-[10px] text-sky-400 font-bold uppercase mb-1">QR-билет семьи (3 чел)</span>
+          <div class="bg-white p-2 rounded-lg my-1.5 shadow flex items-center justify-center min-w-[120px] min-h-[120px]">
+            <div id="sample-qr-family"></div>
+          </div>
+          <span class="text-white font-bold text-sm tracking-wider">MP2026-FAMILY</span>
+          <button onclick="useSampleCode('form', 'MP2026-FAMILY')" class="mt-2 text-[10px] bg-[#2A4D37] hover:bg-[#39694B] text-sky-200 px-3 py-1 rounded">
+            Вставить в терминал
+          </button>
+        </div>
+
+        <!-- Ticket 2: Individual QR -->
+        <div class="bg-black/40 border border-[#2A4D37] rounded-xl p-3 flex flex-col items-center text-center">
+          <span class="text-[10px] text-amber-400 font-bold uppercase mb-1">QR-билет (Иванов • 33 км)</span>
+          <div class="bg-white p-2 rounded-lg my-1.5 shadow flex items-center justify-center min-w-[120px] min-h-[120px]">
+            <div id="sample-qr-indiv"></div>
+          </div>
+          <span class="text-white font-bold text-sm tracking-wider">MP2026-981240</span>
+          <button onclick="useSampleCode('form', 'MP2026-981240')" class="mt-2 text-[10px] bg-[#2A4D37] hover:bg-[#39694B] text-amber-200 px-3 py-1 rounded">
+            Вставить в терминал
+          </button>
+        </div>
+
+        <!-- Card 1: 33 km -->
+        <div class="bg-black/40 border border-[#2A4D37] rounded-xl p-3 flex flex-col items-center text-center">
+          <span class="text-[10px] text-blue-400 font-bold uppercase mb-1">Карта 33 км (Папа • Алексей)</span>
+          <div class="bg-white p-2 rounded-lg my-1.5 shadow flex flex-col items-center justify-center h-[100px] w-[150px]">
+            <svg id="sample-barcode-33"></svg>
+          </div>
+          <span id="sample-code-33" class="text-white font-bold text-sm tracking-wider">CARD-33-01452</span>
+          <button id="sample-btn-33" onclick="useSampleCode('card', 'CARD-33-01452')" class="mt-2 text-[10px] bg-[#2A4D37] hover:bg-[#39694B] text-blue-200 px-3 py-1 rounded">
+            Выдать эту карту
+          </button>
+        </div>
+
+        <!-- Card 2: 17 km Mama -->
+        <div class="bg-black/40 border border-[#2A4D37] rounded-xl p-3 flex flex-col items-center text-center">
+          <span class="text-[10px] text-emerald-400 font-bold uppercase mb-1">Карта 17 км (Мама • Елена)</span>
+          <div class="bg-white p-2 rounded-lg my-1.5 shadow flex flex-col items-center justify-center h-[100px] w-[150px]">
+            <svg id="sample-barcode-17a"></svg>
+          </div>
+          <span id="sample-code-17a" class="text-white font-bold text-sm tracking-wider">CARD-17-08819</span>
+          <button id="sample-btn-17a" onclick="useSampleCode('card', 'CARD-17-08819')" class="mt-2 text-[10px] bg-[#2A4D37] hover:bg-[#39694B] text-emerald-200 px-3 py-1 rounded">
+            Выдать эту карту
+          </button>
+        </div>
+
+        <!-- Card 3: 17 km Son -->
+        <div class="bg-black/40 border border-[#2A4D37] rounded-xl p-3 flex flex-col items-center text-center">
+          <span class="text-[10px] text-emerald-400 font-bold uppercase mb-1">Карта 17 км (Сын • Артём)</span>
+          <div class="bg-white p-2 rounded-lg my-1.5 shadow flex flex-col items-center justify-center h-[100px] w-[150px]">
+            <svg id="sample-barcode-17b"></svg>
+          </div>
+          <span id="sample-code-17b" class="text-white font-bold text-sm tracking-wider">CARD-17-08820</span>
+          <button id="sample-btn-17b" onclick="useSampleCode('card', 'CARD-17-08820')" class="mt-2 text-[10px] bg-[#2A4D37] hover:bg-[#39694B] text-emerald-200 px-3 py-1 rounded">
+            Выдать эту карту
+          </button>
+        </div>
+
+        <!-- Card 4: 10 km -->
+        <div class="bg-black/40 border border-[#2A4D37] rounded-xl p-3 flex flex-col items-center text-center">
+          <span class="text-[10px] text-purple-400 font-bold uppercase mb-1">Карта 10 км (Городской круг)</span>
+          <div class="bg-white p-2 rounded-lg my-1.5 shadow flex flex-col items-center justify-center h-[100px] w-[150px]">
+            <svg id="sample-barcode-10"></svg>
+          </div>
+          <span id="sample-code-10" class="text-white font-bold text-sm tracking-wider">CARD-10-02581</span>
+          <button id="sample-btn-10" onclick="useSampleCode('card', 'CARD-10-02581')" class="mt-2 text-[10px] bg-[#2A4D37] hover:bg-[#39694B] text-purple-200 px-3 py-1 rounded">
+            Выдать эту карту
+          </button>
+        </div>
+
+        <!-- Card 5: 50 km -->
+        <div class="bg-black/40 border border-[#2A4D37] rounded-xl p-3 flex flex-col items-center text-center">
+          <span class="text-[10px] text-orange-400 font-bold uppercase mb-1">Карта 50 км (Классика Прогулки)</span>
+          <div class="bg-white p-2 rounded-lg my-1.5 shadow flex flex-col items-center justify-center h-[100px] w-[150px]">
+            <svg id="sample-barcode-50"></svg>
+          </div>
+          <span id="sample-code-50" class="text-white font-bold text-sm tracking-wider">CARD-50-00341</span>
+          <button id="sample-btn-50" onclick="useSampleCode('card', 'CARD-50-00341')" class="mt-2 text-[10px] bg-[#2A4D37] hover:bg-[#39694B] text-orange-200 px-3 py-1 rounded">
+            Выдать эту карту
+          </button>
+        </div>
+
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-[#2A4D37] flex flex-wrap items-center justify-between gap-2">
+        <button onclick="regenerateSampleBarcodes()" class="bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-xl font-bold font-mono text-xs shadow transition">
+          🎲 Сгенерировать новый рулон карт
+        </button>
+        <button onclick="closeCardsSheetModal()" class="bg-[#1C3828] hover:bg-[#284F39] text-white px-5 py-2 rounded-xl font-bold font-mono text-xs">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
   <!-- Universal Ecosystem Navigator -->
   <script src="ecosystem_bar.js"></script>
 </body>

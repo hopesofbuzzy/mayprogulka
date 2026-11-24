@@ -25,17 +25,15 @@
         { title: 'Стартовый терминал (2 сек)', file: 'registrar_terminal.html', url: '/registrar', icon: '⚡', tag: 'Старт' },
         { title: 'Офлайн-сканер КП (Лес)', file: 'marker_terminal.html', url: '/marker', icon: '📱', tag: 'Маркёр' },
         { title: 'Штаб безопасности (МЧС)', file: 'safety_dashboard.html', url: '/safety', icon: '🚨', tag: 'Safety Engine' },
-        { title: 'Станция оцифровки анкет', file: 'typist_station.html', url: '/typist', icon: '📝', tag: 'AI-OCR' }
+        { title: 'Станция оцифровки анкет', file: 'typist_station.html', url: '/typist', icon: '📝', tag: 'AI-OCR' },
+        { title: 'Витрина QR и штрихкодов карт', file: 'registrar_terminal.html?open=cards', url: '/registrar?open=cards', icon: '📋', tag: 'Образцы' }
       ]
     }
   ];
 
   // Helper to determine URL based on environment (file:// vs http://)
   function resolveUrl(item) {
-    if (window.location.protocol === 'file:') {
-      return item.file;
-    }
-    return item.url || item.file;
+    return item.file;
   }
 
   // Create UI Container
@@ -191,7 +189,7 @@
 
       <div id="mp-eco-groups"></div>
 
-      <a href="${window.location.protocol === 'file:' ? 'index.html' : '/'}" class="mp-eco-hub-link">
+      <a href="index.html" class="mp-eco-hub-link">
         🌐 Главная витрина платформы (Hub) &rarr;
       </a>
     </div>
