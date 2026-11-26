@@ -4,20 +4,22 @@
  * Dev-инструмент: на этапе полировки скрывается за ?demo=1.
  */
 (function() {
-  // Dev-навигатор: рендерится только при ?demo=1 в адресной строке.
-  // Без параметра не показывается нигде и никому.
+  // Dev-навигатор: всегда виден организатору и админу (это их пульт наблюдения).
+  // Остальным ролям и гостям — только при ?demo=1 в адресной строке.
   let demo = false;
   try { demo = new URLSearchParams(window.location.search).get('demo') === '1'; } catch (e) { demo = false; }
-  if (!demo) return;
-
-  const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-
-  // Текущий пользователь (заполняется на странице логина / requireAuth)
   let currentUser = null;
   try {
     const raw = localStorage.getItem('mp_auth_user');
     currentUser = raw ? JSON.parse(raw) : null;
   } catch (e) { currentUser = null; }
+  const staffSupervisor = currentUser && (currentUser.role === 'admin' || currentUser.role === 'organizer');
+  if (!demo && !staffSupervisor) return;
+
+  const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+
+  // Текущий пользователь (заполняется на странице логина / requireAuth)
+  // — уже прочитан выше для проверки роли.
 
   const ROLE_LABELS = {
     user: 'Участник',

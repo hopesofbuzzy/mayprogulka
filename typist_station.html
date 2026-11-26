@@ -43,6 +43,13 @@
       color: #F7F8F5;
       font-family: 'Onest', sans-serif;
     }
+    /* Поля, заполненные OCR: янтарная подсветка «проверьте меня».
+       Снимается, как только оператор правит поле вручную. */
+    .ocr-filled {
+      box-shadow: 0 0 0 2px #F59E0B, 0 0 14px rgba(245, 158, 11, .35) !important;
+      border-color: #F59E0B !important;
+      background-color: #1F1A0D !important;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-[#FF542E] selection:text-white">
@@ -74,15 +81,6 @@
   <!-- MAIN -->
   <main class="flex-1 max-w-[1200px] w-full mx-auto p-3 sm:p-5">
 
-    <!-- OCR PLACEHOLDER -->
-    <div class="mb-4 bg-[#14291D] border border-[#244732] rounded-xl px-4 py-2.5 flex items-center gap-3">
-      <span class="text-lg">ℹ</span>
-      <p class="text-[11px] sm:text-xs font-mono text-white/60 leading-relaxed">
-        <span class="text-amber-400 font-bold">AI-OCR распознавание бланков</span> — функционал скоро будет доступен.
-        Пока вводите данные с бумаги вручную: форма ниже полностью работает с реестром фестиваля.
-      </p>
-    </div>
-
     <!-- TABS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
       <button id="tab-btn-entry" onclick="switchTab('entry')"
@@ -103,6 +101,72 @@
           <p class="text-xs font-mono text-white/50">Участник регистрируется на старте, взнос принят — анкета сразу «paid»</p>
         </div>
         <span class="hidden sm:inline px-2.5 py-1 rounded bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[10px] font-mono font-bold uppercase">POST /typist/paper-form</span>
+      </div>
+
+      <!-- OCR HELPER: распознавание бумажного бланка (tesseract.js, локально) -->
+      <div id="ocr-panel" class="mb-5 bg-[#0A140E] border-2 border-amber-500/40 rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-3 sm:px-4 py-3 bg-[#14291D]">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="text-xl shrink-0">🧾</span>
+            <div class="min-w-0">
+              <p class="font-display font-bold text-sm text-white leading-tight">Распознать бланк (OCR)</p>
+              <p class="text-[10px] sm:text-[11px] font-mono text-white/50 leading-tight">Сфотографируйте анкету — поля заполнятся, вы проверите и поправите</p>
+            </div>
+          </div>
+          <button type="button" id="ocr-toggle" onclick="toggleOcrPanel()"
+            class="shrink-0 text-[10px] font-mono font-bold text-amber-300 hover:text-white bg-[#1C3828] border border-amber-500/30 px-2.5 py-1.5 rounded-lg transition">Свернуть</button>
+        </div>
+
+        <div id="ocr-body" class="px-3 sm:px-4 py-3 space-y-3">
+          <input type="file" id="ocr-file-camera" accept="image/*" capture="environment" class="hidden" onchange="handleOcrFile(event)">
+          <input type="file" id="ocr-file-gallery" accept="image/*" class="hidden" onchange="handleOcrFile(event)">
+
+          <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+            <button type="button" id="ocr-start" onclick="startOcr()"
+              class="w-full bg-amber-500 hover:bg-amber-400 active:scale-[.99] disabled:opacity-50 disabled:cursor-wait text-black py-3.5 px-4 rounded-xl flex items-center gap-3 shadow-lg border-2 border-amber-300/60 transition text-left">
+              <svg class="w-8 h-8 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              <span class="flex-1 min-w-0">
+                <span class="block font-display font-black text-sm sm:text-base tracking-wide">📸 СФОТОГРАФИРОВАТЬ БЛАНК</span>
+                <span class="block text-[10px] font-mono text-black/60">Камера телефона или выбор готового фото</span>
+              </span>
+            </button>
+            <button type="button" onclick="pickOcrImage()"
+              class="w-full sm:w-auto bg-[#1C3828] hover:bg-[#284F39] text-amber-200 px-4 py-3 rounded-xl font-mono text-xs font-bold border border-amber-500/30 transition">
+              🖼 Из галереи
+            </button>
+          </div>
+
+          <p class="text-[10px] font-mono text-white/40 leading-relaxed">
+            Работает офлайн, фото не покидает устройство. Первый запуск — 5–15 секунд (загрузка модели), дальше быстрее.
+          </p>
+
+          <!-- Прогресс распознавания -->
+          <div id="ocr-progress" class="hidden bg-[#14291D] border border-amber-500/30 rounded-xl p-3">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <span id="ocr-progress-label" class="text-[11px] font-mono font-bold text-amber-200">Подготовка…</span>
+              <span id="ocr-progress-pct" class="text-[11px] font-mono text-white/50">0%</span>
+            </div>
+            <div class="h-2 bg-[#0A140E] rounded-full overflow-hidden">
+              <div id="ocr-progress-bar" class="h-full bg-amber-400 transition-all duration-300" style="width:0%"></div>
+            </div>
+            <button type="button" onclick="cancelOcr()" class="mt-2 text-[10px] font-mono text-red-300 hover:underline">✕ Отменить распознавание</button>
+          </div>
+
+          <!-- Фото + сырой текст -->
+          <div id="ocr-result" class="hidden grid grid-cols-1 sm:grid-cols-[150px_1fr] gap-3">
+            <div>
+              <img id="ocr-preview" alt="Фото бланка" class="w-full rounded-lg border-2 border-[#244732] bg-black object-contain max-h-[190px]">
+              <button type="button" onclick="clearOcr()" class="mt-2 w-full text-[10px] font-mono text-white/50 hover:text-white bg-[#14291D] border border-[#244732] px-2 py-1.5 rounded-lg transition">✕ Убрать фото</button>
+            </div>
+            <details class="bg-[#14291D] border border-[#244732] rounded-lg px-3 py-2 open:pb-3">
+              <summary class="text-[11px] font-mono font-bold text-white/60 cursor-pointer select-none">📄 Распознанный текст (сверьтесь при сомнениях)</summary>
+              <pre id="ocr-raw" class="mt-2 text-[10px] sm:text-[11px] font-mono text-white/60 whitespace-pre-wrap break-words max-h-48 overflow-auto"></pre>
+            </details>
+          </div>
+
+          <!-- Итог: что заполнено, что проверить -->
+          <div id="ocr-summary" class="hidden rounded-xl px-3 py-2.5 font-mono text-[11px] leading-relaxed"></div>
+        </div>
       </div>
 
       <form id="paper-form" class="space-y-4" onsubmit="event.preventDefault(); submitPaperForm();">
@@ -332,7 +396,8 @@
     }
 
     // --- Вкладки ---
-    function switchTab(tab) {
+    function switchTab(tab, focusField) {
+      const shouldFocus = focusField !== false;
       const entry = document.getElementById('tab-entry');
       const match = document.getElementById('tab-match');
       const btnEntry = document.getElementById('tab-btn-entry');
@@ -345,13 +410,13 @@
         match.classList.add('hidden');
         btnEntry.classList.add(...activeCls); btnEntry.classList.remove(...idleCls);
         btnMatch.classList.remove(...activeCls); btnMatch.classList.add(...idleCls);
-        document.getElementById('pf-surname').focus();
+        if (shouldFocus) document.getElementById('pf-surname').focus();
       } else {
         entry.classList.add('hidden');
         match.classList.remove('hidden');
         btnMatch.classList.add(...activeCls); btnMatch.classList.remove(...idleCls);
         btnEntry.classList.remove(...activeCls); btnEntry.classList.add(...idleCls);
-        document.getElementById('m-form-id').focus();
+        if (shouldFocus) document.getElementById('m-form-id').focus();
       }
     }
 
@@ -428,8 +493,9 @@
     }
 
     function resetPaperForm() {
-      ['pf-surname', 'pf-name', 'pf-middle', 'pf-phone', 'pf-email'].forEach(id => { document.getElementById(id).value = ''; });
+      ['pf-surname', 'pf-name', 'pf-middle', 'pf-dob', 'pf-phone', 'pf-email'].forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('pf-gender').value = 'male';
+      clearOcr();
       document.getElementById('pf-surname').focus();
     }
 
@@ -746,6 +812,575 @@
       }
     }
 
+    // ============================================================
+    // OCR-ПОМОЩНИК НАБОРЩИКА (tesseract.js, локально, офлайн)
+    // Заполняет поля формы подсказкой. Оператор сверяет с фото,
+    // правит вручную и сохраняет обычным способом.
+    // Никаких запросов на сервер: фото не покидает устройство.
+    // ============================================================
+    const OCR_BASE = (function() {
+      try { return new URL('tesseract/', window.location.href).href; }
+      catch (e) { return 'tesseract/'; }
+    })();
+
+    let tesseractScriptPromise = null;
+    let ocrWorkerPromise = null;
+    let ocrBusy = false;
+    let ocrCancelled = false;
+    let ocrProgressHandler = null;
+
+    const OCR_FIELD_LABELS = {
+      surname: 'фамилия',
+      name: 'имя',
+      middle: 'отчество',
+      dob: 'дата рождения',
+      gender: 'пол',
+      phone: 'телефон',
+      email: 'email'
+    };
+
+    function ocrLow(s) {
+      return String(s == null ? '' : s).toLowerCase().replace(/ё/g, 'е');
+    }
+
+    function toggleOcrPanel(force) {
+      const body = document.getElementById('ocr-body');
+      const btn = document.getElementById('ocr-toggle');
+      if (!body || !btn) return;
+      const open = typeof force === 'boolean' ? force : body.classList.contains('hidden');
+      body.classList.toggle('hidden', !open);
+      btn.textContent = open ? 'Свернуть' : 'Развернуть';
+    }
+
+    function ocrEnsurePanelOpen() { toggleOcrPanel(true); }
+
+    function startOcr() {
+      if (ocrBusy) return;
+      ocrEnsurePanelOpen();
+      const input = document.getElementById('ocr-file-camera');
+      if (!input) return;
+      input.value = '';
+      input.click();
+    }
+
+    function pickOcrImage() {
+      if (ocrBusy) return;
+      ocrEnsurePanelOpen();
+      const input = document.getElementById('ocr-file-gallery');
+      if (!input) return;
+      input.value = '';
+      input.click();
+    }
+
+    function loadTesseractScript() {
+      if (window.Tesseract) return Promise.resolve();
+      if (tesseractScriptPromise) return tesseractScriptPromise;
+      tesseractScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = OCR_BASE + 'tesseract.min.js';
+        script.onload = () => {
+          if (window.Tesseract) { resolve(); return; }
+          tesseractScriptPromise = null;
+          reject(new Error('OCR-движок загрузился, но не инициализировался'));
+        };
+        script.onerror = () => {
+          tesseractScriptPromise = null;
+          reject(new Error('не удалось загрузить OCR-движок из папки tesseract/'));
+        };
+        document.head.appendChild(script);
+      });
+      return tesseractScriptPromise;
+    }
+
+    function getOcrWorker() {
+      if (ocrWorkerPromise) return ocrWorkerPromise;
+      ocrWorkerPromise = loadTesseractScript().then(() => {
+        const T = window.Tesseract;
+        if (!T || typeof T.createWorker !== 'function') {
+          throw new Error('OCR-движок недоступен');
+        }
+        return T.createWorker('rus+eng', 1, {
+          workerPath: OCR_BASE + 'worker.min.js',
+          corePath: OCR_BASE,
+          langPath: OCR_BASE,
+          logger: (m) => {
+            if (ocrCancelled) return;
+            if (typeof ocrProgressHandler === 'function') ocrProgressHandler(m);
+          }
+        });
+      }).then(async (worker) => {
+        try { await worker.setParameters({ preserve_interword_spaces: '1' }); }
+        catch (e) { /* не критично */ }
+        return worker;
+      }).catch((err) => {
+        ocrWorkerPromise = null;
+        throw err;
+      });
+      return ocrWorkerPromise;
+    }
+
+    function setOcrProgress(pct, label) {
+      const bar = document.getElementById('ocr-progress-bar');
+      const pctEl = document.getElementById('ocr-progress-pct');
+      const labelEl = document.getElementById('ocr-progress-label');
+      const safe = Math.max(0, Math.min(100, Math.round(pct)));
+      if (bar) bar.style.width = safe + '%';
+      if (pctEl) pctEl.textContent = safe + '%';
+      if (labelEl && label) labelEl.textContent = label;
+    }
+
+    function showOcrProgress(on) {
+      const el = document.getElementById('ocr-progress');
+      if (el) el.classList.toggle('hidden', !on);
+    }
+
+    function handleOcrProgress(m) {
+      if (!m || !m.status) return;
+      const p = typeof m.progress === 'number' ? m.progress : 0;
+      let pct = 45;
+      let label = m.status;
+      if (m.status === 'loading tesseract core') { pct = 2 + p * 10; label = 'Загрузка OCR-ядра…'; }
+      else if (m.status === 'loading language traineddata') { pct = 12 + p * 18; label = 'Загрузка языковой модели…'; }
+      else if (m.status === 'initializing tesseract') { pct = 30 + p * 10; label = 'Инициализация…'; }
+      else if (m.status === 'initializing api') { pct = 38 + p * 7; label = 'Подготовка распознавания…'; }
+      else if (m.status === 'recognizing text') { pct = 45 + p * 55; label = 'Распознавание текста…'; }
+      setOcrProgress(pct, label);
+    }
+
+    function cancelOcr() {
+      if (!ocrBusy) return;
+      ocrCancelled = true;
+      if (ocrWorkerPromise) {
+        const pending = ocrWorkerPromise;
+        ocrWorkerPromise = null;
+        pending.then((w) => { try { w.terminate(); } catch (e) { /* noop */ } })
+          .catch(() => { /* noop */ });
+      }
+    }
+
+    function loadOcrImage(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('не удалось открыть изображение')); };
+        img.src = url;
+      });
+    }
+
+    async function prepareOcrImage(file, maxDim) {
+      const img = await loadOcrImage(file);
+      let w = img.naturalWidth || img.width;
+      let h = img.naturalHeight || img.height;
+      if (!w || !h) throw new Error('пустое изображение');
+      const limit = maxDim || 2000;
+      if (w > limit || h > limit) {
+        if (w >= h) { h = Math.round(h * limit / w); w = limit; }
+        else { w = Math.round(w * limit / h); h = limit; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, w, h);
+      // Оттенки серого + умеренный контраст: печатный бланк OCR читает
+      // заметно стабильнее, чем цветное фото с тенями.
+      try {
+        const data = ctx.getImageData(0, 0, w, h);
+        const px = data.data;
+        const contrast = 1.25;
+        for (let i = 0; i < px.length; i += 4) {
+          let g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+          g = (g - 128) * contrast + 128;
+          g = g < 0 ? 0 : (g > 255 ? 255 : g);
+          px[i] = px[i + 1] = px[i + 2] = g;
+        }
+        ctx.putImageData(data, 0, 0);
+      } catch (e) { /* canvas недоступен — не критично */ }
+      return canvas.toDataURL('image/jpeg', 0.95);
+    }
+
+    // --- Разбор распознанного текста ---
+    function ocrLines(text) {
+      return String(text || '')
+        .replace(/\r/g, '\n')
+        .split('\n')
+        .map(l => l.replace(/\s+/g, ' ').trim())
+        .map(l => l.replace(/^[\s•·*\-–—]+/, '').trim())
+        .filter(l => l.length > 0);
+    }
+
+    // Метка, с которой начинается строка.
+    function ocrLabelAtStart(line) {
+      const s = ocrLow(line).replace(/^\d+[.)]\s*/, '');
+      if (/^(?:e-?mail|эл\.?\s*почта|электронная\s*почта|почта)(?:\s|$|[:.\-—–])/.test(s)) return 'email';
+      if (/^(?:дата\s*рожд[а-я]*|д\.\s*р\.?|дата)(?:\s|$|[:.\-—–])/.test(s)) return 'dob';
+      if (/^(?:телефон|тел\.?|моб\.?(?:ильный)?|сотовый)(?:\s|$|[:.\-—–])/.test(s)) return 'phone';
+      if (/^пол(?:\s|$|[:.\-—–])/.test(s)) return 'gender';
+      if (/^отчеств[оа](?:\s|$|[:.\-—–])/.test(s)) return 'middle';
+      if (/^фамили[яи](?:\s|$|[:.\-—–])/.test(s)) return 'surname';
+      if (/^им[яе](?:\s|$|[:.\-—–])/.test(s)) return 'name';
+      if (/^фио(?:\s|$|[:.\-—–])/.test(s)) return 'fio';
+      return null;
+    }
+
+    const OCR_VALUE_RES = {
+      surname: /^фамили[яи](?:\s*[:.\-—–]\s*|\s+)/,
+      name: /^им[яе](?:\s*[:.\-—–]\s*|\s+)/,
+      middle: /^отчеств[оа](?:\s*[:.\-—–]\s*|\s+)/,
+      fio: /^фио(?:\s*[:.\-—–]\s*|\s+)/,
+      dob: /^(?:дата\s*рожд[а-я]*|д\.\s*р\.?)(?:\s*[:.\-—–]\s*|\s+)/,
+      gender: /^пол(?:\s*[:.\-—–]\s*|\s+)/,
+      phone: /^(?:телефон|тел\.?|моб\.?(?:ильный)?|сотовый)(?:\s*[:.\-—–]\s*|\s+)/,
+      email: /^(?:e-?mail|эл\.?\s*почта|электронная\s*почта|почта)(?:\s*[:.\-—–]\s*|\s+)/
+    };
+
+    function ocrValueAfterLabel(line, key) {
+      const re = OCR_VALUE_RES[key];
+      if (!re) return '';
+      const low = ocrLow(line);
+      const m = low.match(re);
+      if (!m) return '';
+      return line.slice(m[0].length)
+        .replace(/^[_—–\-.\s]+$/, '')
+        .trim();
+    }
+
+    function getOcrFieldValue(lines, key) {
+      for (let i = 0; i < lines.length; i++) {
+        if (ocrLabelAtStart(lines[i]) !== key) continue;
+        const same = ocrValueAfterLabel(lines[i], key);
+        if (same) return same;
+        for (let j = i + 1; j < Math.min(lines.length, i + 5); j++) {
+          if (ocrLabelAtStart(lines[j])) break;
+          const v = lines[j].replace(/^[_—–\-.\s]+$/, '').trim();
+          if (v) return v;
+        }
+        return '';
+      }
+      return '';
+    }
+
+    // Табличная шапка «Фамилия Имя Отчество» + строка значений под ней.
+    function extractOcrFioTable(lines) {
+      for (let i = 0; i < lines.length; i++) {
+        const s = ocrLow(lines[i]);
+        const found = [];
+        const patterns = [
+          ['surname', /фамили[яи]/],
+          ['name', /(?:^|\s)им[яе](?=\s|$|[:.])/],
+          ['middle', /отчеств[оа]/]
+        ];
+        for (const pair of patterns) {
+          const m = s.match(pair[1]);
+          if (m) found.push({ key: pair[0], index: m.index });
+        }
+        if (found.length < 2) continue;
+        found.sort((a, b) => a.index - b.index);
+        const keys = found.map(f => f.key);
+        for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
+          if (ocrLabelAtStart(lines[j])) continue;
+          const tokens = lines[j].split(/\s+/).filter(Boolean);
+          if (tokens.length < keys.length) continue;
+          const out = {};
+          keys.forEach((k, idx) => { out[k] = tokens[idx]; });
+          return out;
+        }
+      }
+      return null;
+    }
+
+    function cleanOcrName(value) {
+      if (!value) return '';
+      const v = String(value)
+        .replace(/[^A-Za-zА-Яа-яЁё\-\s'’]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!v) return '';
+      return v.toUpperCase();
+    }
+
+    function normalizeOcrDate(raw) {
+      if (!raw) return '';
+      let s = String(raw)
+        .replace(/[ООоO]/g, '0')
+        .replace(/[Зз]/g, '3')
+        .replace(/[lI|]/g, '1');
+      let y = 0, mo = 0, d = 0;
+      let m = s.match(/(\d{4})\s*[-./]\s*(\d{1,2})\s*[-./]\s*(\d{1,2})/);
+      if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+      if (!y) {
+        m = s.match(/(\d{1,2})\s*[-./\s]\s*(\d{1,2})\s*[-./\s]\s*(\d{2,4})/);
+        if (m) {
+          d = +m[1]; mo = +m[2]; y = +m[3];
+          if (y < 100) y += (y > 30 ? 1900 : 2000);
+        }
+      }
+      if (!y) {
+        const months = { янв: 1, фев: 2, мар: 3, апр: 4, май: 5, мая: 5, июн: 6, июл: 7, авг: 8, сен: 9, окт: 10, ноя: 11, дек: 12 };
+        const mm = ocrLow(s).match(/(\d{1,2})\s+([а-я]{3,})\.?\s+(\d{4})/);
+        if (mm && months[mm[2].slice(0, 3)]) {
+          d = +mm[1]; mo = months[mm[2].slice(0, 3)]; y = +mm[3];
+        }
+      }
+      if (!y || mo < 1 || mo > 12 || d < 1 || d > 31) return '';
+      const dt = new Date(Date.UTC(y, mo - 1, d));
+      if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return '';
+      if (y < 1900 || y > new Date().getFullYear()) return '';
+      const pad = n => String(n).padStart(2, '0');
+      return y + '-' + pad(mo) + '-' + pad(d);
+    }
+
+    function findOcrDateInText(text) {
+      const s = String(text || '');
+      let m = s.match(/\b\d{4}\s*-\s*\d{1,2}\s*-\s*\d{1,2}\b/);
+      if (m) { const iso = normalizeOcrDate(m[0]); if (iso) return iso; }
+      m = s.match(/\b\d{1,2}\s*[.\-/]\s*\d{1,2}\s*[.\-/]\s*\d{2,4}\b/);
+      if (m) { const iso = normalizeOcrDate(m[0]); if (iso) return iso; }
+      return '';
+    }
+
+    function normalizeOcrPhone(value) {
+      if (!value) return '';
+      const s = String(value)
+        .replace(/[ООоO]/g, '0')
+        .replace(/[lI|]/g, '1');
+      const fmt = (digits) =>
+        '+7 ' + digits.slice(0, 3) + ' ' + digits.slice(3, 6) + '-' + digits.slice(6, 8) + '-' + digits.slice(8, 10);
+      let m = s.match(/(?:\+?\s*[78])?[\s\-()]*(?:\d[\s\-()]*){11}/);
+      if (m) {
+        let digits = m[0].replace(/\D/g, '');
+        if (digits.length === 11 && (digits[0] === '7' || digits[0] === '8')) {
+          return fmt(digits.slice(1));
+        }
+      }
+      m = s.match(/(?:\d[\s\-()]*){10}/);
+      if (m) {
+        const digits = m[0].replace(/\D/g, '');
+        if (digits.length === 10 && digits[0] === '9') return fmt(digits);
+      }
+      return '';
+    }
+
+    function normalizeOcrEmail(value) {
+      if (!value) return '';
+      const s = String(value)
+        .replace(/\s*@\s*/g, '@')
+        .replace(/\s*\.\s*/g, '.')
+        .replace(/[«»"'`]/g, '')
+        .trim();
+      const m = s.match(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/);
+      return m ? m[0].toLowerCase() : '';
+    }
+
+    function detectOcrGender(lines, text) {
+      const genderIdx = lines.findIndex(l => /^пол(?:\s|$|[:.\-—–])/.test(ocrLow(l)));
+      if (genderIdx >= 0) {
+        const ctx = ocrLow(lines[genderIdx]) + ' ' + ocrLow(lines[genderIdx + 1] || '');
+        const markedF = /(?:жен[а-я]*[^]{0,8}[☑☒✓✔*]|\[[xх]\][^]{0,8}жен|[☑☒✓✔*][^]{0,8}жен)/.test(ctx);
+        const markedM = /(?:муж[а-я]*[^]{0,8}[☑☒✓✔*]|\[[xх]\][^]{0,8}муж|[☑☒✓✔*][^]{0,8}муж)/.test(ctx);
+        if (markedF && !markedM) return 'female';
+        if (markedM && !markedF) return 'male';
+        const hasF = /жен/.test(ctx);
+        const hasM = /муж/.test(ctx);
+        if (hasF && !hasM) return 'female';
+        if (hasM && !hasF) return 'male';
+        const letter = ctx.match(/^пол\s*[:.\-—–]?\s*([мж])(?:\s|$|[.,;])/);
+        if (letter) return letter[1] === 'ж' ? 'female' : 'male';
+      }
+      const lowText = ocrLow(text);
+      const hasF = /жен/.test(lowText);
+      const hasM = /муж/.test(lowText);
+      if (hasF && !hasM) return 'female';
+      if (hasM && !hasF) return 'male';
+      return '';
+    }
+
+    function parseOcrText(text) {
+      const lines = ocrLines(text);
+      const values = { surname: '', name: '', middle: '', dob: '', gender: '', phone: '', email: '' };
+
+      const tableFio = extractOcrFioTable(lines);
+      if (tableFio) {
+        values.surname = cleanOcrName(tableFio.surname);
+        values.name = cleanOcrName(tableFio.name);
+        values.middle = cleanOcrName(tableFio.middle);
+      }
+
+      if (!values.surname) values.surname = cleanOcrName(getOcrFieldValue(lines, 'surname'));
+      if (!values.name) values.name = cleanOcrName(getOcrFieldValue(lines, 'name'));
+      if (!values.middle) values.middle = cleanOcrName(getOcrFieldValue(lines, 'middle'));
+
+      const fio = getOcrFieldValue(lines, 'fio');
+      if (fio) {
+        const tokens = fio.replace(/[^A-Za-zА-Яа-яЁё\-\s'’]/g, ' ').trim().split(/\s+/).filter(Boolean);
+        if (!values.surname && tokens[0]) values.surname = cleanOcrName(tokens[0]);
+        if (!values.name && tokens[1]) values.name = cleanOcrName(tokens[1]);
+        if (!values.middle && tokens[2]) values.middle = cleanOcrName(tokens[2]);
+      }
+
+      values.dob = normalizeOcrDate(getOcrFieldValue(lines, 'dob')) || findOcrDateInText(text);
+      values.gender = detectOcrGender(lines, text);
+      values.phone = normalizeOcrPhone(getOcrFieldValue(lines, 'phone')) || normalizeOcrPhone(text);
+      values.email = normalizeOcrEmail(getOcrFieldValue(lines, 'email')) || normalizeOcrEmail(text);
+      return values;
+    }
+
+    function markOcrField(el) {
+      if (el) el.classList.add('ocr-filled');
+    }
+
+    function resetOcrHighlights() {
+      document.querySelectorAll('.ocr-filled').forEach(el => el.classList.remove('ocr-filled'));
+    }
+
+    function applyOcrValues(values) {
+      const filled = [];
+      const missing = [];
+      const setText = (key, elId, optional) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        if (values[key]) {
+          el.value = values[key];
+          markOcrField(el);
+          filled.push(OCR_FIELD_LABELS[key]);
+        } else if (!optional) {
+          missing.push(OCR_FIELD_LABELS[key]);
+        }
+      };
+      setText('surname', 'pf-surname');
+      setText('name', 'pf-name');
+      setText('middle', 'pf-middle', true); // отчество необязательно
+      setText('dob', 'pf-dob');
+      setText('phone', 'pf-phone');
+      setText('email', 'pf-email');
+
+      const genderEl = document.getElementById('pf-gender');
+      if (values.gender && genderEl) {
+        genderEl.value = values.gender;
+        markOcrField(genderEl);
+        filled.push(OCR_FIELD_LABELS.gender);
+      } else {
+        missing.push(OCR_FIELD_LABELS.gender);
+      }
+      return { filled, missing };
+    }
+
+    function showOcrSummary(filled, missing) {
+      const el = document.getElementById('ocr-summary');
+      if (!el) return;
+      const hasFilled = filled.length > 0;
+      const parts = [];
+      if (hasFilled) {
+        parts.push('<span class="text-amber-300 font-bold">✓ Распознано:</span> ' + filled.join(', ') + '.');
+        parts.push('Поля с янтарной рамкой заполнены автоматически — <span class="text-white font-bold">сверьте с бумагой</span> и поправьте при необходимости.');
+      }
+      if (missing.length) {
+        parts.push('<span class="text-red-300 font-bold">Не распознано:</span> ' + missing.join(', ') + ' — заполните вручную.');
+      }
+      if (!hasFilled) {
+        parts.push('Попробуйте сфотографировать бланк ровнее и при хорошем свете, чтобы текст занимал весь кадр.');
+      }
+      el.innerHTML = parts.join('<br>');
+      el.className = 'rounded-xl px-3 py-2.5 font-mono text-[11px] leading-relaxed border ' +
+        (hasFilled
+          ? 'bg-amber-950/50 border-amber-500/40 text-amber-100'
+          : 'bg-red-950/50 border-red-500/40 text-red-200');
+    }
+
+    function clearOcr() {
+      const img = document.getElementById('ocr-preview');
+      if (img) img.removeAttribute('src');
+      const raw = document.getElementById('ocr-raw');
+      if (raw) raw.textContent = '';
+      const result = document.getElementById('ocr-result');
+      if (result) result.classList.add('hidden');
+      const summary = document.getElementById('ocr-summary');
+      if (summary) { summary.classList.add('hidden'); summary.innerHTML = ''; }
+      showOcrProgress(false);
+      setOcrProgress(0, 'Подготовка…');
+      resetOcrHighlights();
+    }
+
+    async function runOcr(file) {
+      if (ocrBusy) return;
+      ocrBusy = true;
+      ocrCancelled = false;
+      ocrEnsurePanelOpen();
+      resetOcrHighlights();
+
+      const startBtn = document.getElementById('ocr-start');
+      if (startBtn) startBtn.disabled = true;
+      const result = document.getElementById('ocr-result');
+      if (result) result.classList.add('hidden');
+      const summary = document.getElementById('ocr-summary');
+      if (summary) summary.classList.add('hidden');
+      const raw = document.getElementById('ocr-raw');
+      if (raw) raw.textContent = '';
+
+      showOcrProgress(true);
+      setOcrProgress(1, 'Подготовка изображения…');
+      ocrProgressHandler = handleOcrProgress;
+
+      try {
+        const dataUrl = await prepareOcrImage(file, 2000);
+        if (ocrCancelled) throw new Error('CANCELLED');
+        const preview = document.getElementById('ocr-preview');
+        if (preview) preview.src = dataUrl;
+        if (result) result.classList.remove('hidden');
+
+        setOcrProgress(12, 'Загрузка OCR-движка…');
+        const worker = await getOcrWorker();
+        if (ocrCancelled) throw new Error('CANCELLED');
+
+        setOcrProgress(45, 'Распознавание текста…');
+        const ret = await worker.recognize(dataUrl);
+        if (ocrCancelled) throw new Error('CANCELLED');
+
+        const text = (ret && ret.data && ret.data.text) ? ret.data.text.trim() : '';
+        if (raw) raw.textContent = text || '(текст не распознан)';
+
+        const values = parseOcrText(text);
+        const outcome = applyOcrValues(values);
+        showOcrSummary(outcome.filled, outcome.missing);
+
+        setOcrProgress(100, 'Готово');
+        showOcrProgress(false);
+        if (outcome.filled.length) {
+          playSuccessChime();
+          MPToast.show('OCR заполнил полей: ' + outcome.filled.length + '. Проверьте янтарные поля и сохраните анкету.', 'success');
+        } else {
+          playErrorBuzzer();
+          MPToast.show('OCR не нашёл данные на фото. Введите вручную или сфотографируйте ровнее.', 'warn');
+        }
+      } catch (err) {
+        showOcrProgress(false);
+        if (ocrCancelled) {
+          MPToast.show('Распознавание отменено.', 'info');
+        } else {
+          playErrorBuzzer();
+          const msg = (err && err.message) ? err.message : String(err);
+          MPToast.show('OCR не смог распознать бланк: ' + msg + '\n\nДанные можно ввести вручную — форма работает как раньше.', 'error');
+        }
+      } finally {
+        ocrBusy = false;
+        ocrProgressHandler = null;
+        if (startBtn) startBtn.disabled = false;
+      }
+    }
+
+    async function handleOcrFile(event) {
+      const input = event.target;
+      const file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      if (ocrBusy) {
+        MPToast.show('Распознавание уже идёт — дождитесь результата.', 'warn');
+        return;
+      }
+      await runOcr(file);
+    }
+
     // --- Запуск ---
     window.addEventListener('DOMContentLoaded', async () => {
       // Эндпоинты /typist/* на бэкенде: только роли typist и admin
@@ -759,8 +1394,16 @@
       tickClock();
       setInterval(tickClock, 1000);
 
+      // Ручная правка поля снимает янтарную подсветку OCR
+      document.querySelectorAll('#paper-form input, #paper-form select').forEach(el => {
+        const clear = () => el.classList.remove('ocr-filled');
+        el.addEventListener('input', clear);
+        el.addEventListener('change', clear);
+      });
+
       await loadRoutes();
-      switchTab('entry');
+      // На старте не уводим фокус к полям: сначала виден OCR-блок (камера-first).
+      switchTab('entry', false);
     });
   </script>
 
