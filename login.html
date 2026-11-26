@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Вход • Майская прогулка 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Bebas+Neue&family=Onest:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand-orange:#FF542E;
+    --brand-orange-hover:#E0411D;
+    --brand-bg:#FFE8DA;
+    --surface-card:#FFFFFF;
+    --brand-dark:#1F140E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Onest',system-ui,sans-serif;
+    background:var(--brand-bg);
+    color:var(--brand-dark);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+    background-image:radial-gradient(circle at 15% 20%, rgba(255,84,46,.12) 0, transparent 40%),
+                     radial-gradient(circle at 85% 80%, rgba(29,78,216,.08) 0, transparent 45%);
+  }
+  .auth-card{
+    width:100%;max-width:440px;background:var(--surface-card);
+    border-radius:24px;padding:36px 32px;
+    box-shadow:0 20px 60px rgba(31,20,14,.15);
+  }
+  .logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:22px;line-height:1.2;margin-bottom:4px}
+  .logo span{color:var(--brand-orange)}
+  .year{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.2em;color:var(--brand-orange);margin-bottom:24px}
+  .tabs{display:flex;gap:8px;margin-bottom:24px;background:#FFF8F3;border-radius:14px;padding:6px}
+  .tab{
+    flex:1;border:none;background:transparent;padding:10px;border-radius:10px;
+    font-family:'Onest',sans-serif;font-weight:700;font-size:14px;color:var(--brand-dark);
+    cursor:pointer;transition:.2s;
+  }
+  .tab.active{background:var(--brand-orange);color:#fff}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+  input{
+    width:100%;padding:12px 14px;border:2px solid #EADACE;border-radius:12px;
+    font-family:'Onest',sans-serif;font-size:15px;background:#FFFDFB;color:var(--brand-dark);
+    transition:border-color .2s;
+  }
+  input:focus{outline:none;border-color:var(--brand-orange)}
+  .btn{
+    width:100%;margin-top:22px;padding:14px;border:none;border-radius:14px;
+    background:var(--brand-orange);color:#fff;font-family:'Unbounded',sans-serif;
+    font-weight:700;font-size:14px;cursor:pointer;transition:background .2s, transform .1s;
+  }
+  .btn:hover{background:var(--brand-orange-hover)}
+  .btn:active{transform:scale(.98)}
+  .msg{margin-top:16px;font-size:14px;text-align:center;min-height:20px}
+  .msg.err{color:#C0392B}
+  .msg.ok{color:#15803D}
+  .hint{margin-top:18px;font-size:12px;color:#8a7568;text-align:center;line-height:1.5}
+  .denied{display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;background:#FDECEA;color:#C0392B;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="logo">МАЙСКАЯ <span>ПРОГУЛКА</span></div>
+  <div class="year">2026 · УРФУ · ЕКАТЕРИНБУРГ</div>
+
+  <div class="denied" id="deniedMsg">У вашей учётной записи нет доступа к этой странице.</div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabLogin" onclick="switchMode('login')">Вход</button>
+    <button class="tab" id="tabRegister" onclick="switchMode('register')">Регистрация</button>
+  </div>
+
+  <form id="authForm" autocomplete="on">
+    <label for="username">Имя пользователя (логин)</label>
+    <input id="username" name="username" required placeholder="ivan_petrov">
+
+    <div id="emailField" style="display:none">
+      <label for="email">Электронная почта</label>
+      <input id="email" name="email" type="email" placeholder="ivan@example.com">
+    </div>
+
+    <label for="password">Пароль</label>
+    <input id="password" name="password" type="password" required minlength="6" placeholder="••••••••">
+
+    <button class="btn" id="submitBtn" type="submit">ВОЙТИ В СИСТЕМУ</button>
+    <div class="msg" id="msg"></div>
+  </form>
+
+  <div class="hint">
+    Роли системы: участник (user), наборщик (typist), регистратор (registrar),<br>
+    маркёр (marker), организатор (organizer), администратор (admin).
+  </div>
+</div>
+
+<script src="api_config.js"></script>
+<script>
+  let mode = 'login';
+
+  if (new URLSearchParams(location.search).get('denied') === '1') {
+    document.getElementById('deniedMsg').style.display = 'block';
+  }
+
+  // Если уже авторизован — сразу на рабочую страницу
+  if (mpAuth.isAuthenticated()) {
+    location.replace(roleHome(mpAuth.getRole()));
+  }
+
+  function switchMode(m) {
+    mode = m;
+    document.getElementById('tabLogin').classList.toggle('active', m === 'login');
+    document.getElementById('tabRegister').classList.toggle('active', m === 'register');
+    document.getElementById('emailField').style.display = m === 'register' ? 'block' : 'none';
+    document.getElementById('email').required = (m === 'register');
+    document.getElementById('submitBtn').textContent = m === 'register' ? 'СОЗДАТЬ АККАУНТ' : 'ВОЙТИ В СИСТЕМУ';
+    setMsg('');
+  }
+
+  function setMsg(text, ok) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = 'msg ' + (ok ? 'ok' : 'err');
+  }
+
+  function roleHome(role) {
+    return {
+      user: 'user_cabinet.html',
+      typist: 'typist_station.html',
+      registrar: 'registrar_terminal.html',
+      marker: 'marker_terminal.html',
+      organizer: 'organizer_dashboard.html',
+      admin: 'admin_panel.html'
+    }[role] || 'user_cabinet.html';
+  }
+
+  document.getElementById('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const email = document.getElementById('email').value.trim();
+    setMsg('Проверяем данные…', true);
+    try {
+      let data;
+      if (mode === 'register') {
+        await mpApi('/auth/register', { method: 'POST', json: { username, email, password } });
+        data = await mpApi('/auth/login', { method: 'POST', json: { username, password } });
+      } else {
+        data = await mpApi('/auth/login', { method: 'POST', json: { username, password } });
+      }
+      mpAuth.saveToken(data);
+      mpAuth.setUsername(username);
+      setMsg('Добро пожаловать! Перенаправление…', true);
+      setTimeout(() => { location.href = roleHome(mpAuth.getRole()); }, 400);
+    } catch (err) {
+      setMsg(err.message || 'Не удалось выполнить запрос к серверу', false);
+    }
+  });
+</script>
+</body>
+</html>
