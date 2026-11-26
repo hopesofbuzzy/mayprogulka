@@ -6,6 +6,7 @@
   <title>Личный кабинет участника • Майская прогулка 2026</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <script src="api_config.js"></script>
+  <script src="mp_toast.js"></script>
   <script>document.documentElement.classList.add('mp-auth-wait');</script>
   <script src="qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -260,7 +261,7 @@
             <button onclick="toggleFullscreenTicket()" class="py-2.5 px-3 rounded-lg bg-[#122419] text-white hover:bg-stone-800 transition shadow-xs flex items-center justify-center gap-1.5">
               <span>☀️</span> Во весь экран
             </button>
-            <button onclick="alert('PDF-анкета с договором-офертой скачана')" class="py-2.5 px-3 rounded-lg bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center justify-center gap-1.5">
+            <button onclick="MPToast.show('PDF-анкета с договором-офертой скачана', 'info')" class="py-2.5 px-3 rounded-lg bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center justify-center gap-1.5">
               <span>📄</span> Скачать PDF
             </button>
           </div>
@@ -767,7 +768,7 @@
       const routeRadio = document.querySelector('input[name="wiz-route"]:checked');
 
       if (!routeRadio) {
-        alert('Выберите дистанцию маршрута.');
+        MPToast.show('Выберите дистанцию маршрута.', 'warn');
         btn.disabled = false;
         btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
         return;
@@ -816,10 +817,10 @@
         openPaymentModal();
 
         const formIds = data.participants.map(p => p.form_id).join('\n');
-        alert(`✅ Зарегистрировано участников: ${data.participants.length}\n\nForm ID:\n${formIds}\n\nТеперь оплатите взнос — и QR-билеты активируются.`);
+        MPToast.dialog('Регистрация завершена', `✅ Зарегистрировано участников: ${data.participants.length}\n\nForm ID:\n${formIds}\n\nТеперь оплатите взнос — и QR-билеты активируются.`, 'success');
       } catch (err) {
         console.error('Registration error:', err);
-        alert('Ошибка регистрации: ' + err.message);
+        MPToast.show('Ошибка регистрации: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
@@ -1089,7 +1090,7 @@
       const modal = document.getElementById('payment-modal');
       const unpaid = participants.filter(p => !p.isPaid);
       if (unpaid.length === 0) {
-        alert('Все участники уже оплачены. ✓');
+        MPToast.show('Все участники уже оплачены ✓', 'info');
         return;
       }
       const total = unpaid.reduce((acc, cur) => acc + cur.price, 0);
@@ -1145,9 +1146,9 @@
       selectTicket(0);
 
       if (errors.length > 0) {
-        alert(`⚠️ Оплачено: ${paidCount} из ${unpaid.length}.\n\nОшибки оплаты:\n${errors.join('\n')}`);
+        MPToast.dialog('Оплата завершена частично', `⚠ Оплачено: ${paidCount} из ${unpaid.length}.\n\nОшибки оплаты:\n${errors.join('\n')}`, 'warn');
       } else {
-        alert(`🎉 ВЗНОС УСПЕШНО ОПЛАЧЕН (${method.toUpperCase()})!\n\nПлатеж сохранен в базе данных и не сбросится при перезагрузке.\nСформированы именные QR-билеты для выдачи карт на старте.`);
+        MPToast.dialog('Взнос успешно оплачен', `🎉 Оплата (${method.toUpperCase()}) сохранена в базе данных и не сбросится при перезагрузке.\nСформированы именные QR-билеты для выдачи карт на старте.`, 'success');
       }
     }
 
@@ -1197,7 +1198,7 @@
       const routeInput = document.querySelector('input[name="route"]:checked');
 
       if (!routeInput) {
-        alert('Выберите дистанцию маршрута.');
+        MPToast.show('Выберите дистанцию маршрута.', 'warn');
         return;
       }
 
@@ -1221,10 +1222,10 @@
         closeModal();
         await loadMyParticipants();
         selectTicket(participants.length - 1);
-        alert(`Участник ${surname} ${name} успешно зарегистрирован!\nForm ID: ${data.participants[0].form_id}\nСтатус: Ожидает оплаты.\nНажмите «Оплатить» для формирования билета.`);
+        MPToast.dialog('Участник зарегистрирован', `Участник ${surname} ${name} успешно зарегистрирован!\nForm ID: ${data.participants[0].form_id}\nСтатус: ожидает оплаты.\n\nНажмите «Оплатить» для формирования билета.`, 'success');
       } catch (err) {
         console.error('Error adding participant:', err);
-        alert('Ошибка регистрации: ' + err.message);
+        MPToast.show('Ошибка регистрации: ' + err.message, 'error');
       }
     }
 

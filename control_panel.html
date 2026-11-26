@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="api_config.js"></script>
+  <script src="mp_toast.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -717,7 +718,7 @@
             <td>${rt.is_active ? '<span class="text-[10px] font-mono text-emerald-300">да</span>' : '<span class="text-[10px] font-mono text-white/30">нет</span>'}</td>
             <td class="whitespace-nowrap">
               <button onclick="startRouteEdit(${rt.id})" class="text-emerald-400 hover:text-white text-xs font-mono mr-2">✎</button>
-              <button onclick="deleteRoute(${rt.id})" class="text-red-300 hover:text-red-200 text-xs font-mono">🗑</button>
+              <button onclick="deleteRoute(${rt.id}, this)" class="text-red-300 hover:text-red-200 text-xs font-mono">🗑</button>
             </td>
           </tr>`).join('') || '<tr><td colspan="6" class="text-center text-white/30 py-3">Маршрутов нет</td></tr>';
       } catch (e) {
@@ -772,16 +773,21 @@
       }
     }
 
-    async function deleteRoute(id) {
+    async function deleteRoute(id, btn) {
       const rt = sysRoutes.find(r => r.id === id);
-      if (!confirm('Удалить маршрут «' + (rt ? rt.name : '№' + id) + '»?')) return;
+      MPToast.arm(btn, 'Точно удалить?', function() {
+        doDeleteRoute(id, rt);
+      });
+    }
+
+    async function doDeleteRoute(id, rt) {
       try {
         await apiRequest('/api/v1/admin/routes/' + id, { method: 'DELETE' });
         await loadSysRoutes();
         if (sysRoutes.some(r => r.id === id)) {
           showStatus('sys-status', 'amber', 'Сервер не удалил маршрут — вероятно, он используется');
         } else {
-          showStatus('sys-status', 'emerald', '✓ Маршрут удалён');
+          showStatus('sys-status', 'emerald', '✓ Маршрут «' + (rt ? rt.name : '№' + id) + '» удалён');
           routes = sysRoutes;
           rebuildRouteSelects();
         }
@@ -821,7 +827,7 @@
             <td class="font-mono text-[11px] text-white/50">${esc(c.coordinates || '—')}</td>
             <td class="whitespace-nowrap">
               <button onclick="startCpEdit(${c.checkpoint_id})" class="text-emerald-400 hover:text-white text-xs font-mono mr-2">✎</button>
-              <button onclick="deleteCp(${c.checkpoint_id})" class="text-red-300 hover:text-red-200 text-xs font-mono">🗑</button>
+              <button onclick="deleteCp(${c.checkpoint_id}, this)" class="text-red-300 hover:text-red-200 text-xs font-mono">🗑</button>
             </td>
           </tr>`).join('') || '<tr><td colspan="6" class="text-center text-white/30 py-3">КП нет</td></tr>';
         // Селект маршрутов формы создания
@@ -886,9 +892,13 @@
       }
     }
 
-    async function deleteCp(cpId) {
-      const cp = sysCps.find(c => c.checkpoint_id === cpId);
-      if (!confirm('Удалить КП «' + (cp ? cp.name : '№' + cpId) + '»?')) return;
+    async function deleteCp(cpId, btn) {
+      MPToast.arm(btn, 'Точно удалить?', function() {
+        doDeleteCp(cpId);
+      });
+    }
+
+    async function doDeleteCp(cpId) {
       try {
         await apiRequest('/api/v1/admin/checkpoints/' + cpId, { method: 'DELETE' });
         await loadSysCheckpoints();

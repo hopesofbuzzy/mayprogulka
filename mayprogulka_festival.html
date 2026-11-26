@@ -1029,7 +1029,7 @@
     pickRoute('17');
 
     function downloadGpx() {
-      alert(`GPX-трек «${routesData[activeKey].name}» готов для экспорта в Яндекс Карты, 2ГИС, OsmAnd или фитнес-часы.`);
+      MPToast.show('GPX-трек «' + routesData[activeKey].name + '» готов для экспорта в Яндекс Карты, 2ГИС, OsmAnd или фитнес-часы.', 'info');
     }
 
     function startOnlineRegistration() {
@@ -1038,6 +1038,7 @@
     }
   </script>
   <!-- Universal Ecosystem Navigator -->
+  <script src="mp_toast.js"></script>
   <script src="ecosystem_bar.js"></script>
 </body>
 </html>

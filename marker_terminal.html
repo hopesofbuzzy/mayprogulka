@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="api_config.js"></script>
+  <script src="mp_toast.js"></script>
   <script src="html5-qrcode.min.js"></script>
   <script>
     tailwind.config = {
@@ -139,7 +140,7 @@
       <div class="flex items-center justify-between pb-2 border-b border-[#244732] mb-2">
         <span class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider">Журнал отметок</span>
         <span class="flex items-center gap-2">
-          <button onclick="clearQueue()" class="text-[10px] font-mono text-red-300 hover:underline">🗑 Очистить</button>
+          <button onclick="clearQueue(this)" class="text-[10px] font-mono text-red-300 hover:underline">🗑 Очистить</button>
           <button onclick="flushQueue(true)" class="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             Отправить сейчас
@@ -406,15 +407,17 @@
       input.focus();
     }
 
-    // Аварийный сброс очереди (например, КП удалён на сервере)
-    function clearQueue() {
+    // Аварийный сброс очереди (например, КП удалён на сервере).
+    // Подтверждение — вторым нажатием (MPToast.arm), без блокирующего confirm().
+    function clearQueue(btn) {
       if (queue.length === 0) return;
-      if (!confirm('Удалить ' + queue.length + ' неотправленных отметок из очереди?')) return;
-      queue = [];
-      persistQueue();
-      updateStats();
-      updateSyncBadge();
-      playTone(300, 0.1, 'triangle');
+      MPToast.arm(btn, 'Точно удалить ' + queue.length + '?', function() {
+        queue = [];
+        persistQueue();
+        updateStats();
+        updateSyncBadge();
+        playTone(300, 0.1, 'triangle');
+      });
     }
 
     // Отложенная отправка (после скана — даём накопиться пачке)
@@ -760,7 +763,7 @@
         const decodedText = await html5QrScanner.scanFile(processedFile, false);
         addScan(decodedText);
       } catch (err) {
-        alert('Не удалось распознать код на снимке: ' + (err.message || err) + '\n\nСовет: держите камеру ближе к коду и снимайте при ровном свете.');
+        MPToast.show('Не удалось распознать код на снимке: ' + (err.message || err) + '\n\nСовет: держите камеру ближе к коду и снимайте при ровном свете.', 'error');
       } finally {
         event.target.value = '';
       }
@@ -779,19 +782,19 @@
 
     async function toggleTorch() {
       if (!html5QrScanner) {
-        alert('Сначала включите камеру кнопкой «Сканировать карту».');
+        MPToast.show('Сначала включите камеру кнопкой «Сканировать карту».', 'warn');
         return;
       }
       try {
         const caps = html5QrScanner.getRunningTrackCapabilities();
         if (!caps || !('torch' in caps)) {
-          alert('Фонарик не поддерживается этой камерой.');
+          MPToast.show('Фонарик не поддерживается этой камерой.', 'info');
           return;
         }
         torchOn = !torchOn;
         await html5QrScanner.applyVideoConstraints({ advanced: [{ torch: torchOn }] });
       } catch (e) {
-        alert('Не удалось переключить фонарик: ' + (e.message || e));
+        MPToast.show('Не удалось переключить фонарик: ' + (e.message || e), 'error');
       }
     }
   </script>

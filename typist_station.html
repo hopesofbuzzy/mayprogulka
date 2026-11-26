@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="api_config.js"></script>
+  <script src="mp_toast.js"></script>
   <script>document.documentElement.classList.add('mp-auth-wait');</script>
   <script src="html5-qrcode.min.js"></script>
   <script src="qrcode.min.js"></script>
@@ -68,7 +69,6 @@
   <div class="bg-[#0D1A12]/60 border-b border-[#244732] px-4 sm:px-6 py-2 flex flex-wrap items-center gap-x-8 gap-y-1 font-mono text-xs">
     <span class="text-white/50">Анкет за смену: <strong id="counter-forms" class="text-white">0</strong></span>
     <span class="text-white/50">Карт привязано: <strong id="counter-matches" class="text-white">0</strong></span>
-    <span class="text-white/50">Свободных карт в БД: <strong id="counter-free-maps" class="text-amber-300">…</strong></span>
   </div>
 
   <!-- MAIN -->
@@ -232,15 +232,6 @@
         <div id="match-status" class="hidden mt-3 rounded-lg px-3 py-2 font-mono text-xs"></div>
       </div>
 
-      <!-- Free maps -->
-      <div class="bg-[#14291D] border-2 border-[#244732] rounded-xl p-4 shadow-xl">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-display font-bold text-sm text-white">Свободные карты <span id="free-maps-count" class="font-mono text-amber-300"></span></h3>
-          <button onclick="loadFreeMaps()" class="text-[11px] font-mono text-emerald-300 hover:text-white bg-[#1C3828] px-3 py-1 rounded border border-[#244732] transition">↻ Обновить</button>
-        </div>
-        <div id="free-maps-list" class="flex flex-wrap gap-3"></div>
-      </div>
-
       <!-- Session history -->
       <div class="bg-[#14291D] border-2 border-[#244732] rounded-xl p-4 shadow-xl">
         <h3 class="font-display font-bold text-sm text-white mb-3">Привязки за смену <span class="font-mono text-[10px] text-white/40">(последние 10)</span></h3>
@@ -392,7 +383,7 @@
       const routeId = selectedRouteId;
       if (!routeId) {
         playErrorBuzzer();
-        alert('Выберите дистанцию — маршруты не загружены.');
+        MPToast.show('Выберите дистанцию — маршруты не загружены.', 'warn');
         return;
       }
       const payload = {
@@ -407,7 +398,7 @@
       };
       if (!payload.surname || !payload.name || !payload.date_of_birth || !payload.phone_number || !payload.email) {
         playErrorBuzzer();
-        alert('Заполните обязательные поля (отмечены *).');
+        MPToast.show('Заполните обязательные поля (отмечены *).', 'warn');
         return;
       }
 
@@ -429,7 +420,7 @@
         document.getElementById('save-success-modal').classList.remove('hidden');
       } catch (err) {
         playErrorBuzzer();
-        alert('❌ Не удалось сохранить анкету: ' + err.message);
+        MPToast.show('Не удалось сохранить анкету: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg> ЗАРЕГИСТРИРОВАТЬ УЧАСТНИКА <span class="font-mono text-[10px] opacity-70">(Ctrl+Enter)</span>';
@@ -481,7 +472,6 @@
         renderHistory();
         document.getElementById('m-barcode').value = '';
         document.getElementById('m-barcode').focus();
-        loadFreeMaps();
       } catch (err) {
         playErrorBuzzer();
         highlightCardScan(false);
@@ -515,42 +505,6 @@
           <span class="text-white/30 text-[10px]">${h.time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       `).join('');
-    }
-
-    // --- Свободные карты (GET /api/v1/typist/unlinked) ---
-    async function loadFreeMaps() {
-      try {
-        const data = await apiRequest('/api/v1/typist/unlinked?limit=6');
-        document.getElementById('counter-free-maps').textContent = data.total;
-        document.getElementById('free-maps-count').textContent = `(${data.total})`;
-        const list = document.getElementById('free-maps-list');
-        const maps = data.maps || [];
-        if (maps.length === 0) {
-          list.innerHTML = '<span class="text-[11px] font-mono text-white/40">свободных карт нет — создайте партию через POST /api/v1/admin/maps/batch</span>';
-          return;
-        }
-        list.innerHTML = maps.map(m => `
-          <div class="bg-white text-black p-2 rounded-lg inline-flex flex-col items-center border-2 border-amber-400">
-            <div id="free-map-qr-${m.id}"></div>
-            <button type="button" onclick="useFreeMap('${m.barcode}')" class="mt-1 text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold px-2 py-0.5 rounded">Вставить &rarr;</button>
-          </div>
-        `).join('');
-        if (typeof QRCode !== 'undefined') {
-          maps.forEach(m => {
-            const el = document.getElementById('free-map-qr-' + m.id);
-            if (el) new QRCode(el, { text: m.barcode, width: 76, height: 76, correctLevel: QRCode.CorrectLevel.M });
-          });
-        }
-      } catch (err) {
-        document.getElementById('counter-free-maps').textContent = '—';
-        document.getElementById('free-maps-count').textContent = '(—)';
-      }
-    }
-
-    function useFreeMap(barcode) {
-      switchTab('match');
-      document.getElementById('m-barcode').value = barcode;
-      document.getElementById('m-barcode').focus();
     }
 
     // --- Статистика и часы ---
@@ -776,7 +730,7 @@
         applyScannedCode(code);
       } catch (err) {
         playErrorBuzzer();
-        alert('Не удалось распознать код на снимке: ' + (err.message || err) + '\n\nСовет: держите камеру ближе к QR-коду и снимайте при ровном свете.');
+        MPToast.show('Не удалось распознать код на снимке: ' + (err.message || err) + '\n\nСовет: держите камеру ближе к QR-коду и снимайте при ровном свете.', 'error');
       } finally {
         event.target.value = '';
       }
@@ -806,7 +760,6 @@
       setInterval(tickClock, 1000);
 
       await loadRoutes();
-      loadFreeMaps();
       switchTab('entry');
     });
   </script>

@@ -4,6 +4,12 @@
  * Dev-инструмент: на этапе полировки скрывается за ?demo=1.
  */
 (function() {
+  // Dev-навигатор: рендерится только при ?demo=1 в адресной строке.
+  // Без параметра не показывается нигде и никому.
+  let demo = false;
+  try { demo = new URLSearchParams(window.location.search).get('demo') === '1'; } catch (e) { demo = false; }
+  if (!demo) return;
+
   const currentPath = window.location.pathname.split('/').pop() || 'index.html';
 
   // Текущий пользователь (заполняется на странице логина / requireAuth)

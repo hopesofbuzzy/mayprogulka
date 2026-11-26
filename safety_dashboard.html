@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="api_config.js"></script>
+  <script src="mp_toast.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -495,15 +496,15 @@
 
     // F3: Parameterized caller modal
     function callParticipant(phone, card, name, eta, point) {
-      alert(`СВЯЗЬ С УЧАСТНИКОМ:\nКарта: ${card}\nУчастник: ${name}\nТелефон: ${phone}\n\nРекомендация диспетчера штаба:\n«${name}, по расчетам скорости ваш прогноз финиша — ${eta}. До заката (21:30) вы не успеваете завершить лесной отрезок. Рекомендуем сойти в районе ${point} на городской транспорт».`);
+      MPToast.dialog('Связь с участником', `Карта: ${card}\nУчастник: ${name}\nТелефон: ${phone}\n\nРекомендация диспетчера штаба:\n«${name}, по расчетам скорости ваш прогноз финиша — ${eta}. До заката (21:30) вы не успеваете завершить лесной отрезок. Рекомендуем сойти в районе ${point} на городской транспорт».`, 'info');
     }
 
     function dispatchPatrol(card, location) {
-      alert(`ЭКИПАЖУ МЧС / КВАДРОЦИКЛУ:\nВыезд на локацию: ${location}\nПоиск участника: ${card}\nЗадача: визуальный контакт, проверка самочувствия.`);
+      MPToast.dialog('Экипажу МЧС / квадроциклу', `Выезд на локацию: ${location}\nПоиск участника: ${card}\nЗадача: визуальный контакт, проверка самочувствия.`, 'warn');
     }
 
     function markEvacuation(card, point) {
-      alert(`ФИКСАЦИЯ СХОДА С ДИСТАНЦИИ:\nУчастник ${card} снят с дистанции на ${point}.\nСтатус передан в информационную систему финиша.`);
+      MPToast.dialog('Сход с дистанции', `Участник ${card} снят с дистанции на ${point}.\nСтатус передан в информационную систему финиша.`, 'info');
     }
 
     // F6: Real CSV report generation and download
