@@ -646,7 +646,9 @@
         { facingMode: "environment" },
         buildScanConfig(),
         (decodedText) => {
-          const code = decodedText.trim().toUpperCase();
+          // Код сканируется как есть: баркоды в БД в смешанном регистре, точный
+          // поиск/привязка на бэкенде регистрозависимы.
+          const code = decodedText.trim();
           playSuccessChime();
           closeCameraScanner();
           applyScannedCode(code);
@@ -766,7 +768,9 @@
         }
         const processedFile = await downscaleImage(file, 1000);
         const decodedText = await html5QrScanner.scanFile(processedFile, false);
-        const code = decodedText.trim().toUpperCase();
+        // Код сканируется как есть: баркоды в БД в смешанном регистре, точный
+        // поиск/привязка на бэкенде регистрозависимы.
+        const code = decodedText.trim();
         playSuccessChime();
         closeCameraScanner();
         applyScannedCode(code);

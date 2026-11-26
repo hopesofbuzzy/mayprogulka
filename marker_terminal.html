@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="mp-auth-wait">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,8 +10,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="api_config.js"></script>
   <script src="html5-qrcode.min.js"></script>
-  <script src="jsbarcode.min.js"></script>
-  <script src="qrcode.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -44,18 +42,10 @@
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
+    input, textarea { user-select: text; -webkit-user-select: text; }
     .flash-overlay {
       transition: opacity 0.25s ease-out;
       pointer-events: none;
-    }
-    /* Scanner aiming animation */
-    @keyframes scanBeam {
-      0% { top: 10%; opacity: 0.3; }
-      50% { top: 90%; opacity: 1; }
-      100% { top: 10%; opacity: 0.3; }
-    }
-    .scan-beam {
-      animation: scanBeam 2.2s infinite ease-in-out;
     }
   </style>
 </head>
@@ -63,240 +53,155 @@
 
   <!-- FULLSCREEN SCAN FEEDBACK FLASH OVERLAY -->
   <div id="feedback-flash" class="flash-overlay fixed inset-0 z-50 opacity-0 flex flex-col items-center justify-center p-6 text-center">
-    <div id="flash-icon" class="w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl">
-      <!-- Icon populated by JS -->
-    </div>
-    <div id="flash-title" class="font-display font-black text-3xl sm:text-4xl text-white tracking-wide mb-1">
-      ОТМЕТКА ПРИНЯТА
-    </div>
-    <div id="flash-card-id" class="font-mono text-xl sm:text-2xl font-bold text-white/95 mb-2">
-      CARD-33-04821
-    </div>
-    <div id="flash-subtext" class="text-sm font-mono text-white/80 bg-black/40 px-4 py-1.5 rounded-full">
-      Маршрут 33 км • Всего на КП: 1 843
-    </div>
+    <div id="flash-icon" class="w-24 h-24 rounded-full flex items-center justify-center text-white text-5xl mb-3 shadow-2xl bg-emerald-600">✓</div>
+    <div id="flash-title" class="font-display font-black text-3xl sm:text-4xl text-white tracking-wide mb-1">ОТМЕЧЕН</div>
+    <div id="flash-barcode" class="font-mono text-xl sm:text-2xl font-bold text-white/95 mb-2">MP2026-…</div>
+    <div id="flash-subtext" class="text-sm font-mono text-white/80 bg-black/50 px-4 py-1.5 rounded-full"></div>
   </div>
 
-  <!-- TOP HEADER: Offline status, CP number, battery & sync -->
-  <header class="bg-[#0D1A12] border-b border-[#244732] px-4 py-2.5 flex items-center justify-between sticky top-0 z-40">
-    <div class="flex items-center gap-2.5">
-      <div id="sync-status-indicator" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-        <span id="sync-status-text">ОФЛАЙН (38 в очереди)</span>
-      </div>
+  <!-- TOP HEADER: sync status, CP name, clock -->
+  <header class="bg-[#0D1A12] border-b border-[#244732] px-4 py-2.5 flex items-center justify-between sticky top-0 z-40 gap-2">
+    <div id="sync-status-indicator" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
+      <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span id="sync-status-text">СИНХРОНИЗИРОВАНО</span>
     </div>
 
-    <!-- CP info -->
-    <div class="text-center">
-      <div class="font-sport tracking-widest text-lg sm:text-xl text-white">КП-03 • РОДНИК «ПАМЯТИ»</div>
-      <div class="text-[10px] font-mono text-emerald-400">ДИСТАНЦИИ: 33 КМ / 50 КМ</div>
+    <div class="text-center min-w-0">
+      <div id="header-cp-name" class="font-sport tracking-widest text-lg sm:text-xl text-white truncate">КП НЕ ВЫБРАН</div>
+      <div id="header-cp-route" class="text-[10px] font-mono text-emerald-400 truncate"></div>
     </div>
 
-    <!-- Battery & time -->
-    <div class="flex items-center gap-2">
-      <div class="text-right">
-        <div id="clock-display" class="font-mono text-sm font-bold text-white">14:15</div>
-        <div class="text-[9px] font-mono text-amber-400">ДО 17:30</div>
-      </div>
+    <div class="text-right shrink-0">
+      <div id="clock-display" class="font-mono text-sm font-bold text-white">--:--</div>
+      <div id="operator-role" class="text-[9px] font-mono text-amber-400"></div>
     </div>
   </header>
 
-  <!-- MAIN OPERATING CONTAINER: High-contrast mobile viewport -->
+  <!-- MAIN OPERATING CONTAINER -->
   <main class="flex-1 max-w-lg w-full mx-auto p-3 sm:p-4 flex flex-col gap-3">
 
-    <!-- CAMERA / SCANNER VIEWPORT -->
-    <div class="bg-[#14291D] border-2 border-[#244732] rounded-2xl p-2 relative shadow-2xl overflow-hidden flex flex-col">
-      
-      <!-- Video / Camera Mock & Laser Scanner -->
-      <div class="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden flex items-center justify-center border border-[#244732]">
-        
-        <!-- Live HTML5 QR / Barcode Camera Reader -->
-        <div id="marker-qr-reader" class="w-full h-full"></div>
-
-        <!-- Simulated camera viewfinder overlay -->
-        <div id="marker-viewfinder-overlay" class="absolute inset-0 bg-gradient-to-b from-emerald-950/30 to-black/80 flex flex-col items-center justify-center text-center p-4 pointer-events-none">
-          <!-- Crosshair corners for physical card alignment -->
-          <div class="absolute inset-6 border-2 border-dashed border-emerald-400/40 rounded-lg pointer-events-none">
-            <div class="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-emerald-400"></div>
-            <div class="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-emerald-400"></div>
-            <div class="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-emerald-400"></div>
-            <div class="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-emerald-400"></div>
-          </div>
-
-          <!-- Animated laser scan line -->
-          <div class="scan-beam absolute left-6 right-6 h-0.5 bg-[#FF542E] shadow-[0_0_12px_#FF542E]"></div>
-
-          <div class="z-10 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 text-xs font-mono text-white/90">
-            НАВЕДИТЕ НА ШТРИХКОД КАРТЫ
-          </div>
-        </div>
-
-        <!-- Camera Switcher Floating Button -->
-        <button 
-          id="btn-marker-cam"
-          type="button" 
-          onclick="toggleMarkerCamera()" 
-          class="absolute bottom-3 bg-[#1C3627]/90 hover:bg-[#284D38] border border-emerald-500/50 text-emerald-300 px-4 py-2 rounded-full text-xs font-mono font-bold flex items-center gap-2 shadow-2xl transition z-20">
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          <span id="marker-cam-text">Включить камеру смартфона</span>
-        </button>
-      </div>
-
-      <!-- Quick Manual Input & Test Trigger Row -->
-      <div class="mt-2.5 flex items-center gap-2">
-        <input 
-          type="text" 
-          id="manual-barcode-input" 
-          inputmode="text" 
-          placeholder="№ карты вручную (CARD-XX-XXXXX)..." 
-          class="flex-1 bg-[#0A140E] border border-[#244732] focus:border-amber-400 rounded-lg px-3 py-2.5 text-sm font-mono text-white placeholder-white/30 focus:outline-none uppercase">
-        <button 
-          onclick="submitManualBarcode()" 
-          class="bg-[#244732] hover:bg-[#346647] text-white px-4 py-2.5 rounded-lg text-xs font-mono font-bold transition">
-          ОК
-        </button>
-      </div>
-
-      <!-- Quick Simulated Scan Actions (For on-screen evaluation) -->
-      <div class="mt-2 grid grid-cols-4 gap-1.5 text-center">
-        <label class="bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 text-sky-300 py-1.5 rounded text-[11px] font-mono flex items-center justify-center gap-1 cursor-pointer">
-          <input type="file" id="marker-camera-file" accept="image/*" capture="environment" class="hidden" onchange="handleMarkerFileScan(event)">
-          📸 Фото
-        </label>
-        <button onclick="simulateScan('CARD-33-0' + Math.floor(1000 + Math.random()*9000), 'OK')" class="bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 py-1.5 rounded text-[11px] font-mono">
-          + 33 км
-        </button>
-        <button onclick="simulateScan('CARD-50-0' + Math.floor(1000 + Math.random()*9000), 'OK')" class="bg-orange-950/60 hover:bg-orange-900 border border-orange-500/40 text-orange-300 py-1.5 rounded text-[11px] font-mono">
-          + 50 км
-        </button>
-        <button onclick="simulateScan('CARD-17-09999', 'WRONG')" class="bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 py-1.5 rounded text-[11px] font-mono">
-          ! Ошибка
-        </button>
-      </div>
-
-      <!-- Active Issued Cards & Samples Link -->
-      <div class="mt-2 flex flex-wrap items-center justify-center gap-3 text-center">
-        <button type="button" onclick="openIssuedCardsModal()" class="text-[11px] font-mono bg-[#1C3627] hover:bg-[#284D38] text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-lg font-bold transition">
-          🏷️ Активные карты участников на трассе &rarr;
-        </button>
-        <a href="registrar_terminal.html?open=cards" target="_blank" class="text-[11px] font-mono text-amber-300 hover:text-amber-200 underline">
-          Образцы карт &rarr;
-        </a>
-      </div>
-
+    <!-- CHECKPOINT SELECTOR (GET /api/v1/marker/checkpoints) -->
+    <div id="cp-selector" class="bg-[#14291D] border-2 border-[#244732] rounded-xl p-3">
+      <div class="text-xs font-mono text-white/50 text-center py-2">Загрузка контрольных пунктов…</div>
     </div>
 
-    <!-- CP SUMMARY & CAPACITY STATS -->
-    <div class="grid grid-cols-3 gap-2 text-center font-mono">
-      <div class="bg-[#14291D] border border-[#244732] p-2.5 rounded-xl">
-        <div class="text-[10px] text-white/50 uppercase">Отмечено</div>
-        <div id="stat-scanned-count" class="font-sport text-2xl sm:text-3xl text-emerald-400 font-bold">1 842</div>
+    <!-- КАМЕРА — приоритетный способ (крупная цель для массового потока) -->
+    <button
+      type="button"
+      id="btn-giant-scan"
+      onclick="openCameraScanner()"
+      class="w-full bg-[#FF542E] hover:bg-[#E0411D] active:scale-98 text-white py-5 px-4 rounded-xl flex items-center gap-4 shadow-lg transition text-left">
+      <svg class="w-10 h-10 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      <span class="flex-1">
+        <span class="block font-sport text-2xl sm:text-3xl tracking-wider leading-none">📷 СКАНИРОВАТЬ КАРТУ</span>
+        <span class="block text-[11px] font-mono text-orange-100/80 mt-1">QR-код стикера — камера телефона или веб-камера</span>
+      </span>
+      <span class="font-mono text-white/40 text-xl">&rarr;</span>
+    </button>
+
+    <!-- Ручной ввод / USB-сканер -->
+    <div>
+      <p class="text-[10px] font-mono text-white/40 uppercase tracking-wider mb-1.5">⌨ Ручной ввод — резерв (USB-сканер / клавиатура)</p>
+      <form onsubmit="event.preventDefault(); submitManualBarcode();" class="flex items-center gap-2">
+        <input
+          type="text"
+          id="manual-barcode-input"
+          inputmode="text"
+          autocomplete="off"
+          placeholder="MP2026-XXXXXXXX…"
+          class="flex-1 min-w-0 bg-[#0A140E] border border-[#244732] focus:border-amber-400 rounded-lg px-3 py-2.5 text-sm font-mono text-white placeholder-white/25 focus:outline-none uppercase tracking-wider">
+        <button type="submit" class="bg-[#244732] hover:bg-[#346647] text-white px-4 py-2.5 rounded-lg text-xs font-mono font-bold transition shrink-0">ОК</button>
+      </form>
+    </div>
+
+    <!-- SESSION STATS -->
+    <div class="grid grid-cols-4 gap-2 text-center font-mono">
+      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
+        <div class="text-[9px] text-white/50 uppercase leading-tight">Отмечено</div>
+        <div id="stat-ok" class="font-sport text-2xl sm:text-3xl text-emerald-400 font-bold">0</div>
       </div>
-      <div class="bg-[#14291D] border border-[#244732] p-2.5 rounded-xl">
-        <div class="text-[10px] text-white/50 uppercase">В очереди синхр.</div>
-        <div id="stat-queue-count" class="font-sport text-2xl sm:text-3xl text-amber-400 font-bold">38</div>
+      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
+        <div class="text-[9px] text-white/50 uppercase leading-tight">Дубли</div>
+        <div id="stat-dup" class="font-sport text-2xl sm:text-3xl text-sky-300 font-bold">0</div>
       </div>
-      <div class="bg-[#14291D] border border-[#244732] p-2.5 rounded-xl">
-        <div class="text-[10px] text-white/50 uppercase">До закрытия КП</div>
-        <div class="font-sport text-2xl sm:text-3xl text-white font-bold">3ч 15м</div>
+      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
+        <div class="text-[9px] text-white/50 uppercase leading-tight">В очереди</div>
+        <div id="stat-queue" class="font-sport text-2xl sm:text-3xl text-amber-400 font-bold">0</div>
+      </div>
+      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
+        <div class="text-[9px] text-white/50 uppercase leading-tight">Ошибки</div>
+        <div id="stat-err" class="font-sport text-2xl sm:text-3xl text-red-400 font-bold">0</div>
       </div>
     </div>
 
     <!-- RECENT SCANS LOG FEED -->
     <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3 flex-1 flex flex-col">
       <div class="flex items-center justify-between pb-2 border-b border-[#244732] mb-2">
-        <span class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider">Последние отметки на КП</span>
-        <button onclick="forceSyncQueue()" class="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-          Синхронизировать
-        </button>
+        <span class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider">Журнал отметок</span>
+        <span class="flex items-center gap-2">
+          <button onclick="clearQueue()" class="text-[10px] font-mono text-red-300 hover:underline">🗑 Очистить</button>
+          <button onclick="flushQueue(true)" class="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Отправить сейчас
+          </button>
+        </span>
       </div>
-
-      <div id="scans-log" class="space-y-1.5 overflow-y-auto max-h-48 text-xs font-mono">
-        <!-- Filled by JS -->
+      <div id="scans-log" class="space-y-1.5 overflow-y-auto max-h-56 text-xs font-mono">
+        <div class="text-white/30 text-center py-3">Пока пусто — отсканируйте первую карту</div>
       </div>
     </div>
 
-    <!-- EMERGENCY INCIDENT / SOS BUTTON (Full width, thumb-accessible) -->
+    <!-- SOS + TORCH -->
     <div class="grid grid-cols-2 gap-2 mt-auto">
-      <button 
-        onclick="openEmergencyModal()" 
+      <button
+        onclick="sosStub()"
         class="bg-red-700 hover:bg-red-600 active:scale-98 text-white py-3.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         ЧП / Медпомощь (SOS)
       </button>
-
-      <button 
-        onclick="toggleTorch()" 
-        id="torch-btn" 
+      <button
+        onclick="toggleTorch()"
+        id="torch-btn"
         class="bg-[#1C3627] hover:bg-[#284D38] border border-[#244732] text-white py-3.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition">
         <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-        Фонарик / Подсветка
+        Фонарик
       </button>
     </div>
 
   </main>
 
-  <!-- EMERGENCY SOS MODAL -->
-  <div id="sos-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
-    <div class="bg-[#14291D] border-2 border-red-500 rounded-2xl max-w-md w-full p-5 text-white shadow-2xl">
-      <div class="flex items-center justify-between pb-3 border-b border-red-500/40 mb-4">
-        <div class="flex items-center gap-2 text-red-400 font-display font-bold text-lg">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-          Экстренный сигнал в Штаб
-        </div>
-        <button onclick="closeEmergencyModal()" class="text-white/60 hover:text-white text-xl">&times;</button>
+  <!-- CAMERA MODAL -->
+  <div id="camera-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+    <div class="bg-[#14291D] border-2 border-emerald-500 rounded-2xl max-w-md w-full p-4 relative shadow-2xl flex flex-col items-center">
+      <div class="w-full flex items-center justify-between pb-2 border-b border-[#244732] mb-3">
+        <span id="camera-modal-title" class="text-xs font-mono font-bold text-emerald-400 uppercase">Сканирование камерой</span>
+        <button onclick="closeCameraScanner()" class="text-white/60 hover:text-white text-xl font-bold w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center">&times;</button>
       </div>
-
-      <div class="space-y-3 mb-5">
-        <div>
-          <label class="block text-xs font-mono text-white/70 mb-1">Тип происшествия:</label>
-          <select id="sos-type" class="w-full bg-[#0A140E] border border-[#244732] rounded-lg p-2.5 text-sm font-sans text-white focus:outline-none">
-            <option>Травма / Требуется врач / Носилки</option>
-            <option>Укус клеща (нужна первичная фиксация)</option>
-            <option>Сход участника (не может идти дальше)</option>
-            <option>Закончилась вода / Чай / Пряники на КП</option>
-            <option>Потерявшийся ребенок / Пожилой человек</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-mono text-white/70 mb-1">Номер карты участника (если есть):</label>
-          <input type="text" id="sos-card-id" placeholder="CARD-XX-XXXXX" class="w-full bg-[#0A140E] border border-[#244732] rounded-lg p-2.5 text-sm font-mono text-white focus:outline-none">
-        </div>
-
-        <div>
-          <label class="block text-xs font-mono text-white/70 mb-1">Координаты КП:</label>
-          <div class="text-xs font-mono bg-[#0A140E] p-2 rounded border border-[#244732] text-emerald-400">
-            56.84214° N, 60.68912° E (Шарташский лесопарк, родник)
-          </div>
-        </div>
+      <!-- Переключатель формата: QR или линейный штрихкод -->
+      <div class="w-full grid grid-cols-2 gap-2 mb-3 font-mono text-xs font-bold">
+        <button id="cam-mode-qr" type="button" onclick="setScanFormat('qr')" class="py-2 rounded-lg border-2 border-emerald-400 bg-emerald-600 text-white transition">QR-код</button>
+        <button id="cam-mode-barcode" type="button" onclick="setScanFormat('barcode')" class="py-2 rounded-lg border-2 border-[#244732] bg-[#1C3828] text-white/60 transition">Штрихкод CODE128</button>
       </div>
-
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="closeEmergencyModal()" class="bg-[#1C3627] hover:bg-[#284D38] py-2.5 rounded-lg text-xs font-mono font-bold">
-          Отмена
-        </button>
-        <button onclick="dispatchSOS()" class="bg-red-600 hover:bg-red-500 py-2.5 rounded-lg text-xs font-mono font-bold tracking-wider uppercase text-white shadow-lg">
-          ПЕРЕДАТЬ В ШТАБ &rarr;
-        </button>
+      <div id="camera-reader-box" class="w-full aspect-square bg-black rounded-xl overflow-hidden relative border border-[#244732] flex items-center justify-center">
+        <div id="marker-qr-reader" class="w-full h-full"></div>
       </div>
+      <div id="camera-hint" class="text-[11px] font-mono text-white/70 mt-3 text-center">
+        Наведите камеру на QR-код стикера карты
+      </div>
+      <label class="w-full bg-[#2A4D37] hover:bg-[#39694B] text-emerald-200 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2 cursor-pointer mt-2 border border-emerald-500/30">
+        <input type="file" id="marker-file-scan" accept="image/*" capture="environment" class="hidden" onchange="handleMarkerFileScan(event)">
+        📸 Снимок камерой (если видеопоток заблокирован)
+      </label>
+      <button onclick="closeCameraScanner()" class="mt-2 w-full bg-[#1C3828] hover:bg-[#284F39] text-white py-2.5 rounded-xl text-xs font-mono font-bold">
+        Закрыть камеру
+      </button>
     </div>
   </div>
-
-  <!-- BOTTOM BAR / DESKTOP SWITCHER -->
-  <footer class="bg-[#0A140E] border-t border-[#244732] px-4 py-2 flex items-center justify-between text-[11px] font-mono text-white/50">
-    <div>PWA ВЕРСИЯ 2026.4.1 • КЭШ ОФЛАЙН АКТИВЕН</div>
-    <div class="flex items-center gap-3">
-      <a href="registrar_terminal.html" class="text-emerald-400 hover:underline">&larr; Стартовый терминал</a>
-      <a href="safety_dashboard.html" class="text-[#FF542E] hover:underline">Штаб МЧС &rarr;</a>
-    </div>
-  </footer>
 
   <!-- AUDIO & SYNTHESIZER -->
   <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
+
     function playTone(freq, duration, type = 'sine') {
       try {
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -310,7 +215,7 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
-      } catch(e){}
+      } catch (e) { /* noop */ }
     }
 
     function soundSuccess() {
@@ -330,279 +235,481 @@
 
   <!-- TERMINAL CORE SCRIPT -->
   <script>
-    // F4: Persistent storage in localStorage
-    let offlineScans = JSON.parse(localStorage.getItem('mp_offline_scans') || '[]');
-    let scannedTotal = parseInt(localStorage.getItem('mp_scanned_total') || '1842');
-    let offlineQueue = offlineScans.length;
+    // --- Состояние ---
+    const QUEUE_KEY = 'mp_marker_queue';
+    const CP_KEY = 'mp_marker_cp';
+    const BATCH_SIZE = 50;          // максимум сканов в одном POST
+    const DEDUPE_MS = 60000;        // повтор того же баркода в очереди за минуту игнорируем
+    const MAX_SEND_ATTEMPTS = 2;    // после двух определённых отказов сервера отметка выбывает
 
-    const historyScans = [
-      { id: 'CARD-33-04819', time: '14:14:52', route: '33 км', status: 'OK' },
-      { id: 'CARD-33-04818', time: '14:14:38', route: '33 км', status: 'OK' },
-      { id: 'CARD-50-01920', time: '14:13:50', route: '50 км', status: 'OK' },
-      { id: 'CARD-33-04815', time: '14:12:10', route: '33 км', status: 'OK' }
-    ];
+    let checkpoints = [];
+    let activeCpId = null;
+    let queue = [];                 // { barcode, timestamp (ISO), checkpoint_id }
+    let sessionOk = 0, sessionDup = 0, sessionErr = 0;
+    let flushing = false;
+    let flushTimer = null;
+    let syncError = false;
+    let logEntries = [];            // { time, kind: 'scan'|'sync'|'error', barcode, info }
+    let torchOn = false;
 
-    // Clock
-    setInterval(() => {
+    // --- Запуск ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Эндпоинты /marker/* и /scans/* на бэкенде: роли marker, organizer, admin
+      const me = await requireAuth(['marker', 'organizer', 'admin']);
+      if (!me) return;
+
+      const roleEl = document.getElementById('operator-role');
+      if (roleEl) roleEl.textContent = me.username + ' • ' + me.role;
+
+      tickClock();
+      setInterval(tickClock, 1000);
+
+      loadQueue();
+      renderLog();
+      updateStats();
+      updateSyncBadge();
+
+      await loadCheckpoints();
+
+      flushQueue();
+      setInterval(() => flushQueue(), 20000);
+      window.addEventListener('online', () => flushQueue());
+      window.addEventListener('offline', updateSyncBadge);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) flushQueue(); });
+    });
+
+    function tickClock() {
       const d = new Date();
       document.getElementById('clock-display').textContent = d.toTimeString().substring(0, 5);
-    }, 1000);
-
-    // Initial counter sync
-    document.getElementById('stat-scanned-count').textContent = scannedTotal;
-    document.getElementById('stat-queue-count').textContent = offlineQueue;
-    document.getElementById('sync-status-text').textContent = offlineQueue > 0 ? `ОФЛАЙН (${offlineQueue} в очереди)` : `СИНХРОНИЗИРОВАНО`;
-
-    function renderLog() {
-      const container = document.getElementById('scans-log');
-      container.innerHTML = historyScans.map(item => `
-        <div class="flex items-center justify-between p-2 rounded bg-[#0D1A12] border border-[#244732]/60">
-          <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full ${item.status === 'OK' ? 'bg-emerald-400' : 'bg-red-400'}"></span>
-            <span class="font-bold text-white">${item.id}</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded ${item.route === '50 км' ? 'bg-[#FF542E]/20 text-[#FF542E]' : 'bg-blue-900/30 text-blue-300'}">${item.route}</span>
-          </div>
-          <span class="text-white/40 text-[11px]">${item.time}</span>
-        </div>
-      `).join('');
     }
-    renderLog();
 
-    function triggerHaptic(type) {
-      if ('vibrate' in navigator) {
-        if (type === 'OK') navigator.vibrate(100);
-        else if (type === 'DUP') navigator.vibrate([80, 40, 80]);
-        else navigator.vibrate([200, 100, 200]);
+    // --- Контрольные пункты (GET /api/v1/marker/checkpoints) ---
+    async function loadCheckpoints() {
+      const box = document.getElementById('cp-selector');
+      try {
+        const data = await apiRequest('/api/v1/marker/checkpoints');
+        checkpoints = data.checkpoints || [];
+      } catch (e) {
+        box.innerHTML = '<div class="text-center py-2"><div class="text-xs font-mono text-red-300 mb-2">⛔ Не удалось загрузить КП: ' + esc(e.message) + '</div><button onclick="loadCheckpoints()" class="text-[11px] font-mono bg-[#244732] hover:bg-[#346647] text-white px-3 py-1.5 rounded-lg">↻ Повторить</button></div>';
+        return;
       }
+
+      if (checkpoints.length === 0) {
+        box.innerHTML = '<div class="text-center py-2 text-xs font-mono text-amber-300">⚠ Нет назначенных контрольных пунктов.<br>Обратитесь к организатору.</div>';
+        return;
+      }
+
+      let saved = null;
+      try { saved = parseInt(localStorage.getItem(CP_KEY), 10); } catch (e) { /* noop */ }
+      activeCpId = checkpoints.some(c => c.checkpoint_id === saved) ? saved : checkpoints[0].checkpoint_id;
+      renderCpSelector();
     }
 
-    function showFeedback(type, cardId, route, message) {
-      const flash = document.getElementById('feedback-flash');
-      const icon = document.getElementById('flash-icon');
-      const title = document.getElementById('flash-title');
-      const cardEl = document.getElementById('flash-card-id');
-      const sub = document.getElementById('flash-subtext');
+    function renderCpSelector() {
+      const box = document.getElementById('cp-selector');
+      if (checkpoints.length === 1) {
+        const cp = checkpoints[0];
+        box.innerHTML = '<div class="text-center"><div class="font-sport text-xl tracking-wider text-white">КП • ' + esc(cp.name) + '</div><div class="text-[10px] font-mono text-emerald-400 mt-0.5">' + esc(cp.route_name) + (cp.address ? ' • ' + esc(cp.address) : '') + '</div></div>';
+        applyActiveCp();
+        return;
+      }
+      box.innerHTML = '<p class="text-[10px] font-mono text-white/40 uppercase tracking-wider mb-2 text-center">Выберите контрольный пункт</p>'
+        + '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'
+        + checkpoints.map(cp => `
+          <button type="button" onclick="selectCp(${cp.checkpoint_id})" data-cp="${cp.checkpoint_id}"
+            class="cp-btn text-left px-3 py-2.5 rounded-xl border-2 transition bg-[#0A140E] border-[#244732] hover:border-emerald-500">
+            <span class="block font-sport text-lg tracking-wider text-white leading-none">КП №${cp.position} • ${esc(cp.name)}</span>
+            <span class="block text-[10px] font-mono text-emerald-400 mt-1">${esc(cp.route_name)}</span>
+          </button>`).join('')
+        + '</div>';
+      applyActiveCp();
+    }
 
-      cardEl.textContent = cardId;
+    function selectCp(id) {
+      activeCpId = id;
+      try { localStorage.setItem(CP_KEY, String(id)); } catch (e) { /* noop */ }
+      renderCpSelector();
+      playTone(600, 0.06);
+    }
 
-      if (type === 'OK') {
-        flash.style.backgroundColor = '#15803d';
-        icon.className = "w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl bg-emerald-600";
-        icon.innerHTML = `<svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
-        title.textContent = "ОТМЕТКА ПРИНЯТА!";
-        sub.textContent = `Маршрут ${route} • Всего на КП: ${scannedTotal}`;
-        soundSuccess();
-        triggerHaptic('OK');
-      } else if (type === 'DUP') {
-        flash.style.backgroundColor = '#b45309';
-        icon.className = "w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl bg-amber-600";
-        icon.innerHTML = `<svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
-        title.textContent = "ПОВТОРНАЯ ОТМЕТКА!";
-        sub.textContent = message || "Участник уже был отмечен на этом КП ранее";
-        soundDuplicate();
-        triggerHaptic('DUP');
-      } else {
-        flash.style.backgroundColor = '#b91c1c';
-        icon.className = "w-24 h-24 rounded-full flex items-center justify-center text-white mb-3 shadow-2xl bg-red-600";
-        icon.innerHTML = `<svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-        title.textContent = "ОШИБКА МАРШРУТА!";
-        sub.textContent = "Маршрут 17 км не проходит через КП-03!";
+    function applyActiveCp() {
+      const cp = checkpoints.find(c => c.checkpoint_id === activeCpId);
+      if (!cp) return;
+      document.getElementById('header-cp-name').textContent = 'КП №' + cp.position + ' • ' + cp.name;
+      document.getElementById('header-cp-route').textContent = cp.route_name + (cp.address ? ' • ' + cp.address : '');
+      document.querySelectorAll('.cp-btn').forEach(btn => {
+        const mine = parseInt(btn.dataset.cp, 10) === activeCpId;
+        btn.classList.toggle('border-emerald-400', mine);
+        btn.classList.toggle('bg-emerald-900/40', mine);
+        btn.classList.toggle('border-[#244732]', !mine);
+      });
+    }
+
+    // --- Офлайн-очередь ---
+    function loadQueue() {
+      try {
+        const raw = localStorage.getItem(QUEUE_KEY);
+        queue = raw ? (JSON.parse(raw) || []) : [];
+      } catch (e) { queue = []; }
+    }
+
+    function persistQueue() {
+      try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch (e) { /* noop */ }
+    }
+
+    // Приём скана (из камеры или ручного ввода)
+    function addScan(rawBarcode) {
+      // Код сканируется как есть: в БД баркоды хранятся в смешанном регистре
+      // (MP2026-<hex строчными>), точный поиск на бэкенде регистрозависим.
+      const barcode = (rawBarcode || '').trim();
+      if (!barcode) return;
+
+      if (!activeCpId) {
         soundError();
-        triggerHaptic('ERR');
+        showFlash('red', '⛔', 'КП НЕ ВЫБРАН', barcode, 'Сначала выберите контрольный пункт');
+        return;
       }
 
-      flash.style.opacity = '0.96';
-      setTimeout(() => {
-        flash.style.opacity = '0';
-      }, 700);
-    }
-
-    function simulateScan(cardId, type) {
-      if (type === 'OK') {
-        // Check duplicate in recent
-        if (historyScans.some(s => s.id === cardId)) {
-          showFeedback('DUP', cardId, '', 'Участник уже отмечен на этом КП 2 мин назад!');
-          return;
-        }
-
-        scannedTotal++;
-        // F9: Robust route prefix detection
-        const route = cardId.startsWith('CARD-50-') ? '50 км' : (cardId.startsWith('CARD-33-') ? '33 км' : '17 км');
-        const d = new Date();
-        const timeStr = d.toTimeString().split(' ')[0];
-
-        // F4: Store in offline persistent queue
-        offlineScans.push({ card_id: cardId, timestamp: timeStr, route: route });
-        localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
-        localStorage.setItem('mp_scanned_total', scannedTotal);
-        offlineQueue = offlineScans.length;
-
-        document.getElementById('stat-scanned-count').textContent = scannedTotal;
-        document.getElementById('stat-queue-count').textContent = offlineQueue;
-        document.getElementById('sync-status-text').textContent = `СИНХРОНИЗАЦИЯ...`;
-
-        // Direct online auto-sync
-        fetch(mpApiUrl('/api/scans/batch'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cp_id: 'КП-1 (Шарташский бор)', scans: [{ card_id: cardId, timestamp: timeStr, route: route }] })
-        }).then(r => r.json()).then(res => {
-          offlineScans = offlineScans.filter(s => s.card_id !== cardId);
-          localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
-          offlineQueue = offlineScans.length;
-          document.getElementById('stat-queue-count').textContent = offlineQueue;
-          document.getElementById('sync-status-text').textContent = `СИНХРОНИЗИРОВАНО (ОНЛАЙН)`;
-        }).catch(err => {
-          document.getElementById('sync-status-text').textContent = `ОФЛАЙН (${offlineQueue} в очереди)`;
-        });
-
-        historyScans.unshift({ id: cardId, time: timeStr, route: route, status: 'OK' });
-        if (historyScans.length > 50) historyScans.pop();
-        renderLog();
-
-        showFeedback('OK', cardId, route);
-      } else {
-        showFeedback('WRONG', cardId, '17 км');
+      // На КП отмечаются только карты (MP2026-…). Номер анкеты (P2026-…)
+      // здесь ошибочен — не ставим в очередь, сразу объясняем оператору.
+      if (/^P2026/i.test(barcode)) {
+        soundDuplicate();
+        showFlash('amber', '⏳', 'ЭТО НОМЕР АНКЕТЫ', barcode, 'На КП отмечается карта (MP2026-…)');
+        addLog('error', barcode, 'отсканирован номер анкеты вместо карты');
+        renderLog(); updateStats();
+        return;
       }
+
+      const now = new Date();
+      const dupe = queue.some(q => q.barcode === barcode && (now - Date.parse(q.timestamp)) < DEDUPE_MS);
+      if (dupe) {
+        soundDuplicate();
+        showFlash('amber', '⏳', 'УЖЕ В ОЧЕРЕДИ', barcode, 'повторный скан игнорируется');
+        addLog('error', barcode, 'дубль скана — уже в очереди');
+        renderLog(); updateStats();
+        return;
+      }
+
+      queue.push({ barcode: barcode, timestamp: now.toISOString(), checkpoint_id: activeCpId });
+      persistQueue();
+      addLog('scan', barcode, 'в очереди: ' + queue.length);
+      soundSuccess();
+      showFlash('emerald', '✓', 'ОТМЕЧЕН', barcode, navigator.onLine ? 'в очереди: ' + queue.length : 'офлайн — отправим позже');
+      updateStats(); updateSyncBadge(); renderLog();
+      scheduleFlush();
     }
 
     function submitManualBarcode() {
       const input = document.getElementById('manual-barcode-input');
-      const val = input.value.trim().toUpperCase();
-      if (!val) return;
-      simulateScan(val, 'OK');
+      addScan(input.value);
       input.value = '';
+      input.focus();
     }
 
-    // R24: Enter key listener for manual barcode input
-    document.getElementById('manual-barcode-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitManualBarcode();
-    });
-
-    function forceSyncQueue() {
-      if (offlineScans.length === 0) {
-        alert("Очередь пуста. Все отметки переданы.");
-        return;
-      }
-      const indicator = document.getElementById('sync-status-indicator');
-      const syncText = document.getElementById('sync-status-text');
-      
-      syncText.textContent = "СИНХРОНИЗАЦИЯ...";
-      indicator.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40";
-
-      const batchToSend = [...offlineScans];
-      fetch(mpApiUrl('/api/scans/batch'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cp_id: 'KP-03', scans: batchToSend })
-      })
-      .then(res => res.json())
-      .then(data => {
-        // R25: Atomic deduction of synced items
-        offlineScans = offlineScans.slice(batchToSend.length);
-        localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
-        offlineQueue = offlineScans.length;
-        document.getElementById('stat-queue-count').textContent = offlineQueue;
-        syncText.textContent = "СИНХРОНИЗИРОВАНО";
-        indicator.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
-        playTone(900, 0.15);
-      })
-      .catch(err => {
-        // Fallback simulation if running without server
-        setTimeout(() => {
-          offlineScans = offlineScans.slice(batchToSend.length);
-          localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
-          offlineQueue = offlineScans.length;
-          document.getElementById('stat-queue-count').textContent = offlineQueue;
-          syncText.textContent = "СИНХРОНИЗИРОВАНО (ОФЛАЙН)";
-          indicator.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
-        }, 900);
-      });
+    // Аварийный сброс очереди (например, КП удалён на сервере)
+    function clearQueue() {
+      if (queue.length === 0) return;
+      if (!confirm('Удалить ' + queue.length + ' неотправленных отметок из очереди?')) return;
+      queue = [];
+      persistQueue();
+      updateStats();
+      updateSyncBadge();
+      playTone(300, 0.1, 'triangle');
     }
 
-    // Torch simulation
-    let torchActive = false;
-    function toggleTorch() {
-      torchActive = !torchActive;
-      const btn = document.getElementById('torch-btn');
-      if (torchActive) {
-        btn.classList.add('bg-amber-500', 'text-black', 'border-amber-300');
-        btn.classList.remove('bg-[#1C3627]', 'text-white');
-      } else {
-        btn.classList.remove('bg-amber-500', 'text-black', 'border-amber-300');
-        btn.classList.add('bg-[#1C3627]', 'text-white');
-      }
+    // Отложенная отправка (после скана — даём накопиться пачке)
+    function scheduleFlush() {
+      if (flushTimer) return;
+      flushTimer = setTimeout(() => { flushTimer = null; flushQueue(); }, 1500);
     }
 
-    // Emergency Modal
-    function openEmergencyModal() {
-      document.getElementById('sos-modal').classList.remove('hidden');
-    }
-    function closeEmergencyModal() {
-      document.getElementById('sos-modal').classList.add('hidden');
-    }
-    function dispatchSOS() {
-      const type = document.getElementById('sos-type').value;
-      const card = document.getElementById('sos-card-id').value;
-      closeEmergencyModal();
-      soundError();
+    // Отправка очереди на сервер (POST /api/v1/scans/batch)
+    async function flushQueue(force) {
+      if (flushing) return;
+      if (queue.length === 0) { updateSyncBadge(); return; }
+      if (!navigator.onLine) { updateSyncBadge(); return; }
 
-      // ЗАГЛУШКА: эндпоинт /api/v1/safety/emergency пока не реализован в бэкенде.
-      alert(`⏳ ФУНКЦИОНАЛ СКОРО БУДЕТ ДОСТУПЕН\n\nАвтоматическая передача SOS-сигнала в штаб появится после обновления бэкенда.\n\nТип: ${type}\nКарта: ${card || 'Не указана'}\n\n⚠️ Сообщите в штаб по рации!`);
-    }
+      flushing = true;
+      syncError = false;
+      updateSyncBadge();
 
-    // --- HTML5 QR / BARCODE SCANNER FOR MOBILE MARKER ---
-    let markerHtml5Qr = null;
-
-    async function toggleMarkerCamera() {
-      const btnText = document.getElementById('marker-cam-text');
-      const overlay = document.getElementById('marker-viewfinder-overlay');
-
-      const hasWebcam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-      if (!hasWebcam) {
-        // Safari iOS over HTTP restricts WebRTC camera streaming.
-        // Directly trigger native photo capture!
-        const fileInput = document.getElementById('marker-camera-file');
-        if (fileInput) fileInput.click();
-        return;
-      }
-
-      if (markerHtml5Qr && markerHtml5Qr.isScanning) {
-        try {
-          await markerHtml5Qr.stop();
-        } catch(e){}
-        btnText.textContent = 'Включить камеру смартфона';
-        if (overlay) overlay.classList.remove('opacity-20');
-        return;
-      }
+      // Группируем по КП (метка КП хранится в каждом скане) и отправляем первую группу
+      const byCp = {};
+      queue.forEach(q => { (byCp[q.checkpoint_id] = byCp[q.checkpoint_id] || []).push(q); });
+      const cpId = Object.keys(byCp)[0];
+      const batch = byCp[cpId].slice(0, BATCH_SIZE);
+      const sentKeys = new Set(batch.map(q => q.barcode + '|' + q.timestamp));
 
       try {
-        if (!markerHtml5Qr) {
-          markerHtml5Qr = new Html5Qrcode("marker-qr-reader");
-        }
-        if (overlay) overlay.classList.add('opacity-20');
-        btnText.textContent = 'Выключить камеру';
+        const resp = await apiRequest('/api/v1/scans/batch', {
+          method: 'POST',
+          body: { checkpoint_id: parseInt(cpId, 10), scans: batch.map(q => ({ barcode: q.barcode, timestamp: q.timestamp })) }
+        });
 
-        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
-        await markerHtml5Qr.start(
-          { facingMode: "environment" },
-          config,
-          (decodedText) => {
-            const cardId = decodedText.trim().toUpperCase();
-            simulateScan(cardId, 'OK');
-          },
-          (errorMessage) => {
-            // scanning loop...
+        const processed = resp.processed || 0;
+        const already = resp.already_passed || 0;
+        const errors = resp.errors || [];
+
+        // Отправленная пачка выбывает из очереди целиком: принятые и «уже прошедшие» —
+        // в счётчики, отклонённые сервером — в журнал (сервер ответил по каждому
+        // баркоду, повторять отклонённое бессмысленно).
+        queue = queue.filter(q => {
+          if (String(q.checkpoint_id) !== String(cpId)) return true;
+          return !sentKeys.has(q.barcode + '|' + q.timestamp);
+        });
+        batch.forEach(q => {
+          const err = errors.find(e2 => (e2.barcode || '').toUpperCase() === (q.barcode || '').toUpperCase());
+          if (err) {
+            sessionErr++;
+            addLog('error', q.barcode, err.error || 'отклонено сервером');
           }
-        );
-      } catch (err) {
-        console.log('Marker camera error, fallback to snapshot:', err);
-        const fileInput = document.getElementById('marker-camera-file');
-        if (fileInput) fileInput.click();
-        btnText.textContent = 'Включить камеру смартфона';
-        if (overlay) overlay.classList.remove('opacity-20');
+        });
+
+        sessionOk += processed;
+        sessionDup += already;
+        addLog('sync', null, '✓ ' + processed + ' • дубли ' + already + (errors.length ? ' • ошибок ' + errors.length : ''));
+
+        persistQueue();
+        soundSuccess();
+        if (queue.length > 0) scheduleFlush();
+      } catch (e) {
+        // Определённый отказ сервера (403/404/409/422): считаем попытку.
+        // После MAX_SEND_ATTEMPTS отметки выбывают из очереди в журнал.
+        const definitive = [403, 404, 409, 422].indexOf(e.status) !== -1;
+        if (definitive) {
+          batch.forEach(q => { q.attempts = (q.attempts || 0) + 1; });
+          const rest = [];
+          queue.forEach(q => {
+            const sent = String(q.checkpoint_id) === String(cpId) && sentKeys.has(q.barcode + '|' + q.timestamp);
+            if (sent && (q.attempts || 0) >= MAX_SEND_ATTEMPTS) {
+              sessionErr++;
+              addLog('error', q.barcode, 'не отправлено после ' + q.attempts + ' попыток: ' + e.message);
+            } else {
+              rest.push(q);
+            }
+          });
+          queue = rest;
+          persistQueue();
+        }
+        // Сеть недоступна / 5xx / 401 — очередь сохраняем: это офлайн-режим,
+        // отметки уйдут, когда связь появится.
+        syncError = true;
+        playTone(300, 0.15, 'triangle');
+        addLog('error', null, 'синхронизация: ' + e.message);
+      } finally {
+        flushing = false;
+        updateSyncBadge();
+        updateStats();
+        renderLog();
       }
     }
+
+    // --- Журнал и статистика ---
+    function addLog(kind, barcode, info) {
+      logEntries.unshift({ time: new Date(), kind: kind, barcode: barcode, info: info || '' });
+      if (logEntries.length > 60) logEntries.length = 60;
+    }
+
+    function renderLog() {
+      const box = document.getElementById('scans-log');
+      if (logEntries.length === 0) {
+        box.innerHTML = '<div class="text-white/30 text-center py-3">Пока пусто — отсканируйте первую карту</div>';
+        return;
+      }
+      box.innerHTML = logEntries.slice(0, 30).map(item => {
+        const t = item.time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (item.kind === 'scan') {
+          return '<div class="flex items-center justify-between gap-2 p-2 rounded bg-[#0A140E] border border-[#244732]/60"><span class="text-white/30 text-[10px]">' + t + '</span><span class="text-white font-bold break-all flex-1 text-center">' + esc(item.barcode) + '</span><span class="text-amber-400 text-[10px] shrink-0">⏳ ' + esc(item.info) + '</span></div>';
+        }
+        if (item.kind === 'sync') {
+          return '<div class="p-2 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-center">' + t + ' • 📤 ' + esc(item.info) + '</div>';
+        }
+        return '<div class="p-2 rounded bg-red-950/40 border border-red-500/40 text-red-300">' + (item.barcode ? '<span class="font-bold break-all">' + esc(item.barcode) + '</span> — ' : t + ' • ') + esc(item.info) + '</div>';
+      }).join('');
+    }
+
+    function updateStats() {
+      document.getElementById('stat-ok').textContent = sessionOk;
+      document.getElementById('stat-dup').textContent = sessionDup;
+      document.getElementById('stat-queue').textContent = queue.length;
+      document.getElementById('stat-err').textContent = sessionErr;
+    }
+
+    function updateSyncBadge() {
+      const badge = document.getElementById('sync-status-indicator');
+      const dot = document.getElementById('sync-dot');
+      const text = document.getElementById('sync-status-text');
+      const online = navigator.onLine;
+
+      badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold border shrink-0';
+      if (!online) {
+        badge.classList.add('bg-amber-500/20', 'text-amber-300', 'border-amber-500/40');
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+        text.textContent = 'ОФЛАЙН (' + queue.length + ' в очереди)';
+      } else if (syncError) {
+        badge.classList.add('bg-red-500/20', 'text-red-300', 'border-red-500/40');
+        dot.className = 'w-2 h-2 rounded-full bg-red-400 animate-ping';
+        text.textContent = 'ОШИБКА СВЯЗИ (' + queue.length + ')';
+      } else if (queue.length > 0) {
+        badge.classList.add('bg-sky-500/20', 'text-sky-300', 'border-sky-500/40');
+        dot.className = 'w-2 h-2 rounded-full bg-sky-400 animate-ping';
+        text.textContent = 'ОТПРАВКА (' + queue.length + ')';
+      } else {
+        badge.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.textContent = 'СИНХРОНИЗИРОВАНО';
+      }
+    }
+
+    // --- Полноэкранная вспышка результата ---
+    let flashTimer = null;
+    function showFlash(color, icon, title, barcode, subtext) {
+      const overlay = document.getElementById('feedback-flash');
+      const iconEl = document.getElementById('flash-icon');
+      const palette = {
+        emerald: 'bg-emerald-600',
+        amber: 'bg-amber-500',
+        red: 'bg-red-600'
+      };
+      iconEl.className = 'w-24 h-24 rounded-full flex items-center justify-center text-white text-5xl mb-3 shadow-2xl ' + (palette[color] || 'bg-emerald-600');
+      iconEl.textContent = icon;
+      document.getElementById('flash-title').textContent = title;
+      document.getElementById('flash-barcode').textContent = barcode || '';
+      document.getElementById('flash-subtext').textContent = subtext || '';
+
+      overlay.style.opacity = '1';
+      if (flashTimer) clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 900);
+    }
+
+    function sosStub() {
+      soundError();
+      showFlash('red', '🚨', 'SOS', 'Функционал скоро будет доступен', 'эндпоинты безопасности — в разработке');
+    }
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // --- HTML5 LIVE CAMERA SCANNER (как в регистраторе и у наборщика) ---
+    let html5QrScanner = null;
+    let currentScanFormat = 'qr'; // 'qr' | 'barcode' — переключается в окне камеры
+
+    function updateScanFormatUI() {
+      const qrBtn = document.getElementById('cam-mode-qr');
+      const bcBtn = document.getElementById('cam-mode-barcode');
+      if (!qrBtn || !bcBtn) return;
+      const activeCls = ['border-emerald-400', 'bg-emerald-600', 'text-white'];
+      const idleCls = ['border-[#244732]', 'bg-[#1C3828]', 'text-white/60'];
+      qrBtn.classList.add(...(currentScanFormat === 'qr' ? activeCls : idleCls));
+      qrBtn.classList.remove(...(currentScanFormat === 'qr' ? idleCls : activeCls));
+      bcBtn.classList.add(...(currentScanFormat === 'barcode' ? activeCls : idleCls));
+      bcBtn.classList.remove(...(currentScanFormat === 'barcode' ? idleCls : activeCls));
+    }
+
+    function setScanFormat(format) {
+      if (currentScanFormat === format) return;
+      currentScanFormat = format;
+      updateScanFormatUI();
+      updateCameraTexts();
+      const modal = document.getElementById('camera-modal');
+      if (modal && !modal.classList.contains('hidden')) {
+        restartScanner();
+      }
+    }
+
+    function buildScanConfig() {
+      const config = currentScanFormat === 'barcode'
+        ? { fps: 15, qrbox: { width: 340, height: 140 } }   // линейный код — широкая рамка
+        : { fps: 15, qrbox: { width: 260, height: 260 } };  // QR — квадрат
+      try {
+        config.formatsToSupport = [currentScanFormat === 'barcode'
+          ? Html5QrcodeSupportedFormats.CODE_128
+          : Html5QrcodeSupportedFormats.QR_CODE];
+      } catch (e) { /* старая версия библиотеки — читаем все форматы */ }
+      return config;
+    }
+
+    function updateCameraTexts() {
+      const title = document.getElementById('camera-modal-title');
+      if (title) {
+        title.textContent = currentScanFormat === 'qr'
+          ? 'Сканирование QR-кода карты'
+          : 'Сканирование штрихкода карты (CODE128)';
+      }
+      const hint = document.getElementById('camera-hint');
+      if (hint) {
+        hint.textContent = currentScanFormat === 'qr'
+          ? 'Наведите камеру на QR-код стикера карты'
+          : 'Наведите камеру на линейный штрихкод (CODE128) карты';
+      }
+    }
+
+    async function startScanning() {
+      if (!html5QrScanner) {
+        html5QrScanner = new Html5Qrcode("marker-qr-reader");
+      }
+      await html5QrScanner.start(
+        { facingMode: "environment" },
+        buildScanConfig(),
+        (decodedText) => {
+          soundSuccess();
+          closeCameraScanner();
+          addScan(decodedText);
+        },
+        () => { /* кадры без кода — норма */ }
+      );
+      updateTorchAvailability();
+    }
+
+    async function restartScanner() {
+      if (html5QrScanner) {
+        try { await html5QrScanner.stop(); } catch (e) { /* уже остановлен */ }
+        try { html5QrScanner.clear(); } catch (e) { /* noop */ }
+      }
+      try {
+        await startScanning();
+      } catch (err) {
+        console.log('Camera restart error:', err);
+      }
+    }
+
+    async function openCameraScanner() {
+      const hasWebcam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+      if (!hasWebcam) {
+        // Safari iOS по HTTP ограничивает WebRTC — сразу делаем снимок нативной камерой
+        const fileInput = document.getElementById('marker-file-scan');
+        if (fileInput) fileInput.click();
+        return;
+      }
+
+      updateCameraTexts();
+      updateScanFormatUI();
+      document.getElementById('camera-modal').classList.remove('hidden');
+
+      try {
+        await startScanning();
+      } catch (err) {
+        console.log('Camera error, fallback to snapshot:', err);
+        closeCameraScanner();
+        const fileInput = document.getElementById('marker-file-scan');
+        if (fileInput) fileInput.click();
+      }
+    }
+
+    async function closeCameraScanner() {
+      const modal = document.getElementById('camera-modal');
+      if (modal) modal.classList.add('hidden');
+      if (html5QrScanner) {
+        try { await html5QrScanner.stop(); } catch (e) { /* noop */ }
+        try { html5QrScanner.clear(); } catch (e) { /* noop */ }
+      }
+      torchOn = false;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeCameraScanner();
+    });
 
     async function downscaleImage(file, maxDimension = 1000) {
       return new Promise((resolve) => {
@@ -628,12 +735,11 @@
             ctx.drawImage(img, 0, 0, width, height);
             canvas.toBlob((blob) => {
               if (blob) {
-                const resized = new File([blob], file.name || "scan.jpg", { type: 'image/jpeg' });
-                resolve(resized);
+                resolve(new File([blob], file.name || "scan.jpg", { type: 'image/jpeg' }));
               } else {
                 resolve(file);
               }
-            }, 'image/jpeg', 0.92);
+            }, 'image/jpeg', 0.9);
           };
           img.onerror = () => resolve(file);
           img.src = e.target.result;
@@ -643,98 +749,52 @@
       });
     }
 
-    async function openIssuedCardsModal() {
-      const modal = document.getElementById('issued-cards-modal');
-      const list = document.getElementById('issued-cards-list');
-      if (!modal || !list) return;
-      modal.classList.remove('hidden');
-      list.innerHTML = '<div class="text-center text-xs font-mono text-white/60 py-6">Загрузка выданных карт с сервера...</div>';
-
-      try {
-        const resp = await fetch(mpApiUrl('/api/participants'));
-        const data = await resp.json();
-        const active = (data.participants || []).filter(p => p.card_id);
-        if (active.length === 0) {
-          list.innerHTML = '<div class="text-center text-xs font-mono text-amber-300 py-6">На трассе пока нет выданных карт.<br>Сначала выдайте карту участнику в Стартовом терминале!</div>';
-          return;
-        }
-
-        list.innerHTML = active.map((p, idx) => `
-          <div class="bg-[#0A140E] border border-[#244732] rounded-xl p-3 flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-2 text-xs">
-              <div>
-                <div class="font-bold text-white">${p.fio}</div>
-                <div class="text-[11px] font-mono text-emerald-400">${p.route} • ${p.id}</div>
-              </div>
-              <button type="button" onclick="scanFromIssuedModal('${p.card_id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-[11px] rounded-lg shrink-0">
-                Отметить на КП &rarr;
-              </button>
-            </div>
-            <div class="bg-white rounded-lg p-2 flex items-center justify-around gap-2">
-              <svg id="active-bc-${idx}"></svg>
-              <div id="active-qr-${idx}" class="w-[64px] h-[64px] flex items-center justify-center"></div>
-            </div>
-          </div>
-        `).join('');
-
-        active.forEach((p, idx) => {
-          if (typeof JsBarcode !== 'undefined') {
-            try {
-              JsBarcode(`#active-bc-${idx}`, p.card_id, { format: 'CODE128', width: 1.4, height: 38, displayValue: true, fontSize: 10 });
-            } catch(_) {}
-          }
-          const qrBox = document.getElementById(`active-qr-${idx}`);
-          if (qrBox && typeof QRCode !== 'undefined') {
-            qrBox.innerHTML = '';
-            new QRCode(qrBox, { text: p.card_id, width: 64, height: 64, correctLevel: QRCode.CorrectLevel.M });
-          }
-        });
-      } catch (e) {
-        list.innerHTML = '<div class="text-center text-xs font-mono text-red-400 py-6">Ошибка загрузки списка карт с сервера.</div>';
-      }
-    }
-
-    function closeIssuedCardsModal() {
-      const modal = document.getElementById('issued-cards-modal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function scanFromIssuedModal(cardId) {
-      closeIssuedCardsModal();
-      simulateScan(cardId, 'OK');
-    }
-
     async function handleMarkerFileScan(event) {
       const file = event.target.files[0];
       if (!file) return;
       try {
-        if (!markerHtml5Qr) {
-          markerHtml5Qr = new Html5Qrcode("marker-qr-reader");
+        if (!html5QrScanner) {
+          html5QrScanner = new Html5Qrcode("marker-qr-reader");
         }
         const processedFile = await downscaleImage(file, 1000);
-        const decodedText = await markerHtml5Qr.scanFile(processedFile, false);
-        const cardId = decodedText.trim().toUpperCase();
-        simulateScan(cardId, 'OK');
+        const decodedText = await html5QrScanner.scanFile(processedFile, false);
+        addScan(decodedText);
       } catch (err) {
-        alert('Не удалось распознать штрихкод на снимке: ' + (err.message || err));
+        alert('Не удалось распознать код на снимке: ' + (err.message || err) + '\n\nСовет: держите камеру ближе к коду и снимайте при ровном свете.');
       } finally {
         event.target.value = '';
       }
     }
+
+    // --- Фонарик (если камера поддерживает) ---
+    function updateTorchAvailability() {
+      const btn = document.getElementById('torch-btn');
+      try {
+        const caps = html5QrScanner && html5QrScanner.getRunningTrackCapabilities();
+        btn.style.display = caps && ('torch' in caps) ? '' : 'none';
+      } catch (e) {
+        btn.style.display = 'none';
+      }
+    }
+
+    async function toggleTorch() {
+      if (!html5QrScanner) {
+        alert('Сначала включите камеру кнопкой «Сканировать карту».');
+        return;
+      }
+      try {
+        const caps = html5QrScanner.getRunningTrackCapabilities();
+        if (!caps || !('torch' in caps)) {
+          alert('Фонарик не поддерживается этой камерой.');
+          return;
+        }
+        torchOn = !torchOn;
+        await html5QrScanner.applyVideoConstraints({ advanced: [{ torch: torchOn }] });
+      } catch (e) {
+        alert('Не удалось переключить фонарик: ' + (e.message || e));
+      }
+    }
   </script>
-  <!-- MODAL: ACTIVE ISSUED CARDS ON ROUTE -->
-  <div id="issued-cards-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#14291D] border-2 border-emerald-500 rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between pb-3 border-b border-[#244732] mb-3">
-        <div>
-          <h3 class="font-display font-bold text-sm text-white">Выданные карты участников</h3>
-          <p class="text-[11px] font-mono text-white/60">Наведите камеру с другого телефона или нажмите «Отметить»</p>
-        </div>
-        <button onclick="closeIssuedCardsModal()" class="text-white/60 hover:text-white text-xl font-bold w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center">&times;</button>
-      </div>
-      <div id="issued-cards-list" class="space-y-3 overflow-y-auto pr-1"></div>
-    </div>
-  </div>
 
   <!-- Universal Ecosystem Navigator -->
   <script src="ecosystem_bar.js"></script>
