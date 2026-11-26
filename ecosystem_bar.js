@@ -1,6 +1,7 @@
 /**
  * ecosystem_bar.js • Универсальный навигатор по экосистеме «Майская прогулка 2026»
- * Позволяет мгновенно переключаться между 3 контурами и 7 модулями платформы на любой странице.
+ * Позволяет мгновенно переключаться между 4 контурами и 9 модулями платформы на любой странице.
+ * Dev-инструмент: на этапе полировки скрывается за ?demo=1.
  */
 (function() {
   const currentPath = window.location.pathname.split('/').pop() || 'index.html';
@@ -43,6 +44,12 @@
         { title: 'Штаб безопасности (МЧС)', file: 'safety_dashboard.html', url: '/safety', icon: '🚨', tag: 'Safety Engine', roles: ['marker', 'organizer', 'admin'] },
         { title: 'Станция оцифровки анкет', file: 'typist_station.html', url: '/typist', icon: '📝', tag: 'Наборщик', roles: ['typist', 'organizer', 'admin'] },
         { title: 'Витрина QR и штрихкодов карт', file: 'registrar_terminal.html?open=cards', url: '/registrar?open=cards', icon: '📋', tag: 'Образцы', roles: ['registrar', 'organizer', 'admin'] }
+      ]
+    },
+    {
+      group: 'IV. ЦЕНТР УПРАВЛЕНИЯ (ORGANIZER/ADMIN)',
+      items: [
+        { title: 'Статистика, участники, маркёры, роли', file: 'control_panel.html', url: '/control', icon: '🎯', tag: 'Орг/Админ', roles: ['organizer', 'admin'] }
       ]
     }
   ];
@@ -208,7 +215,7 @@
     <div class="mp-eco-panel" id="mp-eco-panel">
       <div class="mp-eco-head">
         <span class="mp-eco-title">Экосистема Майской прогулки</span>
-        <span style="font-size: 11px; color: #64748b; font-family: monospace;" id="mp-eco-count">7 модулей</span>
+        <span style="font-size: 11px; color: #64748b; font-family: monospace;" id="mp-eco-count">9 модулей</span>
       </div>
 
       <div id="mp-eco-auth"></div>
@@ -223,7 +230,7 @@
     <button class="mp-eco-trigger" id="mp-eco-trigger" title="Переключение между модулями системы">
       <span class="mp-eco-dot"></span>
       <span>Экосистема</span>
-      <span id="mp-eco-trigger-count" style="background: #FF542E; color: white; padding: 1px 6px; border-radius: 9999px; font-size: 11px;">7</span>
+      <span id="mp-eco-trigger-count" style="background: #FF542E; color: white; padding: 1px 6px; border-radius: 9999px; font-size: 11px;">9</span>
     </button>
   `;
 
@@ -243,7 +250,8 @@
 
     html += `<div class="mp-eco-group-title">${group.group}</div>`;
     allowedItems.forEach(item => {
-      const isCurrent = (currentPath && currentPath.includes(item.file)) ||
+      // Точное совпадение с учётом query (?open=cards у витрины карт)
+      const isCurrent = (resolveUrl(item) === currentPath + window.location.search) ||
                         window.location.pathname === item.url ||
                         window.location.pathname === item.url + '/';
       html += `

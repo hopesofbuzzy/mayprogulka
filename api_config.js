@@ -64,8 +64,8 @@
     typist: 'typist_station.html',
     registrar: 'registrar_terminal.html',
     marker: 'marker_terminal.html',
-    organizer: 'index.html',      // панель организатора появится позже
-    admin: 'index.html'           // админ-панель появится позже
+    organizer: 'control_panel.html',
+    admin: 'control_panel.html'
   };
 
   // --- Хранилище токена и пользователя ---

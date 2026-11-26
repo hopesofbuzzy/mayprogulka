@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="ru" class="mp-auth-wait">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Центр управления • Майская прогулка 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api_config.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF542E',
+              'orange-hover': '#E0411D',
+              pine: '#0D1A12',
+              'pine-card': '#14291D',
+              border: '#244732'
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Onest', 'sans-serif'],
+            sport: ['"Bebas Neue"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0A140E;
+      color: #F7F8F5;
+      font-family: 'Onest', sans-serif;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    table.data th { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.45); text-align: left; padding: 8px 10px; border-bottom: 1px solid #244732; }
+    table.data td { padding: 8px 10px; border-bottom: 1px solid rgba(36,71,50,0.5); font-size: 13px; }
+    select, input { color-scheme: dark; }
+    .sys-input { background: #0A140E; border: 1px solid #244732; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 13px; font-family: 'JetBrains Mono', monospace; color: #fff; width: 100%; min-width: 0; }
+    .sys-input:focus { outline: none; border-color: #34d399; }
+    .sys-input:disabled { opacity: 0.4; }
+    .sys-btn { background: #059669; color: #fff; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 700; transition: background 0.15s; white-space: nowrap; }
+    .sys-btn:hover { background: #10b981; }
+    .sys-btn-alt { background: rgba(255,255,255,0.06); border: 1px solid #244732; color: rgba(255,255,255,0.7); padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 700; transition: all 0.15s; white-space: nowrap; }
+    .sys-btn-alt:hover { border-color: #FF542E; color: #fff; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-[#0D1A12] border-b border-[#244732] px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center gap-3 min-w-0">
+      <span class="text-2xl">🎯</span>
+      <div class="min-w-0">
+        <div class="font-sport tracking-widest text-xl sm:text-2xl text-white leading-none">ЦЕНТР УПРАВЛЕНИЯ</div>
+        <div class="text-[10px] font-mono text-emerald-400">МАЙСКАЯ ПРОГУЛКА 2026</div>
+      </div>
+    </div>
+    <div class="text-right shrink-0">
+      <div id="operator-name" class="font-mono text-sm font-bold text-white">…</div>
+      <div id="operator-role" class="text-[10px] font-mono text-amber-400"></div>
+    </div>
+  </header>
+
+  <!-- TAB BAR -->
+  <nav class="bg-[#0D1A12] border-b border-[#244732] px-2 sm:px-4 flex gap-1 overflow-x-auto">
+    <button data-tab="stats" onclick="switchTab('stats')" class="tab-btn px-3 sm:px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white border-b-2 border-transparent transition whitespace-nowrap">📊 Статистика</button>
+    <button data-tab="participants" onclick="switchTab('participants')" class="tab-btn px-3 sm:px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white border-b-2 border-transparent transition whitespace-nowrap">👥 Участники</button>
+    <button data-tab="markers" onclick="switchTab('markers')" class="tab-btn px-3 sm:px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white border-b-2 border-transparent transition whitespace-nowrap">🎽 Маркёры и КП</button>
+    <button data-tab="users" onclick="switchTab('users')" class="tab-btn px-3 sm:px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white border-b-2 border-transparent transition whitespace-nowrap">👪 Пользователи</button>
+    <button id="tab-btn-system" data-tab="system" onclick="switchTab('system')" class="tab-btn hidden px-3 sm:px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white border-b-2 border-transparent transition whitespace-nowrap">🔧 Система</button>
+  </nav>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-4">
+
+    <!-- ==================== TAB: STATS ==================== -->
+    <section id="tab-stats" class="tab-panel hidden space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-mono text-white/50">Маршрут:</label>
+          <select id="stats-route" onchange="loadStats()" class="bg-[#0A140E] border border-[#244732] rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-emerald-400">
+            <option value="">все маршруты</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="stats-updated" class="text-[10px] font-mono text-white/40"></span>
+          <button onclick="loadStats()" class="text-xs font-mono text-emerald-400 hover:text-white bg-[#1C3828] hover:bg-[#284F39] px-3 py-1.5 rounded-lg border border-[#244732] transition">↻ Обновить</button>
+        </div>
+      </div>
+
+      <!-- Totals -->
+      <div id="stats-totals" class="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono">
+        <div class="bg-[#14291D] border border-[#244732] p-3 rounded-xl text-center">
+          <div class="text-[10px] text-white/50 uppercase">Зарегистрированы</div>
+          <div id="t-registered" class="font-sport text-3xl text-white font-bold">…</div>
+        </div>
+        <div class="bg-[#14291D] border border-[#244732] p-3 rounded-xl text-center">
+          <div class="text-[10px] text-white/50 uppercase">Оплатили</div>
+          <div id="t-paid" class="font-sport text-3xl text-emerald-400 font-bold">…</div>
+        </div>
+        <div class="bg-[#14291D] border border-[#244732] p-3 rounded-xl text-center">
+          <div class="text-[10px] text-white/50 uppercase">Стартовали</div>
+          <div id="t-started" class="font-sport text-3xl text-sky-300 font-bold">…</div>
+        </div>
+        <div class="bg-[#14291D] border border-[#244732] p-3 rounded-xl text-center">
+          <div class="text-[10px] text-white/50 uppercase">На маршруте</div>
+          <div id="t-on_route" class="font-sport text-3xl text-amber-400 font-bold">…</div>
+        </div>
+        <div class="bg-[#14291D] border border-[#244732] p-3 rounded-xl text-center col-span-2 sm:col-span-1">
+          <div class="text-[10px] text-white/50 uppercase">Финишировали</div>
+          <div id="t-finished" class="font-sport text-3xl text-orange-400 font-bold">…</div>
+        </div>
+      </div>
+
+      <!-- Routes breakdown -->
+      <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+        <div class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-2">По маршрутам</div>
+        <div class="overflow-x-auto">
+          <table class="data w-full">
+            <thead><tr><th>Маршрут</th><th>Зарегистр.</th><th>Оплатили</th><th>Стартовали</th><th>На маршруте</th><th>Финишировали</th></tr></thead>
+            <tbody id="stats-routes"><tr><td colspan="6" class="text-center text-white/30">…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Checkpoints breakdown -->
+      <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+        <div class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-2">Отметки на КП</div>
+        <div class="overflow-x-auto">
+          <table class="data w-full">
+            <thead><tr><th>КП</th><th>Маршрут</th><th>Прошли</th></tr></thead>
+            <tbody id="stats-cps"><tr><td colspan="3" class="text-center text-white/30">…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB: PARTICIPANTS ==================== -->
+    <section id="tab-participants" class="tab-panel hidden space-y-3">
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <input type="text" id="p-search" placeholder="🔍 ФИО, анкета, телефон…" oninput="scheduleParticipantsReload()"
+          class="col-span-2 bg-[#0A140E] border border-[#244732] focus:border-emerald-400 rounded-lg px-3 py-2 text-sm font-mono text-white placeholder-white/25 focus:outline-none">
+        <select id="p-route" onchange="reloadParticipants()" class="bg-[#0A140E] border border-[#244732] rounded-lg px-2 py-2 text-sm font-mono text-white focus:outline-none">
+          <option value="">все маршруты</option>
+        </select>
+        <select id="p-payment" onchange="reloadParticipants()" class="bg-[#0A140E] border border-[#244732] rounded-lg px-2 py-2 text-sm font-mono text-white focus:outline-none">
+          <option value="">оплата: все</option>
+          <option value="paid">оплачен</option>
+          <option value="unpaid">не оплачен</option>
+        </select>
+        <select id="p-status" onchange="reloadParticipants()" class="bg-[#0A140E] border border-[#244732] rounded-lg px-2 py-2 text-sm font-mono text-white focus:outline-none">
+          <option value="">статус: все</option>
+          <option value="started">стартовали</option>
+          <option value="on_route">на маршруте</option>
+          <option value="finished">финишировали</option>
+          <option value="not_started">не стартовали</option>
+        </select>
+      </div>
+
+      <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+        <div class="overflow-x-auto">
+          <table class="data w-full">
+            <thead><tr><th>Участник</th><th>Маршрут</th><th>Оплата</th><th>Старт</th><th>Финиш</th><th>Карта</th><th>Телефон</th></tr></thead>
+            <tbody id="participants-body"><tr><td colspan="7" class="text-center text-white/30">…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="flex items-center justify-between mt-3 pt-2 border-t border-[#244732]">
+          <button onclick="participantsPage(-1)" id="p-prev" class="text-xs font-mono text-emerald-400 hover:text-white disabled:text-white/20 disabled:cursor-default" disabled>← назад</button>
+          <span id="p-total" class="text-[10px] font-mono text-white/40"></span>
+          <button onclick="participantsPage(1)" id="p-next" class="text-xs font-mono text-emerald-400 hover:text-white disabled:text-white/20 disabled:cursor-default" disabled>вперёд →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB: MARKERS ==================== -->
+    <section id="tab-markers" class="tab-panel hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Markers list -->
+        <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider">Маркёры</span>
+            <button onclick="loadMarkers()" class="text-[10px] font-mono text-emerald-400 hover:text-white">↻</button>
+          </div>
+          <div id="markers-list" class="space-y-1.5 max-h-96 overflow-y-auto">
+            <div class="text-white/30 text-xs font-mono text-center py-3">…</div>
+          </div>
+        </div>
+        <!-- Selected marker assignments -->
+        <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+          <div class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-2">Назначенные КП</div>
+          <div id="assignments-box" class="mb-3">
+            <div class="text-white/30 text-xs font-mono text-center py-3">Выберите маркёра слева</div>
+          </div>
+          <div id="assign-controls" class="hidden space-y-2">
+            <label class="block text-[10px] font-mono text-white/40 uppercase tracking-wider">Добавить КП</label>
+            <div class="flex gap-2">
+              <select id="assign-cp" class="flex-1 min-w-0 bg-[#0A140E] border border-[#244732] rounded-lg px-2 py-2 text-sm font-mono text-white focus:outline-none"></select>
+              <button onclick="addAssignment()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-mono font-bold transition shrink-0">+ Назначить</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="markers-status" class="hidden mt-2 rounded-lg px-3 py-2 font-mono text-xs"></div>
+    </section>
+
+    <!-- ==================== TAB: USERS ==================== -->
+    <section id="tab-users" class="tab-panel hidden space-y-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <input type="text" id="u-search" placeholder="🔍 имя или email…" oninput="scheduleUsersReload()"
+          class="col-span-2 bg-[#0A140E] border border-[#244732] focus:border-emerald-400 rounded-lg px-3 py-2 text-sm font-mono text-white placeholder-white/25 focus:outline-none">
+        <select id="u-role" onchange="reloadUsers()" class="bg-[#0A140E] border border-[#244732] rounded-lg px-2 py-2 text-sm font-mono text-white focus:outline-none">
+          <option value="">роль: все</option>
+        </select>
+        <div class="flex items-center justify-end">
+          <span id="u-total" class="text-[10px] font-mono text-white/40"></span>
+        </div>
+      </div>
+
+      <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+        <div class="overflow-x-auto">
+          <table class="data w-full">
+            <thead><tr><th>Пользователь</th><th>Email</th><th>Роль</th><th>Статус</th></tr></thead>
+            <tbody id="users-body"><tr><td colspan="4" class="text-center text-white/30">…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="flex items-center justify-between mt-3 pt-2 border-t border-[#244732]">
+          <button onclick="usersPage(-1)" id="u-prev" class="text-xs font-mono text-emerald-400 hover:text-white disabled:text-white/20 disabled:cursor-default" disabled>← назад</button>
+          <span class="text-[10px] font-mono text-white/30">смена роли применяется сразу</span>
+          <button onclick="usersPage(1)" id="u-next" class="text-xs font-mono text-emerald-400 hover:text-white disabled:text-white/20 disabled:cursor-default" disabled>вперёд →</button>
+        </div>
+      </div>
+      <div id="users-status" class="hidden rounded-lg px-3 py-2 font-mono text-xs"></div>
+    </section>
+
+    <!-- ==================== TAB: SYSTEM (только admin) ==================== -->
+    <section id="tab-system" class="tab-panel hidden space-y-4">
+
+      <!-- Маршруты -->
+      <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+        <div class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-2">🛣 Маршруты</div>
+        <div class="overflow-x-auto">
+          <table class="data w-full">
+            <thead><tr><th>ID</th><th>Название</th><th>Дистанция</th><th>Год</th><th>Активен</th><th></th></tr></thead>
+            <tbody id="sys-routes"><tr><td colspan="6" class="text-center text-white/30">…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 mt-3 pt-3 border-t border-[#244732]">
+          <input id="rt-year" type="number" value="2026" class="sys-input" placeholder="год">
+          <input id="rt-name" type="text" class="sys-input sm:col-span-2" placeholder="название">
+          <input id="rt-distance" type="number" step="0.1" class="sys-input" placeholder="км">
+          <input id="rt-desc" type="text" class="sys-input sm:col-span-2" placeholder="описание (необяз.)">
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button onclick="saveRoute()" id="rt-save-btn" class="sys-btn">+ Добавить маршрут</button>
+          <button onclick="cancelRouteEdit()" id="rt-cancel-btn" class="hidden sys-btn-alt">✕ отмена</button>
+        </div>
+      </div>
+
+      <!-- КП -->
+      <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+        <div class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-2">📍 Контрольные пункты</div>
+        <div class="overflow-x-auto">
+          <table class="data w-full">
+            <thead><tr><th>№</th><th>Название</th><th>Маршрут</th><th>Адрес / ориентир</th><th>Координаты</th><th></th></tr></thead>
+            <tbody id="sys-cps"><tr><td colspan="6" class="text-center text-white/30">…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3 pt-3 border-t border-[#244732]">
+          <select id="cp-route" class="sys-input"></select>
+          <input id="cp-name" type="text" class="sys-input" placeholder="название КП">
+          <input id="cp-address" type="text" class="sys-input" placeholder="адрес / ориентир">
+          <input id="cp-coords" type="text" class="sys-input" placeholder="координаты">
+          <input id="cp-position" type="number" class="sys-input hidden" placeholder="№ позиции">
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button onclick="saveCp()" id="cp-save-btn" class="sys-btn">+ Добавить КП</button>
+          <button onclick="cancelCpEdit()" id="cp-cancel-btn" class="hidden sys-btn-alt">✕ отмена</button>
+        </div>
+      </div>
+
+      <!-- Карты -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+          <div class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-2">🖨 Генерация карт</div>
+          <div class="flex gap-2">
+            <input id="map-amount" type="number" value="10" min="1" max="500" class="sys-input" style="max-width:110px;">
+            <button onclick="genMap(false)" class="sys-btn-alt">1 карта</button>
+            <button onclick="genMap(true)" class="sys-btn">🎪 Партия</button>
+          </div>
+          <div id="map-result" class="hidden mt-2 rounded-lg px-3 py-2 font-mono text-xs break-all"></div>
+        </div>
+        <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3">
+          <div class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-2">🔎 Карта по штрихкоду</div>
+          <div class="flex gap-2">
+            <input id="map-lookup" type="text" class="sys-input" placeholder="MP2026-…">
+            <button onclick="lookupMap()" class="sys-btn-alt">найти</button>
+          </div>
+          <div id="map-info" class="mt-2 text-xs font-mono text-white/60"></div>
+        </div>
+      </div>
+
+      <div id="sys-status" class="hidden rounded-lg px-3 py-2 font-mono text-xs"></div>
+    </section>
+
+  </main>
+
+  <footer class="bg-[#0A140E] border-t border-[#244732] px-4 py-2 text-[10px] font-mono text-white/30 text-center">
+    ЦЕНТР УПРАВЛЕНИЯ • МАЙСКАЯ ПРОГУЛКА 2026
+  </footer>
+
+  <script>
+    // --- Состояние ---
+    let me = null;
+    let routes = [];
+    let allCheckpoints = [];   // все КП (для назначения маркёрам)
+    let selectedMarkerId = null;
+    let selectedMarkerAssignments = []; // checkpoint_id текущих назначений
+    let roles = ['user', 'typist', 'registrar', 'marker', 'organizer', 'admin'];
+    let roleTitles = {}; // title с сервера: {value: 'Название'}
+    const PAGE_SIZE = 20;
+    let pOffset = 0, uOffset = 0;
+    let statsTimer = null;
+    let pReloadTimer = null, uReloadTimer = null;
+
+    const ROLE_LABELS = {
+      user: '👤 user', typist: '⌨ typist', registrar: '🎫 registrar',
+      marker: '🎽 marker', organizer: '🧭 organizer', admin: '🔧 admin'
+    };
+
+    // --- Запуск ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      me = await requireAuth(['organizer', 'admin']);
+      if (!me) return;
+      document.getElementById('operator-name').textContent = me.username;
+      document.getElementById('operator-role').textContent = me.role;
+
+      // Системная вкладка видна только администратору
+      if (me.role === 'admin') {
+        document.getElementById('tab-btn-system').classList.remove('hidden');
+      }
+
+      await loadRoutes();
+      loadStats();
+      setInterval(() => { if (!document.getElementById('tab-stats').classList.contains('hidden')) loadStats(); }, 30000);
+
+      switchTab('stats');
+    });
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // --- Вкладки ---
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const active = b.dataset.tab === tab;
+        b.classList.toggle('text-white', active);
+        b.classList.toggle('border-[#FF542E]', active);
+        b.classList.toggle('text-white/50', !active);
+        b.classList.toggle('border-transparent', !active);
+      });
+      if (tab === 'participants') reloadParticipants();
+      if (tab === 'markers') { loadMarkers(); loadCheckpoints(); }
+      if (tab === 'users') reloadUsers();
+      if (tab === 'system') loadSystem();
+    }
+
+    function showStatus(id, color, text) {
+      const el = document.getElementById(id);
+      const palette = {
+        emerald: 'bg-emerald-950/60 border border-emerald-500/50 text-emerald-300',
+        amber: 'bg-amber-950/60 border border-amber-500/50 text-amber-300',
+        red: 'bg-red-950/60 border border-red-500/50 text-red-300'
+      };
+      el.className = 'mt-2 rounded-lg px-3 py-2 font-mono text-xs ' + palette[color];
+      el.textContent = text;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 4000);
+    }
+
+    // --- Маршруты (GET /api/v1/routes — публичный) ---
+    async function loadRoutes() {
+      try {
+        const data = await apiRequest('/api/v1/routes', { auth: false });
+        routes = Array.isArray(data) ? data : (data.routes || []);
+        for (const sel of ['stats-route', 'p-route']) {
+          const el = document.getElementById(sel);
+          routes.forEach(rt => {
+            const opt = document.createElement('option');
+            opt.value = rt.id;
+            opt.textContent = rt.name + (rt.distance ? ' • ' + rt.distance + ' км' : '');
+            el.appendChild(opt);
+          });
+        }
+      } catch (e) { /* фильтр останется без маршрутов — не критично */ }
+    }
+
+    // ==================== СТАТИСТИКА ====================
+    async function loadStats() {
+      try {
+        const routeId = document.getElementById('stats-route').value;
+        const qs = routeId ? '?route_id=' + routeId : '';
+        const data = await apiRequest('/api/v1/organizer/stats' + qs);
+
+        const t = data.totals || {};
+        document.getElementById('t-registered').textContent = t.registered ?? '—';
+        document.getElementById('t-paid').textContent = t.paid ?? '—';
+        document.getElementById('t-started').textContent = t.started ?? '—';
+        document.getElementById('t-on_route').textContent = t.on_route ?? '—';
+        document.getElementById('t-finished').textContent = t.finished ?? '—';
+
+        document.getElementById('stats-routes').innerHTML = (data.routes || []).map(rt => `
+          <tr>
+            <td class="font-bold text-white">${esc(rt.route_name)}</td>
+            <td>${rt.registered}</td><td class="text-emerald-300">${rt.paid}</td>
+            <td class="text-sky-300">${rt.started}</td><td class="text-amber-300">${rt.on_route}</td>
+            <td class="text-orange-300">${rt.finished}</td>
+          </tr>`).join('') || '<tr><td colspan="6" class="text-center text-white/30">нет данных</td></tr>';
+
+        document.getElementById('stats-cps').innerHTML = (data.checkpoints || []).map(cp => `
+          <tr>
+            <td class="font-bold text-white">КП №${cp.position} • ${esc(cp.name)}</td>
+            <td class="text-white/60">${esc(cp.route_name)}</td>
+            <td class="text-emerald-300 font-bold">${cp.passed}</td>
+          </tr>`).join('') || '<tr><td colspan="3" class="text-center text-white/30">нет данных</td></tr>';
+
+        document.getElementById('stats-updated').textContent = 'обновлено ' + new Date().toLocaleTimeString('ru-RU');
+      } catch (e) {
+        document.getElementById('stats-updated').textContent = '⛔ ' + e.message;
+      }
+    }
+
+    // ==================== УЧАСТНИКИ ====================
+    function scheduleParticipantsReload() {
+      clearTimeout(pReloadTimer);
+      pReloadTimer = setTimeout(reloadParticipants, 400);
+    }
+
+    function reloadParticipants() { pOffset = 0; loadParticipants(); }
+
+    function participantsPage(dir) {
+      pOffset = Math.max(0, pOffset + dir * PAGE_SIZE);
+      loadParticipants();
+    }
+
+    async function loadParticipants() {
+      const body = document.getElementById('participants-body');
+      try {
+        const params = new URLSearchParams({ limit: PAGE_SIZE, offset: pOffset });
+        const search = document.getElementById('p-search').value.trim();
+        const routeId = document.getElementById('p-route').value;
+        const payment = document.getElementById('p-payment').value;
+        const status = document.getElementById('p-status').value;
+        if (search) params.set('search', search);
+        if (routeId) params.set('route_id', routeId);
+        if (payment) params.set('payment_status', payment);
+        if (status === 'started') params.set('has_started', 'true');
+        if (status === 'not_started') params.set('has_started', 'false');
+        if (status === 'finished') params.set('has_finished', 'true');
+        if (status === 'on_route') { params.set('has_started', 'true'); params.set('has_finished', 'false'); }
+
+        const data = await apiRequest('/api/v1/organizer/participants?' + params.toString());
+        const items = data.participants || [];
+
+        body.innerHTML = items.map(p => `
+          <tr>
+            <td><span class="font-bold text-white">${esc(p.surname)} ${esc(p.name)}${p.middle_name ? ' ' + esc(p.middle_name) : ''}</span><br><span class="text-[10px] font-mono text-white/40">${esc(p.form_id)}</span></td>
+            <td class="text-white/70">${esc(p.route_name)}</td>
+            <td>${p.payment_status === 'paid' ? '<span class="text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">оплачен</span>' : '<span class="text-[10px] font-mono font-bold bg-red-950 text-red-300 border border-red-500/40 px-2 py-0.5 rounded-full">не оплачен</span>'}</td>
+            <td>${p.has_started ? '✅' : '—'}</td>
+            <td>${p.has_finished ? '🏁' : '—'}</td>
+            <td class="font-mono text-[11px] text-amber-300">${esc(p.map_barcode || '—')}</td>
+            <td class="font-mono text-[11px] text-white/60">${esc(p.phone_number || '—')}</td>
+          </tr>`).join('') || '<tr><td colspan="7" class="text-center text-white/30 py-4">Ничего не найдено</td></tr>';
+
+        const total = data.total ?? items.length;
+        document.getElementById('p-total').textContent = total + ' всего • показано ' + (pOffset + 1) + '–' + (pOffset + items.length);
+        document.getElementById('p-prev').disabled = pOffset === 0;
+        document.getElementById('p-next').disabled = pOffset + PAGE_SIZE >= total;
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="7" class="text-center text-red-300 py-4">⛔ ' + esc(e.message) + '</td></tr>';
+      }
+    }
+
+    // ==================== МАРКЁРЫ И КП ====================
+    async function loadCheckpoints() {
+      try {
+        const data = await apiRequest('/api/v1/marker/checkpoints');
+        allCheckpoints = data.checkpoints || [];
+        const sel = document.getElementById('assign-cp');
+        sel.innerHTML = allCheckpoints.map(cp =>
+          '<option value="' + cp.checkpoint_id + '">КП №' + cp.position + ' • ' + esc(cp.name) + ' (' + esc(cp.route_name) + ')</option>'
+        ).join('');
+      } catch (e) { /* dropdown останется пустым */ }
+    }
+
+    async function loadMarkers() {
+      const box = document.getElementById('markers-list');
+      try {
+        const data = await apiRequest('/api/v1/organizer/markers');
+        const markers = data.markers || [];
+        if (markers.length === 0) {
+          box.innerHTML = '<div class="text-white/30 text-xs font-mono text-center py-3">Маркёров нет — назначьте роль marker на вкладке «Пользователи»</div>';
+          return;
+        }
+        box.innerHTML = markers.map(m => `
+          <button type="button" onclick="selectMarker(${m.user_id})" data-marker="${m.user_id}"
+            class="marker-btn w-full text-left px-3 py-2 rounded-lg border transition bg-[#0A140E] border-[#244732] hover:border-emerald-500 flex items-center justify-between gap-2">
+            <span class="min-w-0">
+              <span class="block text-sm font-bold text-white truncate">${esc(m.username)}</span>
+              <span class="block text-[10px] font-mono text-white/40 truncate">${esc(m.email || '')}</span>
+            </span>
+            <span class="shrink-0 text-[10px] font-mono font-bold px-2 py-1 rounded-full border ${m.checkpoints_count > 0 ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40' : 'bg-stone-900 text-white/40 border-[#244732]'}">${m.checkpoints_count} КП</span>
+          </button>`).join('');
+        if (selectedMarkerId && markers.some(m => m.user_id === selectedMarkerId)) {
+          selectMarker(selectedMarkerId);
+        } else {
+          selectedMarkerId = null;
+          document.getElementById('assignments-box').innerHTML = '<div class="text-white/30 text-xs font-mono text-center py-3">Выберите маркёра слева</div>';
+          document.getElementById('assign-controls').classList.add('hidden');
+        }
+      } catch (e) {
+        box.innerHTML = '<div class="text-red-300 text-xs font-mono text-center py-3">⛔ ' + esc(e.message) + '</div>';
+      }
+    }
+
+    async function selectMarker(userId) {
+      selectedMarkerId = userId;
+      document.querySelectorAll('.marker-btn').forEach(b => {
+        const mine = parseInt(b.dataset.marker, 10) === userId;
+        b.classList.toggle('border-emerald-400', mine);
+        b.classList.toggle('bg-emerald-900/40', mine);
+        b.classList.toggle('border-[#244732]', !mine);
+      });
+      const box = document.getElementById('assignments-box');
+      box.innerHTML = '<div class="text-white/30 text-xs font-mono text-center py-3">Загрузка…</div>';
+      try {
+        const data = await apiRequest('/api/v1/organizer/markers/' + userId + '/assignments');
+        selectedMarkerAssignments = (data.checkpoints || []).map(c => c.checkpoint_id);
+        const cps = data.checkpoints || [];
+        box.innerHTML = cps.length === 0
+          ? '<div class="text-amber-300 text-xs font-mono text-center py-3">КП не назначены</div>'
+          : cps.map(c => `
+            <div class="flex items-center justify-between gap-2 bg-[#0A140E] border border-[#244732] rounded-lg px-3 py-2 mb-1.5">
+              <span class="min-w-0"><span class="block text-sm font-bold text-white truncate">КП №${c.position} • ${esc(c.name)}</span><span class="block text-[10px] font-mono text-emerald-400">${esc(c.route_name)}</span></span>
+              <button onclick="removeAssignment(${c.checkpoint_id})" class="shrink-0 text-red-300 hover:text-red-200 text-xs font-mono font-bold px-2 py-1 rounded bg-red-950/40 border border-red-500/40">✕</button>
+            </div>`).join('');
+        document.getElementById('assign-controls').classList.remove('hidden');
+      } catch (e) {
+        box.innerHTML = '<div class="text-red-300 text-xs font-mono text-center py-3">⛔ ' + esc(e.message) + '</div>';
+      }
+    }
+
+    async function addAssignment() {
+      const sel = document.getElementById('assign-cp');
+      const cpId = parseInt(sel.value, 10);
+      if (!cpId || !selectedMarkerId) return;
+      if (selectedMarkerAssignments.includes(cpId)) {
+        showStatus('markers-status', 'amber', 'Этот КП уже назначен');
+        return;
+      }
+      try {
+        await apiRequest('/api/v1/organizer/markers/' + selectedMarkerId + '/assignments', {
+          method: 'PUT',
+          body: { checkpoint_ids: [...selectedMarkerAssignments, cpId] }
+        });
+        playOk();
+        showStatus('markers-status', 'emerald', '✓ КП назначен');
+        await selectMarker(selectedMarkerId);
+        loadMarkers();
+      } catch (e) {
+        showStatus('markers-status', 'red', '⛔ ' + e.message);
+      }
+    }
+
+    async function removeAssignment(cpId) {
+      if (!selectedMarkerId) return;
+      try {
+        await apiRequest('/api/v1/organizer/markers/' + selectedMarkerId + '/assignments', {
+          method: 'PUT',
+          body: { checkpoint_ids: selectedMarkerAssignments.filter(id => id !== cpId) }
+        });
+        playOk();
+        showStatus('markers-status', 'emerald', '✓ КП снят');
+        await selectMarker(selectedMarkerId);
+        loadMarkers();
+      } catch (e) {
+        showStatus('markers-status', 'red', '⛔ ' + e.message);
+      }
+    }
+
+    function playOk() { try { const c = new (window.AudioContext || window.webkitAudioContext)(); const o = c.createOscillator(); const g = c.createGain(); o.frequency.value = 700; g.gain.value = 0.08; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.07); } catch (e) { /* noop */ } }
+
+    // ==================== ПОЛЬЗОВАТЕЛИ ====================
+    function scheduleUsersReload() {
+      clearTimeout(uReloadTimer);
+      uReloadTimer = setTimeout(reloadUsers, 400);
+    }
+
+    function reloadUsers() { uOffset = 0; loadUsers(); }
+
+    function usersPage(dir) {
+      uOffset = Math.max(0, uOffset + dir * PAGE_SIZE);
+      loadUsers();
+    }
+
+    async function loadUsers() {
+      const body = document.getElementById('users-body');
+      try {
+        const params = new URLSearchParams({ limit: PAGE_SIZE, offset: uOffset });
+        const search = document.getElementById('u-search').value.trim();
+        const role = document.getElementById('u-role').value;
+        if (search) params.set('search', search);
+        if (role) params.set('role', role);
+
+        // Фильтр по роли наполняем при первой загрузке (список ролей — для organizer/admin)
+        const roleSel = document.getElementById('u-role');
+        if (roleSel.options.length <= 1) {
+          try {
+            const rr = await apiRequest('/api/v1/admin/users/roles');
+            if (Array.isArray(rr)) roles = rr;
+            else if (Array.isArray(rr.roles)) {
+              roles = rr.roles.map(x => (typeof x === 'string' ? x : x.value));
+              rr.roles.forEach(x => { if (typeof x === 'object' && x.value) roleTitles[x.value] = x.title; });
+            }
+          } catch (e) { /* используем дефолтный список */ }
+          roles.forEach(rr => {
+            const opt = document.createElement('option');
+            opt.value = rr;
+            opt.textContent = roleLabel(rr);
+            roleSel.appendChild(opt);
+          });
+        }
+
+        const data = await apiRequest('/api/v1/admin/users?' + params.toString());
+        const users = data.users || [];
+
+        body.innerHTML = users.map(u => `
+          <tr>
+            <td class="font-bold text-white">${esc(u.username)}</td>
+            <td class="font-mono text-[11px] text-white/60">${esc(u.email || '—')}</td>
+            <td>
+              <select onchange="changeRole(${u.id}, this.value, '${esc(u.username)}')"
+                class="bg-[#0A140E] border border-[#244732] rounded px-2 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-400">
+                ${roles.map(rr => '<option value="' + rr + '"' + (rr === u.role ? ' selected' : '') + '>' + esc(roleLabel(rr)) + '</option>').join('')}
+              </select>
+            </td>
+            <td>${u.is_active ? '<span class="text-[10px] font-mono text-emerald-300">активен</span>' : '<span class="text-[10px] font-mono text-red-300">заблокирован</span>'}${me.role === 'admin' && u.id !== me.user_id ? `<button onclick="toggleUserStatus(${u.id}, ${!u.is_active}, '${esc(u.username)}')" class="block mt-1 text-[10px] font-mono ${u.is_active ? 'text-red-300 hover:text-red-200' : 'text-emerald-400 hover:text-emerald-300'}">${u.is_active ? '🔒 заблокировать' : '🔓 разблокировать'}</button>` : (me.role === 'admin' ? '<span class="block mt-1 text-[10px] font-mono text-white/30">это вы</span>' : '')}</td>
+          </tr>`).join('') || '<tr><td colspan="4" class="text-center text-white/30 py-4">Ничего не найдено</td></tr>';
+
+        const total = data.total ?? users.length;
+        document.getElementById('u-total').textContent = total + ' всего';
+        document.getElementById('u-prev').disabled = uOffset === 0;
+        document.getElementById('u-next').disabled = uOffset + PAGE_SIZE >= total;
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="4" class="text-center text-red-300 py-4">⛔ ' + esc(e.message) + '</td></tr>';
+      }
+    }
+
+    function roleLabel(rr) {
+      return roleTitles[rr] || ROLE_LABELS[rr] || rr;
+    }
+
+    async function changeRole(userId, newRole, username) {
+      try {
+        await apiRequest('/api/v1/admin/users/' + userId + '/role', { method: 'PATCH', body: { role: newRole } });
+        showStatus('users-status', 'emerald', '✓ ' + username + ' → ' + roleLabel(newRole));
+        loadUsers();
+      } catch (e) {
+        showStatus('users-status', 'red', '⛔ ' + e.message);
+        loadUsers();
+      }
+    }
+
+    async function toggleUserStatus(userId, isActive, username) {
+      const verb = isActive ? 'разблокирован' : 'заблокирован';
+      try {
+        await apiRequest('/api/v1/admin/users/' + userId + '/status', { method: 'PATCH', body: { is_active: isActive } });
+        showStatus('users-status', 'emerald', '✓ ' + username + ' ' + verb);
+      } catch (e) {
+        showStatus('users-status', 'red', '⛔ ' + e.message);
+      }
+      loadUsers();
+    }
+
+    // ==================== СИСТЕМА (только admin) ====================
+    let sysRoutes = [];        // актуальный список маршрутов (GET /routes)
+    let sysCps = [];           // актуальный список КП (GET /marker/checkpoints)
+    let editingRouteId = null; // id маршрута в режиме правки (null = создание)
+    let editingCpId = null;    // id КП в режиме правки
+
+    function loadSystem() {
+      return Promise.all([loadSysRoutes(), loadSysCheckpoints()]);
+    }
+
+    // --- Маршруты ---
+    async function loadSysRoutes() {
+      const body = document.getElementById('sys-routes');
+      try {
+        const data = await apiRequest('/api/v1/routes', { auth: false });
+        sysRoutes = data.routes || [];
+        body.innerHTML = sysRoutes.map(rt => `
+          <tr>
+            <td class="text-white/40 font-mono">${rt.id}</td>
+            <td><span class="font-bold text-white">${esc(rt.name)}</span>${rt.description ? '<br><span class="text-[10px] text-white/40">' + esc(rt.description) + '</span>' : ''}</td>
+            <td class="font-mono">${rt.distance} км</td>
+            <td class="font-mono text-white/60">${rt.year}</td>
+            <td>${rt.is_active ? '<span class="text-[10px] font-mono text-emerald-300">да</span>' : '<span class="text-[10px] font-mono text-white/30">нет</span>'}</td>
+            <td class="whitespace-nowrap">
+              <button onclick="startRouteEdit(${rt.id})" class="text-emerald-400 hover:text-white text-xs font-mono mr-2">✎</button>
+              <button onclick="deleteRoute(${rt.id})" class="text-red-300 hover:text-red-200 text-xs font-mono">🗑</button>
+            </td>
+          </tr>`).join('') || '<tr><td colspan="6" class="text-center text-white/30 py-3">Маршрутов нет</td></tr>';
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="6" class="text-center text-red-300 py-3">⛔ ' + esc(e.message) + '</td></tr>';
+      }
+    }
+
+    function startRouteEdit(id) {
+      const rt = sysRoutes.find(r => r.id === id);
+      if (!rt) return;
+      editingRouteId = id;
+      document.getElementById('rt-year').value = rt.year;
+      document.getElementById('rt-name').value = rt.name;
+      document.getElementById('rt-distance').value = rt.distance;
+      document.getElementById('rt-desc').value = rt.description || '';
+      document.getElementById('rt-year').disabled = true; // год меняется только через пересоздание
+      document.getElementById('rt-save-btn').textContent = '✓ Сохранить';
+      document.getElementById('rt-cancel-btn').classList.remove('hidden');
+    }
+
+    function cancelRouteEdit() {
+      editingRouteId = null;
+      document.getElementById('rt-year').value = 2026;
+      document.getElementById('rt-name').value = '';
+      document.getElementById('rt-distance').value = '';
+      document.getElementById('rt-desc').value = '';
+      document.getElementById('rt-year').disabled = false;
+      document.getElementById('rt-save-btn').textContent = '+ Добавить маршрут';
+      document.getElementById('rt-cancel-btn').classList.add('hidden');
+    }
+
+    async function saveRoute() {
+      const name = document.getElementById('rt-name').value.trim();
+      const distance = parseFloat(document.getElementById('rt-distance').value);
+      const description = document.getElementById('rt-desc').value.trim();
+      if (!name || !distance) { showStatus('sys-status', 'amber', 'Заполните название и дистанцию'); return; }
+      try {
+        if (editingRouteId) {
+          await apiRequest('/api/v1/admin/routes/' + editingRouteId, { method: 'PUT', body: { name, distance, description: description || null } });
+          showStatus('sys-status', 'emerald', '✓ Маршрут обновлён');
+        } else {
+          const year = parseInt(document.getElementById('rt-year').value, 10) || 2026;
+          await apiRequest('/api/v1/admin/routes', { method: 'POST', body: { year, name, distance, description: description || null, is_active: true } });
+          showStatus('sys-status', 'emerald', '✓ Маршрут создан');
+          cancelRouteEdit();
+        }
+        await loadSysRoutes();
+        routes = sysRoutes; // обновляем селекты на других вкладках
+        rebuildRouteSelects();
+      } catch (e) {
+        showStatus('sys-status', 'red', '⛔ ' + e.message);
+      }
+    }
+
+    async function deleteRoute(id) {
+      const rt = sysRoutes.find(r => r.id === id);
+      if (!confirm('Удалить маршрут «' + (rt ? rt.name : '№' + id) + '»?')) return;
+      try {
+        await apiRequest('/api/v1/admin/routes/' + id, { method: 'DELETE' });
+        await loadSysRoutes();
+        if (sysRoutes.some(r => r.id === id)) {
+          showStatus('sys-status', 'amber', 'Сервер не удалил маршрут — вероятно, он используется');
+        } else {
+          showStatus('sys-status', 'emerald', '✓ Маршрут удалён');
+          routes = sysRoutes;
+          rebuildRouteSelects();
+        }
+      } catch (e) {
+        showStatus('sys-status', 'red', '⛔ ' + e.message);
+      }
+    }
+
+    // Обновление селектов «все маршруты» после изменений в системе
+    function rebuildRouteSelects() {
+      for (const selId of ['stats-route', 'p-route']) {
+        const el = document.getElementById(selId);
+        const current = el.value;
+        while (el.options.length > 1) el.remove(1);
+        routes.forEach(rt => {
+          const opt = document.createElement('option');
+          opt.value = rt.id;
+          opt.textContent = rt.name + (rt.distance ? ' • ' + rt.distance + ' км' : '');
+          el.appendChild(opt);
+        });
+        el.value = current;
+      }
+    }
+
+    // --- Контрольные пункты ---
+    async function loadSysCheckpoints() {
+      const body = document.getElementById('sys-cps');
+      try {
+        const data = await apiRequest('/api/v1/marker/checkpoints');
+        sysCps = data.checkpoints || [];
+        body.innerHTML = sysCps.map(c => `
+          <tr>
+            <td class="font-mono text-white/40">№${c.position}</td>
+            <td class="font-bold text-white">${esc(c.name)}</td>
+            <td class="text-white/60">${esc(c.route_name)}</td>
+            <td class="text-white/60">${esc(c.address || '—')}</td>
+            <td class="font-mono text-[11px] text-white/50">${esc(c.coordinates || '—')}</td>
+            <td class="whitespace-nowrap">
+              <button onclick="startCpEdit(${c.checkpoint_id})" class="text-emerald-400 hover:text-white text-xs font-mono mr-2">✎</button>
+              <button onclick="deleteCp(${c.checkpoint_id})" class="text-red-300 hover:text-red-200 text-xs font-mono">🗑</button>
+            </td>
+          </tr>`).join('') || '<tr><td colspan="6" class="text-center text-white/30 py-3">КП нет</td></tr>';
+        // Селект маршрутов формы создания
+        const sel = document.getElementById('cp-route');
+        const current = sel.value;
+        sel.innerHTML = (sysRoutes.length ? sysRoutes : routes).map(rt =>
+          '<option value="' + rt.id + '">' + esc(rt.name) + '</option>'
+        ).join('');
+        if ([...sel.options].some(o => o.value === current)) sel.value = current;
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="6" class="text-center text-red-300 py-3">⛔ ' + esc(e.message) + '</td></tr>';
+      }
+    }
+
+    function startCpEdit(cpId) {
+      const cp = sysCps.find(c => c.checkpoint_id === cpId);
+      if (!cp) return;
+      editingCpId = cpId;
+      document.getElementById('cp-name').value = cp.name;
+      document.getElementById('cp-address').value = cp.address || '';
+      document.getElementById('cp-coords').value = cp.coordinates || '';
+      document.getElementById('cp-position').value = cp.position;
+      document.getElementById('cp-position').classList.remove('hidden');
+      document.getElementById('cp-route').disabled = true; // маршрут КП через API не меняется
+      document.getElementById('cp-save-btn').textContent = '✓ Сохранить';
+      document.getElementById('cp-cancel-btn').classList.remove('hidden');
+    }
+
+    function cancelCpEdit() {
+      editingCpId = null;
+      document.getElementById('cp-name').value = '';
+      document.getElementById('cp-address').value = '';
+      document.getElementById('cp-coords').value = '';
+      document.getElementById('cp-position').value = '';
+      document.getElementById('cp-position').classList.add('hidden');
+      document.getElementById('cp-route').disabled = false;
+      document.getElementById('cp-save-btn').textContent = '+ Добавить КП';
+      document.getElementById('cp-cancel-btn').classList.add('hidden');
+    }
+
+    async function saveCp() {
+      const name = document.getElementById('cp-name').value.trim();
+      const address = document.getElementById('cp-address').value.trim();
+      const coordinates = document.getElementById('cp-coords').value.trim();
+      if (!name || !address || !coordinates) { showStatus('sys-status', 'amber', 'Заполните название, адрес и координаты'); return; }
+      try {
+        if (editingCpId) {
+          const body = { name, address, coordinates };
+          const position = parseInt(document.getElementById('cp-position').value, 10);
+          if (position) body.position = position;
+          const created = await apiRequest('/api/v1/admin/checkpoints/' + editingCpId, { method: 'PUT', body });
+          showStatus('sys-status', 'emerald', '✓ КП обновлён' + (created && created.barcode ? ' (' + created.barcode + ')' : ''));
+        } else {
+          const route_id = parseInt(document.getElementById('cp-route').value, 10);
+          const created = await apiRequest('/api/v1/admin/checkpoints', { method: 'POST', body: { route_id, name, address, coordinates } });
+          showStatus('sys-status', 'emerald', '✓ КП создан' + (created && created.barcode ? ' — штрихкод ' + created.barcode : ''));
+          cancelCpEdit();
+        }
+        await loadSysCheckpoints();
+      } catch (e) {
+        showStatus('sys-status', 'red', '⛔ ' + e.message);
+      }
+    }
+
+    async function deleteCp(cpId) {
+      const cp = sysCps.find(c => c.checkpoint_id === cpId);
+      if (!confirm('Удалить КП «' + (cp ? cp.name : '№' + cpId) + '»?')) return;
+      try {
+        await apiRequest('/api/v1/admin/checkpoints/' + cpId, { method: 'DELETE' });
+        await loadSysCheckpoints();
+        showStatus('sys-status', 'emerald', '✓ КП удалён');
+      } catch (e) {
+        showStatus('sys-status', 'red', '⛔ ' + e.message);
+      }
+    }
+
+    // --- Карты ---
+    async function genMap(batch) {
+      const result = document.getElementById('map-result');
+      try {
+        if (batch) {
+          const amount = parseInt(document.getElementById('map-amount').value, 10);
+          if (!amount || amount < 1) { showStatus('sys-status', 'amber', 'Укажите количество карт'); return; }
+          const d = await apiRequest('/api/v1/admin/maps/batch', { method: 'POST', body: { amount } });
+          result.className = 'mt-2 rounded-lg px-3 py-2 font-mono text-xs break-all bg-emerald-950/60 border border-emerald-500/50 text-emerald-300';
+          result.textContent = '🖨 Создано карт: ' + (d.created_count != null ? d.created_count : JSON.stringify(d));
+        } else {
+          const d = await apiRequest('/api/v1/admin/maps', { method: 'POST', body: {} });
+          result.className = 'mt-2 rounded-lg px-3 py-2 font-mono text-xs break-all bg-emerald-950/60 border border-emerald-500/50 text-emerald-300';
+          result.textContent = '🖨 Новая карта: ' + (d.barcode || JSON.stringify(d));
+        }
+        playOk();
+      } catch (e) {
+        result.className = 'mt-2 rounded-lg px-3 py-2 font-mono text-xs break-all bg-red-950/60 border border-red-500/50 text-red-300';
+        result.textContent = '⛔ ' + e.message;
+      }
+    }
+
+    async function lookupMap() {
+      const box = document.getElementById('map-info');
+      const barcode = document.getElementById('map-lookup').value.trim();
+      if (!barcode) return;
+      try {
+        const d = await apiRequest('/api/v1/admin/maps/' + encodeURIComponent(barcode));
+        if (!d.is_linked) {
+          box.innerHTML = '<span class="text-white/40">Карта существует, к участнику не привязана</span>';
+          return;
+        }
+        const fio = [d.participant_surname, d.participant_name].filter(Boolean).join(' ');
+        const flags = [];
+        if (d.has_started) flags.push('стартовал');
+        if (d.has_finished) flags.push('финишировал');
+        if (d.payment_status) flags.push(d.payment_status === 'paid' ? 'оплачен' : 'не оплачен');
+        box.innerHTML = '<span class="text-emerald-300 font-bold">' + esc(fio || 'участник') + '</span>'
+          + '<br>' + esc(d.route_name || 'маршрут не указан')
+          + (flags.length ? '<br><span class="text-white/40">' + esc(flags.join(' • ')) + '</span>' : '');
+      } catch (e) {
+        box.innerHTML = '<span class="text-red-300">⛔ ' + esc(e.message) + '</span>';
+      }
+    }
+  </script>
+
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+</body>
+</html>
