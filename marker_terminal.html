@@ -86,10 +86,13 @@
       </div>
     </div>
 
-    <!-- CP info -->
+    <!-- CP info: назначенные КП загружаются из GET /api/v1/marker/checkpoints -->
     <div class="text-center">
-      <div class="font-sport tracking-widest text-lg sm:text-xl text-white">КП-03 • РОДНИК «ПАМЯТИ»</div>
-      <div class="text-[10px] font-mono text-emerald-400">ДИСТАНЦИИ: 33 КМ / 50 КМ</div>
+      <select id="cp-select" onchange="window.selectedCheckpointId=parseInt(this.value,10)||null;localStorage.setItem('mp_selected_cp',this.value||'')"
+              class="bg-[#0D1A12] border border-[#2A4D37] rounded-lg px-2 py-1.5 font-sport tracking-wider text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-amber-500 max-w-[260px]">
+        <option value="">Загрузка КП...</option>
+      </select>
+      <div class="text-[10px] font-mono text-emerald-400 mt-1">Список ваших КП с сервера</div>
     </div>
 
     <!-- Battery & time -->
@@ -330,10 +333,60 @@
 
   <!-- TERMINAL CORE SCRIPT -->
   <script>
+    // Защита страницы: только маркёр/админ
+    if (typeof mpAuth !== 'undefined') {
+      mpAuth.requireAuth(['marker', 'admin']);
+      setInterval(() => { if (!mpAuth.isAuthenticated()) mpAuth.logout(); }, 5000);
+    }
+
     // F4: Persistent storage in localStorage
-    let offlineScans = JSON.parse(localStorage.getItem('mp_offline_scans') || '[]');
-    let scannedTotal = parseInt(localStorage.getItem('mp_scanned_total') || '1842');
+    // Офлайн-очередь хранится в формате нового API: { checkpoint_id, barcode, timestamp(ISO8601) }
+    let offlineScans = JSON.parse(localStorage.getItem('mp_offline_scans') || '[]')
+      .filter(s => s && s.barcode)
+      .map(s => ({
+        checkpoint_id: s.checkpoint_id != null ? s.checkpoint_id : (window.selectedCheckpointId || null),
+        barcode: s.barcode || s.card_id,
+        timestamp: s.timestamp || new Date().toISOString()
+      }));
+    let scannedTotal = parseInt(localStorage.getItem('mp_scanned_total') || '0');
     let offlineQueue = offlineScans.length;
+
+    // Назначенные КП (GET /api/v1/marker/checkpoints)
+    let markerCheckpoints = [];
+    window.selectedCheckpointId = parseInt(localStorage.getItem('mp_selected_cp') || '0') || null;
+
+    function renderCheckpointSelect() {
+      const sel = document.getElementById('cp-select');
+      if (!sel) return;
+      if (!markerCheckpoints.length) {
+        sel.innerHTML = '<option value="">КП не назначены — обратитесь к организатору</option>';
+        return;
+      }
+      sel.innerHTML = markerCheckpoints.map(cp =>
+        `<option value="${cp.checkpoint_id}" ${cp.checkpoint_id === window.selectedCheckpointId ? 'selected' : ''}>КП-${cp.position} • ${cp.name} (${cp.route_name})</option>`
+      ).join('');
+      if (!window.selectedCheckpointId || !markerCheckpoints.some(c => c.checkpoint_id === window.selectedCheckpointId)) {
+        window.selectedCheckpointId = markerCheckpoints[0].checkpoint_id;
+        sel.value = String(window.selectedCheckpointId);
+      }
+    }
+
+    async function loadMarkerCheckpoints() {
+      try {
+        const data = await mpApi('/marker/checkpoints');
+        markerCheckpoints = (data && data.checkpoints) || [];
+      } catch (e) {
+        console.warn('Не удалось загрузить список КП:', e);
+        markerCheckpoints = [];
+      }
+      renderCheckpointSelect();
+    }
+    loadMarkerCheckpoints();
+    setInterval(loadMarkerCheckpoints, 60000);
+
+    function currentCpInfo() {
+      return markerCheckpoints.find(c => c.checkpoint_id === window.selectedCheckpointId) || null;
+    }
 
     const historyScans = [
       { id: 'CARD-33-04819', time: '14:14:52', route: '33 км', status: 'OK' },
@@ -426,13 +479,15 @@
         }
 
         scannedTotal++;
-        // F9: Robust route prefix detection
-        const route = cardId.startsWith('CARD-50-') ? '50 км' : (cardId.startsWith('CARD-33-') ? '33 км' : '17 км');
+        // barcode не содержит информации о дистанции — маршрут определяется через КП/маршрут бэка
+        const cp = currentCpInfo();
+        const route = cp ? cp.route_name : '';
         const d = new Date();
-        const timeStr = d.toTimeString().split(' ')[0];
+        const timeStr = d.toISOString();
+        const checkpointId = window.selectedCheckpointId || (cp ? cp.checkpoint_id : null);
 
-        // F4: Store in offline persistent queue
-        offlineScans.push({ card_id: cardId, timestamp: timeStr, route: route });
+        // F4: Store in offline persistent queue (format: checkpoint_id + barcode + ISO timestamp)
+        offlineScans.push({ checkpoint_id: checkpointId, barcode: cardId, timestamp: timeStr });
         localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
         localStorage.setItem('mp_scanned_total', scannedTotal);
         offlineQueue = offlineScans.length;
@@ -441,22 +496,28 @@
         document.getElementById('stat-queue-count').textContent = offlineQueue;
         document.getElementById('sync-status-text').textContent = `СИНХРОНИЗАЦИЯ...`;
 
-        // Direct online auto-sync
-        fetch(mpApiUrl('/api/scans/batch'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cp_id: 'КП-1 (Шарташский бор)', scans: [{ card_id: cardId, timestamp: timeStr, route: route }] })
-        }).then(r => r.json()).then(res => {
-          offlineScans = offlineScans.filter(s => s.card_id !== cardId);
-          localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
-          offlineQueue = offlineScans.length;
-          document.getElementById('stat-queue-count').textContent = offlineQueue;
-          document.getElementById('sync-status-text').textContent = `СИНХРОНИЗИРОВАНО (ОНЛАЙН)`;
-        }).catch(err => {
-          document.getElementById('sync-status-text').textContent = `ОФЛАЙН (${offlineQueue} в очереди)`;
-        });
+        // Direct online auto-sync: POST /api/v1/scans/batch { checkpoint_id, scans: [{barcode, timestamp}] }
+        if (checkpointId) {
+          mpApi('/scans/batch', {
+            method: 'POST',
+            json: { checkpoint_id: checkpointId, scans: [{ barcode: cardId, timestamp: timeStr }] }
+          }).then(res => {
+            if (res && res.errors && res.errors.some(e => e.barcode === cardId)) {
+              console.warn('Сервер отклонил отметку:', res.errors);
+            }
+            offlineScans = offlineScans.filter(s => !(s.barcode === cardId && s.timestamp === timeStr));
+            localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
+            offlineQueue = offlineScans.length;
+            document.getElementById('stat-queue-count').textContent = offlineQueue;
+            document.getElementById('sync-status-text').textContent = `СИНХРОНИЗИРОВАНО (ОНЛАЙН)`;
+          }).catch(err => {
+            document.getElementById('sync-status-text').textContent = `ОФЛАЙН (${offlineQueue} в очереди)`;
+          });
+        } else {
+          document.getElementById('sync-status-text').textContent = `НЕТ КП — выберите в списке`;
+        }
 
-        historyScans.unshift({ id: cardId, time: timeStr, route: route, status: 'OK' });
+        historyScans.unshift({ id: cardId, time: d.toTimeString().split(' ')[0], route: route, status: 'OK' });
         if (historyScans.length > 50) historyScans.pop();
         renderLog();
 
@@ -491,13 +552,21 @@
       indicator.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40";
 
       const batchToSend = [...offlineScans];
-      fetch(mpApiUrl('/api/scans/batch'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cp_id: 'KP-03', scans: batchToSend })
-      })
-      .then(res => res.json())
-      .then(data => {
+      // Группируем очередь по checkpoint_id и отправляем батчами нового формата
+      const byCp = {};
+      batchToSend.forEach(s => {
+        const cpId = s.checkpoint_id || window.selectedCheckpointId;
+        if (!cpId) return;
+        (byCp[cpId] = byCp[cpId] || []).push({ barcode: s.barcode, timestamp: s.timestamp });
+      });
+      const syncPromises = Object.keys(byCp).map(cpId =>
+        mpApi('/scans/batch', {
+          method: 'POST',
+          json: { checkpoint_id: parseInt(cpId, 10), scans: byCp[cpId] }
+        })
+      );
+      Promise.all(syncPromises)
+      .then(() => {
         // R25: Atomic deduction of synced items
         offlineScans = offlineScans.slice(batchToSend.length);
         localStorage.setItem('mp_offline_scans', JSON.stringify(offlineScans));
@@ -664,9 +733,14 @@
       list.innerHTML = '<div class="text-center text-xs font-mono text-white/60 py-6">Загрузка выданных карт с сервера...</div>';
 
       try {
-        const resp = await fetch(mpApiUrl('/api/participants'));
-        const data = await resp.json();
-        const active = (data.participants || []).filter(p => p.card_id);
+        // GET /api/v1/typist/unlinked — список карт (barcode), готовых к отметкам
+        const data = await mpApi('/typist/unlinked?limit=50');
+        const active = ((data && data.maps) || []).filter(m => m.barcode).map(m => ({
+          card_id: m.barcode,
+          fio: m.participant_id ? ('Участник #' + m.participant_id) : 'Не привязана',
+          route: m.route_name || '',
+          id: m.id
+        }));
         if (active.length === 0) {
           list.innerHTML = '<div class="text-center text-xs font-mono text-amber-300 py-6">На трассе пока нет выданных карт.<br>Сначала выдайте карту участнику в Стартовом терминале!</div>';
           return;

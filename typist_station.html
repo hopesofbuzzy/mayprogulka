@@ -298,6 +298,7 @@
             <div>
               <label class="block text-white/60 mb-1 text-[11px] font-sans">Дистанция (OMR)</label>
               <select id="inp-route" class="w-full bg-[#0A140E] border border-[#244732] rounded px-3 py-2 text-white font-bold focus:border-[#FF542E] focus:outline-none">
+                <!-- Заполняется из GET /api/v1/routes (value = route_id) -->
                 <option value="10">10 км • Городской круг</option>
                 <option value="17">17 км • Шарташская кругосветка</option>
                 <option value="33" selected>33 км • В Новокольцовский</option>
@@ -475,6 +476,36 @@
       runRecognition();
     }
 
+    // Защита страницы: только наборщик/админ
+    if (typeof mpAuth !== 'undefined') {
+      mpAuth.requireAuth(['typist', 'admin']);
+      setInterval(() => { if (!mpAuth.isAuthenticated()) mpAuth.logout(); }, 5000);
+    }
+
+    // Справочник маршрутов: заполняем select #inp-route реальными route_id (GET /api/v1/routes)
+    let typistRoutes = [];
+    async function loadTypistRoutes() {
+      try {
+        const data = await mpApi('/routes');
+        typistRoutes = (data && data.routes) || [];
+        if (!typistRoutes.length) return;
+        const sel = document.getElementById('inp-route');
+        sel.innerHTML = typistRoutes.map(r =>
+          `<option value="${r.id}">${Math.round(r.distance)} км • ${r.name}</option>`
+        ).join('');
+        sel.value = String(typistRoutes[0].id);
+      } catch (e) {
+        console.warn('Маршруты с сервера не загружены, используем демо-список:', e);
+      }
+    }
+    loadTypistRoutes();
+
+    function routeIdByDistance(distStr) {
+      const d = parseInt(String(distStr).replace(/\D/g, ''), 10) || 0;
+      const match = typistRoutes.find(r => Math.round(Number(r.distance)) === d);
+      return match ? match.id : d; // fallback: значение дистанции как id (демо)
+    }
+
     // --- OCR RECOGNITION CALL (Sends to /api/ocr/recognize) ---
     async function runRecognition() {
       const beam = document.getElementById('scanning-beam');
@@ -496,7 +527,8 @@
           formData.append('preset', currentPreset);
         }
 
-        const resp = await fetch(mpApiUrl('/api/ocr/recognize'), {
+        // TODO(бэк): POST /api/v1/ocr/recognize будет реализован; пока — ручной ввод в форме
+        const resp = await fetch(mpApiUrl('/ocr/recognize'), {
           method: 'POST',
           body: formData
         });
@@ -564,10 +596,13 @@
       // Extract distance
       if (d.distance) {
         const distStr = String(d.distance);
-        if (distStr.includes('50')) document.getElementById('inp-route').value = '50';
-        else if (distStr.includes('33')) document.getElementById('inp-route').value = '33';
-        else if (distStr.includes('17') || distStr.includes('18')) document.getElementById('inp-route').value = '17';
-        else if (distStr.includes('10') || distStr.includes('15')) document.getElementById('inp-route').value = '10';
+        // Маппинг распознанной дистанции -> route_id из GET /routes
+        let mappedRid = null;
+        [[50,'50'],[33,'33'],[17,'17'],[18,'17'],[10,'10'],[15,'10']].some(([num, key]) => {
+          if (distStr.includes(key)) { mappedRid = routeIdByDistance(num); return true; }
+          return false;
+        });
+        if (mappedRid != null) document.getElementById('inp-route').value = String(mappedRid);
       }
 
       // If response includes aligned image preview
@@ -576,61 +611,49 @@
       }
     }
 
-    // --- SAVE TO UNIFIED FESTIVAL DATABASE (/api/register) ---
+    // --- SAVE PAPER FORM TO BACKEND (POST /api/v1/typist/paper-form) ---
     async function saveToDatabase() {
-      const formId = document.getElementById('inp-form-id').value.trim();
       const surname = document.getElementById('inp-surname').value.trim();
       const name = document.getElementById('inp-name').value.trim();
       const patronymic = document.getElementById('inp-patronymic').value.trim();
       const birth = document.getElementById('inp-birth').value.trim();
-      const gender = document.getElementById('inp-gender').value;
+      const genderRu = document.getElementById('inp-gender').value;
       const phone = document.getElementById('inp-phone').value.trim();
-      const city = document.getElementById('inp-city').value.trim();
-      const routeVal = document.getElementById('inp-route').value;
-      const role = document.getElementById('inp-role').value;
+      const emailInput = document.getElementById('inp-email');
+      const email = (emailInput && emailInput.value.trim()) || 'typist@mayprogulka.local';
 
-      const fio = `${surname} ${name} ${patronymic}`.trim();
+      if (!surname || !name) {
+        alert('Заполните фамилию и имя участника!');
+        return;
+      }
+      if (!birth) {
+        alert('Укажите дату рождения (поле обязательно для POST /typist/paper-form)!');
+        return;
+      }
 
+      // PaperFormRequest: route_id, surname, name, middle_name?, date_of_birth, gender, phone_number, email
       const payload = {
-        type: 'individual',
-        payerPhone: phone,
-        paid: true,
-        participants: [
-          {
-            id: formId,
-            form_id: formId,
-            fio: fio,
-            surname: surname,
-            name: name,
-            patronymic: patronymic,
-            role: role,
-            gender: gender,
-            birth: birth,
-            phone: phone,
-            city: city,
-            dist: routeVal,
-            route: `${routeVal} км`,
-            soc: 'Очная регистрация на старте'
-          }
-        ]
+        route_id: parseInt(document.getElementById('inp-route').value, 10),
+        surname: surname,
+        name: name,
+        middle_name: patronymic || null,
+        date_of_birth: /^\d{4}-\d{2}-\d{2}$/.test(birth) ? birth : '1990-01-01',
+        gender: genderRu === 'Ж' ? 'female' : 'male',
+        phone_number: phone,
+        email: email
       };
 
-      let assignedId = formId;
+      let assignedId = document.getElementById('inp-form-id').value.trim();
       try {
-        const resp = await fetch(mpApiUrl('/api/register'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (resp.ok) {
-          const res = await resp.json();
-          if (res.participants && res.participants[0]) {
-            assignedId = res.participants[0].id;
-          }
+        const res = await mpApi('/typist/paper-form', { method: 'POST', json: payload });
+        if (res && res.form_id) assignedId = res.form_id;
+        if (res && res.participant_id != null) {
+          document.getElementById('modal-form-id').dataset.participantId = res.participant_id;
         }
       } catch (err) {
         console.log('Saved locally:', err);
+        alert(`Не удалось сохранить анкету на сервере: ${err.message}\nДанные останутся в форме — повторите сохранение.`);
+        return;
       }
 
       document.getElementById('modal-form-id').textContent = assignedId;

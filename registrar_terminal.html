@@ -534,7 +534,51 @@
     };
 
     let currentParticipant = null;
-    let totalCardsIssued = 342;
+    let totalCardsIssued = 0;
+
+    // Справочник маршрутов (GET /api/v1/routes): route_id -> RouteResponse
+    const routesById = {};
+    async function ensureRoutesLoaded() {
+      try {
+        const data = await mpApi('/routes');
+        (data.routes || []).forEach(r => { routesById[r.route_id] = r; });
+      } catch (e) {
+        console.warn('Не удалось загрузить справочник маршрутов:', e);
+      }
+    }
+    ensureRoutesLoaded();
+
+    function routeColorByDistance(route) {
+      if (!route) return '#15803D';
+      const d = Math.round(Number(route.distance) || 0);
+      const colors = { 10: '#EAB308', 17: '#15803D', 33: '#1D4ED8', 50: '#C2410C' };
+      return colors[d] || '#15803D';
+    }
+
+    // Маппинг ParticipantDetail / RegistrarFormItem -> внутренняя карточка терминала
+    function mapParticipantToCard(t) {
+      const route = routesById[t.route_id] || null;
+      const distNum = route ? String(Math.round(Number(route.distance) || 0)) : '';
+      const genderRu = (t.gender === 'male' || t.gender === 'М') ? 'М' : 'Ж';
+      const birthYear = parseInt(String(t.date_of_birth || '1990').split('-')[0], 10) || 1990;
+      return {
+        participantId: t.participant_id != null ? t.participant_id : t.id,
+        formId: t.form_id,
+        fio: `${(t.surname || '').toUpperCase()} ${(t.name || '').toUpperCase()} ${(t.middle_name || '').toUpperCase()}`.trim(),
+        gender: genderRu,
+        birthYear: birthYear,
+        city: t.city || '',
+        route: distNum ? `${distNum} км` : (t.route_name || ''),
+        routeName: t.route_name || (route ? route.name : ''),
+        routeColor: routeColorByDistance(route),
+        org: `Маршрут • ${t.route_name || ''}`,
+        phone: t.phone_number || '',
+        paid: t.payment_status === 'paid',
+        card: t.map_barcode || null,
+        times: 1,
+        isGroup: false
+      };
+    }
 
     // Clock
     setInterval(() => {
@@ -556,6 +600,12 @@
 
     // Set of issued physical cards to prevent duplicate assignment (F3)
     const issuedPhysicalCards = new Set();
+
+    // Защита страницы: только регистратор/админ
+    if (typeof mpAuth !== 'undefined') {
+      mpAuth.requireAuth(['registrar', 'admin']);
+      setInterval(() => { if (!mpAuth.isAuthenticated()) mpAuth.logout(); }, 5000);
+    }
     window.resetTimer = null;
 
     // Handle Form ID Scan / Input
@@ -592,46 +642,34 @@
 
       let p = null;
 
-      // 1. Query Unified FastAPI Server first
+      // 1. Query FastAPI /api/v1 backend first
       try {
-        const resp = await fetch(mpApiUrl(`/api/participants/${encodeURIComponent(formId)}`));
-        if (resp.ok) {
-          const res = await resp.json();
-          if (res.found && res.target) {
-            const t = res.target;
-            const distNum = String(t.dist || '17');
-            const colors = { '10': '#EAB308', '17': '#15803D', '33': '#1D4ED8', '50': '#C2410C' };
-            
-            p = {
-              formId: t.id,
-              fio: t.family_name ? `${t.family_name.toUpperCase()} (${res.members.length} чел)` : t.fio.toUpperCase(),
-              gender: t.gender,
-              birthYear: parseInt((t.birth || '1990').split('-')[0]),
-              city: t.city,
-              route: t.route,
-              dist: distNum,
-              routeName: t.routeName,
-              routeColor: colors[distNum] || '#15803D',
-              org: t.family_name ? `Семейная группа • ${t.family_name}` : `${t.role || 'Участник'} • ${t.soc || ''}`,
-              phone: t.phone,
-              paid: res.order ? res.order.paid : t.paid,
-              times: 3,
-              isGroup: res.is_group,
-              members: res.members.map(m => ({
-                id: m.id,
-                name: `${m.fio} (${m.role || 'Участник'})`,
-                dist: String(m.dist || '17'),
-                route: m.route,
-                card: m.card_id
-              }))
-            };
+        if (/^\d+$/.test(formId)) {
+          // Числовой ввод — participant_id: GET /participants/{id} (ParticipantDetail)
+          const detail = await mpApi(`/participants/${encodeURIComponent(formId)}`);
+          if (detail && detail.form_id) {
+            p = mapParticipantToCard(detail);
+          }
+        } else {
+          // Иначе — поиск через GET /registrar/search?query=...
+          const res = await mpApi(`/registrar/search?query=${encodeURIComponent(formId)}&limit=5`);
+          const forms = (res && res.forms) || [];
+          if (forms.length === 1) {
+            p = mapParticipantToCard(forms[0]);
+          } else if (forms.length > 1) {
+            const choice = prompt(
+              `Найдено анкет: ${forms.length}. Введите номер участника (1-${forms.length}):\n\n` +
+              forms.map((f, i) => `${i + 1}. ${f.surname} ${f.name} • ${f.route_name} • ${f.form_id}`).join('\n')
+            );
+            const idx = parseInt(choice, 10) - 1;
+            if (forms[idx]) p = mapParticipantToCard(forms[idx]);
           }
         }
       } catch (err) {
-        console.log('Server query error, using local database:', err);
+        console.log('Server query error:', err);
       }
 
-      // 2. Fallback to local database if server unreachable
+      // 2. Fallback to local demo database if server unreachable / not found
       if (!p) {
         p = database[formId];
       }
@@ -673,7 +711,7 @@
 
       // Update recommended card box
       const recTag = document.getElementById('recommended-pack-tag');
-      recTag.textContent = `Коробка карт: ${targetDist} км (Серия CARD-${targetDist}-XXXXX)`;
+      recTag.textContent = `Коробка карт: ${targetDist} км (любой свободный штрихкод)`;
       recTag.style.backgroundColor = p.routeColor + '40';
       recTag.style.color = '#FFFFFF';
 
@@ -686,7 +724,7 @@
             ШАГ 2: ВЫДАЙТЕ КАРТУ ДЛЯ: ${targetName.toUpperCase()}
           </div>
           <p class="text-xs font-mono text-white/70">
-            Возьмите карту серии <strong>CARD-${targetDist}-XXXXX</strong> (${targetDist} км) и отсканируйте её штрихкод.
+            Возьмите свободную карту (${targetDist} км) и отсканируйте её штрихкод — серия больше не важна.
           </p>
         `;
       }
@@ -745,14 +783,18 @@
       unpaidActionBox.classList.add('hidden');
       paymentStatusBadge.className = "px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50";
       paymentStatusBadge.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ОПЛАЧЕНО (${method})`;
-      
+
+      // POST /api/v1/participants/{id}/pay  { payment_method: "card" | "sbp" | ... }
       try {
-        await fetch(mpApiUrl('/api/registrar/mark-paid'), {
+        const pm = /карт/i.test(method) ? 'card' : (/сбп|sbp/i.test(method) ? 'sbp' : (method || 'cash'));
+        await mpApi(`/participants/${currentParticipant.participantId}/pay`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lookup_id: currentParticipant.formId, method: method })
+          json: { payment_method: pm }
         });
-      } catch(e) {}
+      } catch (e) {
+        console.warn('mark-paid error:', e);
+        alert(`Не удалось отметить оплату на сервере: ${e.message}`);
+      }
 
       activateStep2();
     }
@@ -760,7 +802,7 @@
     async function linkCardToParticipant(cardId) {
       if (!cardId || !currentParticipant) return;
 
-      // F3: Guard against duplicate physical card assignment
+      // F3: Guard against duplicate physical card assignment (local session)
       if (issuedPhysicalCards.has(cardId)) {
         playErrorBuzzer();
         alert(`ОШИБКА: Карта ${cardId} уже была выдана ранее!\nНельзя выдать одну физическую карту повторно.`);
@@ -768,78 +810,29 @@
         return;
       }
 
-      // Determine target member and expected distance
-      let targetPid = currentParticipant.formId;
-      let targetDist = String(currentParticipant.dist || currentParticipant.route.replace(' км', '').trim());
-      let nextMember = null;
+      const targetFormId = currentParticipant.formId;
 
-      if (currentParticipant.isGroup && currentParticipant.members) {
-        nextMember = currentParticipant.members.find(m => !m.card);
-        if (nextMember) {
-          targetPid = nextMember.id;
-          targetDist = String(nextMember.dist || '17');
-        }
-      }
-
-      // F3: Strict route prefix validation
-      if (targetDist === '50' && !cardId.startsWith('CARD-50-')) {
-        playErrorBuzzer();
-        alert(`ОШИБКА СЕРИИ: Участник идет на 50 км!\nВыдайте карту серии CARD-50-XXXXX.`);
-        cardInput.select();
-        return;
-      }
-      if (targetDist === '33' && !cardId.startsWith('CARD-33-')) {
-        playErrorBuzzer();
-        alert(`ОШИБКА СЕРИИ: Участник идет на 33 км!\nВыдайте карту серии CARD-33-XXXXX.`);
-        cardInput.select();
-        return;
-      }
-      if (targetDist === '17' && !cardId.startsWith('CARD-17-')) {
-        playErrorBuzzer();
-        alert(`ОШИБКА СЕРИИ: Участник идет на 17 км!\nВыдайте карту серии CARD-17-XXXXX.`);
-        cardInput.select();
-        return;
-      }
-      if (targetDist === '10' && !cardId.startsWith('CARD-10-')) {
-        playErrorBuzzer();
-        alert(`ОШИБКА СЕРИИ: Участник идет на 10 км!\nВыдайте карту серии CARD-10-XXXXX.`);
-        cardInput.select();
-        return;
-      }
-
-      // Assign card
+      // Assign card locally first (optimistic), rollback on server error
       issuedPhysicalCards.add(cardId);
+      currentParticipant.card = cardId;
 
-      if (nextMember) {
-        nextMember.card = cardId;
-      } else {
-        currentParticipant.card = cardId;
-      }
-
-      // Send to FastAPI backend
+      // POST /api/v1/typist/match — связывает barcode с form_id.
+      // Префиксы CARD-XX- больше не нужны: дистанция определяется через маршрут.
       try {
-        const formData = new FormData();
-        formData.append('form_id', currentParticipant.formId);
-        formData.append('card_id', cardId);
-        formData.append('route', `${targetDist} км`);
-        formData.append('participant_id', targetPid);
-        const resp = await fetch(mpApiUrl('/api/registrar/issue-card'), { method: 'POST', body: formData });
-        if (!resp.ok) {
-          let errMsg = `Ошибка сервера (${resp.status})`;
-          try {
-            const errJson = await resp.json();
-            if (errJson.detail) errMsg = errJson.detail;
-          } catch (_) {}
-          issuedPhysicalCards.delete(cardId);
-          if (nextMember) nextMember.card = null;
-          else currentParticipant.card = null;
-          playErrorBuzzer();
-          alert(`❌ НЕ УДАЛОСЬ ПРИВЯЗАТЬ КАРТУ:\n${errMsg}\n\nСовет: используйте кнопку «⚡ Выдать свободную карту» или сгенерируйте новую в «Образцах».`);
-          cardInput.select();
-          return;
+        const res = await mpApi('/typist/match', {
+          method: 'POST',
+          json: { barcode: cardId, form_id: targetFormId }
+        });
+        if (res && res.participant_id != null) {
+          currentParticipant.participantId = res.participant_id;
         }
-      } catch(e) {
-        console.log('Offline/local card issuance:', e);
+      } catch (e) {
+        issuedPhysicalCards.delete(cardId);
+        currentParticipant.card = null;
+        playErrorBuzzer();
+        alert(`❌ НЕ УДАЛОСЬ ПРИВЯЗАТЬ КАРТУ:\n${e.message}\n\nПроверьте штрихкод карты и номер анкеты.`);
+        cardInput.select();
+        return;
       }
 
       playSuccessChime();
@@ -847,16 +840,9 @@
       document.getElementById('counter-total').textContent = totalCardsIssued;
       cardInput.value = '';
 
-      // If group still has unassigned members, continue to next member
-      if (currentParticipant.isGroup && currentParticipant.members && currentParticipant.members.some(m => !m.card)) {
-        processTicketLookup(currentParticipant.formId);
-        cardInput.focus();
-        return;
-      }
-
-      // All cards assigned: Show success overlay and reset
-      document.getElementById('success-details').textContent = 
-        `Карта ${cardId} успешно привязана! Старт зафиксирован.`;
+      // Show success overlay and reset
+      document.getElementById('success-details').textContent =
+        `Карта ${cardId} привязана к анкете ${targetFormId}. Старт зафиксирован.`;
       successOverlay.classList.remove('hidden');
       terminalBody.classList.add('flash-success');
 
