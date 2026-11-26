@@ -837,20 +837,58 @@
     }
 
     function loadDemoSmirnovs() {
-      localStorage.setItem('mp_active_order_id', 'MP2026-FAMILY');
-      currentOrderId = 'MP2026-FAMILY';
-      loadServerParticipants('MP2026-FAMILY');
+      // order_id в новом бэке отсутствует — загружаем участников текущего аккаунта
+      loadServerParticipants();
+    }
+
+    // --- Интеграция с бэкендом /api/v1 ---
+    let ROUTES_MAP = {};      // route_id -> {id, name, distance, ...}
+    let DIST_TO_ROUTE = {};   // "33" -> route_id
+
+    const PRICE_BY_DIST = { '10': 400, '17': 450, '33': 500, '50': 600 };
+
+    async function loadRoutesFromServer() {
+      try {
+        const data = await mpApi('/routes');
+        (data.routes || []).forEach(r => {
+          ROUTES_MAP[r.id] = r;
+          const distKey = String(Math.round(r.distance));
+          if (!DIST_TO_ROUTE[distKey]) DIST_TO_ROUTE[distKey] = r.id;
+        });
+      } catch (e) {
+        console.log('Не удалось загрузить маршруты с сервера:', e.message);
+      }
+    }
+
+    function resolveRouteId(distVal) {
+      return DIST_TO_ROUTE[String(distVal)] || null;
+    }
+
+    function distFromRoute(routeName, distance) {
+      const m = String(routeName || '').match(/(\d+)/);
+      if (m) return m[1];
+      return String(Math.round(distance || 17));
+    }
+
+    function normalizeGender(v) {
+      const s = String(v || '').trim().toLowerCase();
+      if (s === 'м' || s === 'male' || s === 'мужской' || s === 'мужчина') return 'male';
+      return 'female';
     }
 
     async function resetDatabaseToDefault() {
-      if (!confirm('Сбросить базу данных фестиваля к исходным демо-данным? Все созданные тесты будут очищены.')) return;
+      if (!mpAuth.hasRole('admin')) {
+        alert('Сброс базы доступен только администратору. Обратитесь в техподдержку фестиваля.');
+        return;
+      }
+      if (!confirm('Удалить данные фестиваля (доступно администратору)? Все тестовые записи будут очищены.')) return;
       try {
-        await fetch(mpApiUrl('/api/system/reset-db'), { method: 'POST' });
+        await mpApi('/system/reset-db', { method: 'POST' });
         localStorage.removeItem('mp_active_order_id');
         alert('База данных успешно сброшена к заводским настройкам.');
         window.location.reload();
       } catch(e) {
-        alert('Ошибка связи с сервером при сбросе базы.');
+        alert('Сервер не поддерживает сброс базы (/api/v1/system/reset-db): ' + e.message);
       }
     }
 
@@ -964,34 +1002,37 @@
       }
 
       const payload = {
-        type: isFamily ? 'family' : 'individual',
-        familyName: familyName,
-        payerPhone: phone,
-        payerEmail: email,
-        paid: false,
-        participants: rawMembers
+        participants: rawMembers.map(m => ({
+          surname: m.surname,
+          name: m.name,
+          middle_name: m.patronymic || null,
+          route_id: resolveRouteId(m.dist),
+          date_of_birth: m.birth || '2000-01-01',
+          gender: normalizeGender(m.gender),
+          email: m.email || 'participant@mayprogulka.ru',
+          phone_number: m.phone || '+70000000000'
+        }))
       };
 
-      try {
-        const resp = await fetch(mpApiUrl('/api/register'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+      if (payload.participants.some(p => !p.route_id)) {
+        alert('Не удалось сопоставить выбранную дистанцию с маршрутом на сервере (GET /api/v1/routes). Проверьте подключение к бэкенду.');
+        btn.disabled = false;
+        btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
+        return;
+      }
 
-        if (resp.ok) {
-          const data = await resp.json();
-          currentOrderId = data.order_id;
-          localStorage.setItem('mp_active_order_id', data.order_id);
-          closeOnboardingModal();
-          await loadServerParticipants(data.order_id);
-          openPaymentModal();
-        } else {
-          alert('Ошибка регистрации: ' + resp.statusText);
-        }
+      try {
+        const data = await mpApi('/participants/register', { method: 'POST', json: payload });
+
+        // Концепция order_id в новом бэке отсутствует — участники привязаны к аккаунту
+        currentOrderId = null;
+        localStorage.removeItem('mp_active_order_id');
+        closeOnboardingModal();
+        await loadServerParticipants();
+        openPaymentModal();
       } catch(err) {
         console.error("Registration error:", err);
-        alert('Ошибка связи с сервером при регистрации. Проверьте запуск бэкенда и настройку API_BASE_URL в api_config.js');
+        alert('Ошибка регистрации: ' + err.message + '\n\nПроверьте запуск бэкенда, вход в аккаунт и настройку API_BASE_URL в api_config.js');
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
@@ -1001,14 +1042,10 @@
     function updateHeaderInfo(order, firstMember) {
       const headerInfo = document.getElementById('user-header-info');
       if (!headerInfo) return;
-      if (order && order.type === 'family') {
-        const fName = order.familyName || 'Семейная группа';
-        headerInfo.innerHTML = `${fName} • Заказ: <strong class="text-stone-700 font-mono">${order.order_id}</strong> • Тел: ${order.payer_phone}`;
-      } else if (order) {
-        headerInfo.innerHTML = `${order.payer_name} • Заказ: <strong class="text-stone-700 font-mono">${order.order_id}</strong> • Тел: ${order.payer_phone}`;
-      } else if (firstMember) {
-        headerInfo.innerHTML = `${firstMember.name} • Заказ: <strong class="text-stone-700 font-mono">${firstMember.order_id || currentOrderId}</strong>`;
-      }
+      const uname = mpAuth.getUsername() || 'Участник';
+      const roleLabel = { user: 'Личный кабинет', typist: 'Станция наборщика', registrar: 'Терминал регистратора', marker: 'Терминал маркёра', organizer: 'Организатор', admin: 'Администратор' }[mpAuth.getRole()] || 'Личный кабинет';
+      const count = participants.length;
+      headerInfo.innerHTML = `${uname} • ${roleLabel} • Участников: <strong class="text-stone-700 font-mono">${count}</strong>${firstMember ? ' • Первый: ' + firstMember.surname : ''}`;
     }
 
     // Render Grid
@@ -1266,20 +1303,24 @@
         <span>ПРОВЕДЕНИЕ ПЛАТЕЖА СБП...</span>
       `;
 
-      try {
-        await fetch(mpApiUrl('/api/registrar/mark-paid'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lookup_id: currentOrderId || 'MP2026-FAMILY', method: 'СБП Онлайн' })
-        });
-      } catch(e) {}
+      // Оплата каждого неоплаченного участника: POST /api/v1/participants/{id}/pay
+      const unpaidP = participants.filter(p => !p.isPaid && p.participant_id);
+      let payErrors = 0;
+      for (const p of unpaidP) {
+        try {
+          await mpApi(`/participants/${p.participant_id}/pay`, { method: 'POST', json: { payment_method: 'sbp' } });
+        } catch (e) { payErrors++; console.error('Payment error:', e); }
+      }
+      if (unpaidP.length > 0 && payErrors === unpaidP.length) {
+        alert('Не удалось провести оплату через сервер. Проверьте авторизацию и статус участников.');
+      }
 
       setTimeout(async () => {
         closePaymentModal();
         btn.disabled = false;
         btn.innerHTML = `<span>🟢 Подтвердить оплату (Симуляция)</span>`;
 
-        await loadServerParticipants(currentOrderId);
+        await loadServerParticipants();
         switchTab('tickets');
         selectTicket(0);
 
@@ -1374,49 +1415,35 @@
         socLabel = 'IT-специалист';
       }
 
-      const activeOrder = currentOrderId || 'MP2026-FAMILY';
+      const routeId = resolveRouteId(routeVal);
+      if (!routeId) {
+        alert('Маршрут не найден на сервере (GET /api/v1/routes). Обновите страницу и повторите.');
+        return;
+      }
 
       try {
         const payload = {
-          order_id: activeOrder,
-          type: 'family',
-          payerPhone: phone,
-          payerEmail: email,
-          paid: false,
-          participants: [
-            {
-              fio: `${surname} ${name} ${patronymic}`.trim(),
-              surname: surname,
-              name: name,
-              patronymic: patronymic,
-              role: roleVal,
-              gender: gender,
-              birth: birth,
-              phone: phone,
-              email: email,
-              city: city,
-              dist: routeVal,
-              route: `${routeVal} км`,
-              soc: socLabel
-            }
-          ]
+          participants: [{
+            surname: surname,
+            name: name,
+            middle_name: patronymic || null,
+            route_id: routeId,
+            date_of_birth: birth || '2000-01-01',
+            gender: normalizeGender(gender),
+            email: email || 'participant@mayprogulka.ru',
+            phone_number: phone || '+70000000000'
+          }]
         };
 
-        const resp = await fetch(mpApiUrl('/api/register'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (resp.ok) {
-          closeModal();
-          await loadServerParticipants(activeOrder);
-          selectTicket(participants.length - 1);
-          alert(`Участник ${surname} ${name} успешно добавлен в заказ!\nСтатус: Ожидает оплаты.\nНажмите «Оплатить» в корзине для формирования билета.`);
-          return;
-        }
+        await mpApi('/participants/register', { method: 'POST', json: payload });
+        closeModal();
+        await loadServerParticipants();
+        selectTicket(participants.length - 1);
+        alert(`Участник ${surname} ${name} успешно зарегистрирован!\nСтатус: Ожидает оплаты.\nНажмите «Оплатить» в корзине для формирования билета.`);
+        return;
       } catch (err) {
         console.error('Error adding participant:', err);
+        alert('Ошибка регистрации участника: ' + err.message);
       }
       closeModal();
     }
@@ -1427,14 +1454,17 @@
     }
 
     async function payAll() {
-      try {
-        await fetch(mpApiUrl('/api/registrar/mark-paid'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lookup_id: currentOrderId || 'MP2026-FAMILY', method: 'СБП Онлайн' })
-        });
-      } catch(e) {}
-      await loadServerParticipants(currentOrderId);
+      const unpaidP = participants.filter(p => !p.isPaid && p.participant_id);
+      let payErrors = 0;
+      for (const p of unpaidP) {
+        try {
+          await mpApi(`/participants/${p.participant_id}/pay`, { method: 'POST', json: { payment_method: 'sbp' } });
+        } catch (e) { payErrors++; console.error('Payment error:', e); }
+      }
+      if (unpaidP.length > 0 && payErrors === unpaidP.length) {
+        alert('Не удалось провести оплату через сервер. Проверьте авторизацию и статус участников.');
+      }
+      await loadServerParticipants();
       selectTicket(activeTicketIdx);
       alert('Оплата через СБП успешно проведена и сохранена в базе!\nПерсональные QR-коды для выдачи карт на старте активны.');
     }
@@ -1507,70 +1537,96 @@
       }
     });
 
-    // Server-synchronized Order Loader
-    async function loadServerParticipants(targetOrderId = null) {
-      const activeOrder = targetOrderId || localStorage.getItem('mp_active_order_id') || 'MP2026-FAMILY';
-      currentOrderId = activeOrder;
-      localStorage.setItem('mp_active_order_id', activeOrder);
+    // Server-synchronized Loader: GET /api/v1/participants/my (свои участники аккаунта)
+    async function loadServerParticipants() {
+      if (!mpAuth.isAuthenticated()) {
+        location.href = 'login.html';
+        return false;
+      }
 
       try {
-        const resp = await fetch(mpApiUrl(`/api/participants/${encodeURIComponent(activeOrder)}`));
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.found && data.members && data.members.length > 0) {
-            currentOrderData = data.order || null;
-            updateHeaderInfo(data.order, data.members[0]);
-            
-            participants = data.members.map(p => ({
-              id: p.id,
-              order_id: p.order_id,
-              name: p.fio,
-              roleLabel: p.role,
+        const data = await mpApi('/participants/my?limit=100');
+        const list = data.participants || [];
+        if (list.length > 0) {
+          currentOrderData = null;
+          updateHeaderInfo(null, list[0]);
+
+          participants = list.map(p => {
+            const dist = distFromRoute(p.route_name, (ROUTES_MAP[p.route_id] || {}).distance);
+            const isPaid = p.payment_status === 'paid';
+            return {
+              participant_id: p.id,
+              id: p.form_id,
+              name: `${p.surname} ${p.name}${p.middle_name ? ' ' + p.middle_name : ''}`,
+              roleLabel: 'Онлайн-регистрация',
               gender: p.gender,
-              birth: p.birth,
-              phone: p.phone,
+              birth: p.date_of_birth,
+              phone: p.phone_number,
               email: p.email,
-              city: p.city,
-              dist: p.dist,
-              routeName: p.routeName,
-              soc: p.soc,
-              price: p.price,
-              isPaid: p.paid,
-              status: p.paid ? (p.card_id ? `Карта выдана (${p.card_id})` : 'Оплачен • Билет готов') : 'Ожидает оплаты ⏳'
-            }));
-            renderParticipants();
-            selectTicket(0);
-            return true;
-          }
+              city: '',
+              dist: dist,
+              routeName: p.route_name,
+              soc: 'Зарегистрирован онлайн',
+              price: PRICE_BY_DIST[dist] || 500,
+              isPaid: isPaid,
+              status: isPaid
+                ? (p.map_barcode ? `Карта выдана (${p.map_barcode})` : 'Оплачен • Билет готов')
+                : 'Ожидает оплаты ⏳'
+            };
+          });
+          renderParticipants();
+          selectTicket(0);
+          return true;
         }
       } catch(e) {
-        console.log('Error loading order from server:', e);
+        console.log('Error loading participants from server:', e);
       }
       const grid = document.getElementById('participants-grid');
       if (grid && participants.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full bg-amber-50 border border-amber-300 rounded-2xl p-6 text-center space-y-2">
-            <div class="font-unbounded font-bold text-sm text-amber-900">Бэкенд не подключён или заказ не загружен</div>
+            <div class="font-unbounded font-bold text-sm text-amber-900">Участники не загружены</div>
             <p class="text-xs text-amber-800 max-w-xl mx-auto">
-              Фронтенд ожидает ответ от <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono" id="mp-expected-endpoint">GET /api/participants/...</code>.
-              Подключите свой сервер или задайте адрес в <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono">api_config.js</code> (или через <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono">?api=http://localhost:8000</code>).
+              Фронтенд ожидает ответ от <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono" id="mp-expected-endpoint">GET /api/v1/participants/my</code>.
+              Подключите бэкенд (<code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono">?api=http://localhost:8000</code>) и зарегистрируйте участника через «Новую регистрацию».
             </p>
           </div>
         `;
         const epEl = document.getElementById('mp-expected-endpoint');
-        if (epEl) epEl.textContent = 'GET ' + mpApiUrl('/api/participants/' + encodeURIComponent(activeOrder));
+        if (epEl) epEl.textContent = 'GET ' + mpApiUrl('/participants/my');
       }
       return false;
     }
 
+    // Logout helper
+    function logoutCabinet() {
+      mpAuth.logout();
+    }
+
     // Startup lifecycle
     window.addEventListener('DOMContentLoaded', async () => {
+      // Этап 1: авторизация обязательна для всех эндпоинтов /api/v1
+      if (!mpAuth.requireAuth()) return;
+
+      // Выход из личного кабинета в шапке страницы
+      const topBar = document.querySelector('header .flex.items-center.gap-4, header div[class*="justify-between"] > div:last-child');
+      if (topBar && !document.getElementById('btn-logout-cabinet')) {
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'btn-logout-cabinet';
+        logoutBtn.className = 'inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white transition';
+        logoutBtn.innerHTML = '⎋ Выйти';
+        logoutBtn.onclick = logoutCabinet;
+        topBar.appendChild(logoutBtn);
+      }
+
       initSelectedRoute();
       const urlParams = new URLSearchParams(window.location.search);
       const isForceNew = urlParams.get('new') === '1' || urlParams.get('register') === '1';
       const hasRouteParam = urlParams.has('route');
 
-      // Load background order state so page is always fully functional
+      // Загрузка справочника маршрутов (route_id вместо строки "33 км")
+      await loadRoutesFromServer();
+      // Загрузка своих участников: GET /api/v1/participants/my
       await loadServerParticipants();
 
       // If user came to register for a route or requested new registration, open wizard
