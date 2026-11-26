@@ -6,6 +6,7 @@
   <title>Личный кабинет участника • Майская прогулка 2026</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <script src="api_config.js"></script>
+  <script>document.documentElement.classList.add('mp-auth-wait');</script>
   <script src="qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,17 +92,9 @@
 
       <!-- Quick Actions -->
       <div class="flex items-center flex-wrap gap-2">
-        <button onclick="startFreshRegistration()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#ea580c] border border-orange-200 transition shadow-xs" title="Зарегистрировать себя или новую семью с нуля">
+        <button onclick="startFreshRegistration()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#ea580c] border border-orange-200 transition shadow-xs" title="Зарегистрировать себя и близких">
           <span>✨</span>
           <span>Новая регистрация</span>
-        </button>
-        <button onclick="loadDemoSmirnovs()" class="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition" title="Открыть образец: Семья Смирновых">
-          <span>👨‍👩‍👧</span>
-          <span>Демо: Смирновы</span>
-        </button>
-        <button onclick="resetDatabaseToDefault()" class="hidden lg:inline-flex items-center gap-1.5 text-xs font-mono text-stone-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg border border-dashed border-stone-300 hover:border-red-300 transition" title="Сбросить все заказы к исходным демо-данным">
-          <span>🔄</span>
-          <span>Сброс базы</span>
         </button>
         <button onclick="openModal()" class="bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5">
           <span class="text-base leading-none">+</span>
@@ -133,13 +126,25 @@
 
     <!-- TAB 1: МОИ УЧАСТНИКИ (СЕМЕЙНЫЙ ПРОФИЛЬ) -->
     <section id="tab-team" class="space-y-6">
-      <!-- Notice Box: 1 to N Payer Logic -->
+      <!-- Access denied banner (?denied= from requireAuth) -->
+      <div id="denied-banner" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <span class="text-xl">🔒</span>
+          <div class="text-xs sm:text-sm text-amber-900 leading-relaxed">
+            <strong>Нет доступа к разделу</strong> <span id="denied-page" class="font-mono"></span> — он доступен только службам фестиваля.
+            Ваш аккаунт «Участник» может регистрироваться, оплачивать взнос и показывать QR-билеты.
+          </div>
+        </div>
+        <button onclick="document.getElementById('denied-banner').classList.add('hidden')" class="shrink-0 text-amber-600 hover:text-amber-800 font-bold text-sm px-2">&times;</button>
+      </div>
+
+      <!-- Notice Box: Регистрация участников -->
       <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start justify-between gap-4">
         <div class="flex items-start gap-3">
           <span class="text-xl">ℹ️</span>
           <div class="text-xs sm:text-sm text-emerald-900 leading-relaxed">
-            <strong>Семейная регистрация:</strong> Вы можете зарегистрировать всех членов семьи, детей или коллег с одного аккаунта. 
-            Оплата производится единым платежом, при этом для каждого участника формируется <strong>индивидуальный Form ID и QR-код</strong> для прохода на старте.
+            <strong>Регистрация участников:</strong> Вы можете зарегистрировать себя, членов семьи или коллег — каждый участник получает 
+            <strong>индивидуальный Form ID и QR-билет</strong> для прохода на старте. Оплата производится за каждого участника отдельно.
           </div>
         </div>
         <button onclick="openModal()" class="shrink-0 text-xs font-bold text-emerald-800 bg-white border border-emerald-300 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition shadow-xs">
@@ -243,7 +248,7 @@
 
           <!-- QR Code Display Box -->
           <div class="bg-white rounded-xl p-6 border border-stone-200 text-center shadow-inner flex flex-col items-center justify-center my-4">
-            <!-- Dynamic Vector High-Contrast Scannable QR Code -->
+            <!-- Dynamic High-Contrast Scannable QR Code -->
             <div id="ticket-qr-container" class="mx-auto flex items-center justify-center min-w-[180px] min-h-[180px]"></div>
             <span id="t-qr-caption" class="font-bebas text-lg tracking-widest text-stone-700 mt-2 block tabular-nums">
               *MP2026-849201*
@@ -393,17 +398,13 @@
               <input type="radio" name="wiz-reg-type" value="family" onchange="toggleWizardFamilyFields(true)" class="text-[#ea580c] focus:ring-[#ea580c]">
               <div>
                 <div class="font-bold text-stone-900">Семья / группа</div>
-                <div class="text-[10px] text-stone-500">2+ человека в одном заказе</div>
+                <div class="text-[10px] text-stone-500">Зарегистрировать несколько участников сразу</div>
               </div>
             </label>
           </div>
         </div>
 
-        <!-- Название семьи (если выбрана группа) -->
-        <div id="wiz-box-family-name" class="hidden">
-          <label class="block font-bold text-stone-700 mb-1">Название семьи / команды *</label>
-          <input type="text" id="wiz-family-name" placeholder="Семья Кузнецовых" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
-        </div>
+        <!-- Название семьи (если выбрана группа) — убрано: каждый участник регистрируется отдельно -->
 
         <!-- Данные основного участника -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -432,7 +433,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-stone-700 mb-1">Дата рождения *</label>
             <input type="date" id="wiz-birth" required value="1992-05-15" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
@@ -440,44 +441,17 @@
           <div>
             <label class="block font-bold text-stone-700 mb-1">Пол</label>
             <select id="wiz-gender" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
-              <option value="М">Мужской</option>
-              <option value="Ж">Женский</option>
+              <option value="male">Мужской</option>
+              <option value="female">Женский</option>
             </select>
-          </div>
-          <div class="col-span-2 sm:col-span-1">
-            <label class="block font-bold text-stone-700 mb-1">Город</label>
-            <input type="text" id="wiz-city" value="г. Екатеринбург" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
           </div>
         </div>
 
-        <!-- Выбор маршрута -->
+        <!-- Выбор маршрута (загружается из GET /api/v1/routes) -->
         <div>
           <label class="block font-bold text-stone-700 mb-1.5">Дистанция Майской прогулки *</label>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <label class="cursor-pointer border rounded-xl p-2.5 text-center transition has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50">
-              <input type="radio" name="wiz-route" value="10" class="sr-only">
-              <div class="font-unbounded font-black text-sm text-stone-900">10 КМ</div>
-              <div class="text-[10px] text-stone-500">Городской круг</div>
-              <div class="font-bold text-[#ea580c] mt-1">400 ₽</div>
-            </label>
-            <label class="cursor-pointer border rounded-xl p-2.5 text-center transition has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50">
-              <input type="radio" name="wiz-route" value="17" checked class="sr-only">
-              <div class="font-unbounded font-black text-sm text-stone-900">17 КМ</div>
-              <div class="text-[10px] text-stone-500">Шарташ</div>
-              <div class="font-bold text-[#ea580c] mt-1">450 ₽</div>
-            </label>
-            <label class="cursor-pointer border rounded-xl p-2.5 text-center transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
-              <input type="radio" name="wiz-route" value="33" class="sr-only">
-              <div class="font-unbounded font-black text-sm text-stone-900">33 КМ</div>
-              <div class="text-[10px] text-stone-500">Новокольцовский</div>
-              <div class="font-bold text-[#ea580c] mt-1">500 ₽</div>
-            </label>
-            <label class="cursor-pointer border rounded-xl p-2.5 text-center transition has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
-              <input type="radio" name="wiz-route" value="50" class="sr-only">
-              <div class="font-unbounded font-black text-sm text-stone-900">50 КМ</div>
-              <div class="text-[10px] text-stone-500">Классика</div>
-              <div class="font-bold text-[#ea580c] mt-1">600 ₽</div>
-            </label>
+          <div id="wiz-routes-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="col-span-full text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-xl p-3">Загружаем маршруты…</div>
           </div>
         </div>
 
@@ -527,33 +501,6 @@
       </div>
 
       <form id="add-form" onsubmit="saveParticipant(event)" class="space-y-4 text-xs">
-        
-        <!-- Формат участия и Роль -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-orange-50/70 p-3.5 rounded-2xl border border-orange-200">
-          <div>
-            <label class="block font-semibold text-stone-800 mb-1">Формат участия *</label>
-            <select id="f-reg-type" onchange="handleRegTypeChange(this)" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-semibold focus:outline-none focus:border-[#ea580c]">
-              <option value="family" selected>Семья / Группа</option>
-              <option value="individual">Индивидуальный участник</option>
-            </select>
-          </div>
-          <div id="box-role">
-            <label class="block font-semibold text-stone-800 mb-1">Роль в семье / группе *</label>
-            <select id="f-role" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-semibold focus:outline-none focus:border-[#ea580c]">
-              <option value="Глава семьи / Заявитель" selected>Глава семьи / Заявитель</option>
-              <option value="Супруг(а)">Супруг(а)</option>
-              <option value="Сын">Сын</option>
-              <option value="Дочь">Дочь</option>
-              <option value="Родственник / Друг">Родственник / Друг</option>
-              <option value="Участник команды">Участник команды</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="box-family-name">
-          <label class="block font-semibold text-stone-700 mb-1">Название семьи / команды (для стартового протокола)</label>
-          <input type="text" id="f-family-name" placeholder="Например: Семья Смирновых" value="Семья Смирновых" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
-        </div>
 
         <!-- ФИО -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -572,16 +519,16 @@
         </div>
 
         <!-- Пол и Дата Рождения -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-stone-700 mb-1">Пол *</label>
             <div class="grid grid-cols-2 gap-2">
               <label class="flex items-center justify-center gap-2 p-2.5 bg-stone-50 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-100 font-medium">
-                <input type="radio" name="gender" value="М" checked class="accent-[#ea580c]">
+                <input type="radio" name="gender" value="male" checked class="accent-[#ea580c]">
                 <span>Мужской</span>
               </label>
               <label class="flex items-center justify-center gap-2 p-2.5 bg-stone-50 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-100 font-medium">
-                <input type="radio" name="gender" value="Ж" class="accent-[#ea580c]">
+                <input type="radio" name="gender" value="female" class="accent-[#ea580c]">
                 <span>Женский</span>
               </label>
             </div>
@@ -590,108 +537,25 @@
             <label class="block font-semibold text-stone-700 mb-1">Дата рождения *</label>
             <input type="date" id="f-birth" required value="1995-06-15" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium tabular-nums focus:outline-none focus:border-[#ea580c]">
           </div>
-          <div>
-            <label class="block font-semibold text-stone-700 mb-1">Ранее участвовал в Прогулке</label>
-            <div class="flex items-center gap-2">
-              <input type="number" id="f-prev" min="0" max="42" value="0" class="w-24 bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-bold tabular-nums focus:outline-none focus:border-[#ea580c]">
-              <span class="text-stone-500 font-medium">раз(а)</span>
-            </div>
-          </div>
         </div>
 
-        <!-- Контакты и Город -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- Контакты -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-stone-700 mb-1">Телефон (+7) *</label>
             <input type="tel" id="f-phone" required placeholder="+7 999 000-00-00" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium tabular-nums focus:outline-none focus:border-[#ea580c]">
           </div>
           <div>
-            <label class="block font-semibold text-stone-700 mb-1">E-mail</label>
-            <input type="email" id="f-email" placeholder="ivanov@example.com" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
-          </div>
-          <div>
-            <label class="block font-semibold text-stone-700 mb-1">Город проживания *</label>
-            <input type="text" id="f-city" required value="г. Екатеринбург" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
+            <label class="block font-semibold text-stone-700 mb-1">E-mail *</label>
+            <input type="email" id="f-email" required placeholder="ivanov@example.com" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
           </div>
         </div>
 
-        <!-- Дистанция -->
+        <!-- Дистанция (загружается из GET /api/v1/routes) -->
         <div>
           <label class="block font-semibold text-stone-700 mb-1">Выбор дистанции и маршрута *</label>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50">
-              <div class="flex items-center justify-between">
-                <span class="font-unbounded font-bold text-xs text-[#122419]">10 км</span>
-                <input type="radio" name="route" value="10" class="accent-[#ea580c]">
-              </div>
-              <span class="text-[10px] text-stone-500 mt-1">Городской • 400 ₽</span>
-            </label>
-
-            <label class="border-2 border-[#ea580c] rounded-xl p-3 cursor-pointer bg-orange-50/50 flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <span class="font-unbounded font-bold text-xs text-[#ea580c]">17 км</span>
-                <input type="radio" name="route" value="17" checked class="accent-[#ea580c]">
-              </div>
-              <span class="text-[10px] text-stone-500 mt-1">Шарташ • 450 ₽</span>
-            </label>
-
-            <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50">
-              <div class="flex items-center justify-between">
-                <span class="font-unbounded font-bold text-xs text-[#122419]">33 км</span>
-                <input type="radio" name="route" value="33" class="accent-[#ea580c]">
-              </div>
-              <span class="text-[10px] text-stone-500 mt-1">Кампус • 500 ₽</span>
-            </label>
-
-            <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50">
-              <div class="flex items-center justify-between">
-                <span class="font-unbounded font-bold text-xs text-[#122419]">50 км</span>
-                <input type="radio" name="route" value="50" class="accent-[#ea580c]">
-              </div>
-              <span class="text-[10px] text-stone-500 mt-1">Классика • 600 ₽</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Динамический социальный срез (Требование Льва Муравьева) -->
-        <div class="p-3.5 bg-stone-100 rounded-2xl border border-stone-200 space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block font-semibold text-stone-700 mb-1">Социальный статус / род занятий *</label>
-              <select id="f-soc" onchange="handleSocChange(this)" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
-                <option value="student" selected>Студент ВУЗа / колледжа</option>
-                <option value="school">Школьник</option>
-                <option value="employee">Служащий / Специалист</option>
-                <option value="it">IT-специалист</option>
-                <option value="engineer">Инженер / Производство</option>
-                <option value="teacher">Преподаватель / Учитель</option>
-                <option value="business">Предприниматель</option>
-                <option value="pensioner">Пенсионер</option>
-                <option value="other">Другое</option>
-              </select>
-            </div>
-
-            <!-- Conditional 1: ВУЗ Екатеринбурга -->
-            <div id="box-vuz">
-              <label class="block font-semibold text-stone-700 mb-1">Учебное заведение (ВУЗ) *</label>
-              <select id="f-vuz" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
-                <option value="urfu" selected>УрФУ (Уральский федеральный университет)</option>
-                <option value="urguu">УрГЮУ (Юридический университет)</option>
-                <option value="ugmu">УГМУ (Медицинский университет)</option>
-                <option value="uggu">УГГУ (Горный университет)</option>
-                <option value="urgeu">УрГЭУ (СИНХ)</option>
-                <option value="rgppu">РГППУ (Педагогический)</option>
-                <option value="urgau">УрГАУ (Аграрный)</option>
-                <option value="urgups">УрГУПС (Путей сообщения)</option>
-                <option value="other_vuz">Другой ВУЗ / колледж</option>
-              </select>
-            </div>
-
-            <!-- Conditional 2: Школа -->
-            <div id="box-school" class="hidden">
-              <label class="block font-semibold text-stone-700 mb-1">Номер школы и класс *</label>
-              <input type="text" id="f-school-num" placeholder="Гимназия №9, 8 «Б»" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium focus:outline-none focus:border-[#ea580c]">
-            </div>
+          <div id="f-routes-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="col-span-full text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-xl p-3">Загружаем маршруты…</div>
           </div>
         </div>
 
@@ -771,7 +635,7 @@
       <div class="space-y-2 mb-6">
         <label class="flex items-center justify-between p-3.5 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 cursor-pointer">
           <div class="flex items-center gap-3">
-            <input type="radio" name="pay-method" checked class="text-emerald-600 focus:ring-emerald-500">
+            <input type="radio" name="pay-method" value="sbp" checked class="text-emerald-600 focus:ring-emerald-500">
             <div class="text-left">
               <div class="font-bold text-xs text-stone-900">СБП по QR / Ссылка в банк</div>
               <div class="text-[11px] text-stone-500">Т-Банк, Сбербанк, ВТБ, Альфа (0% комиссии)</div>
@@ -781,7 +645,7 @@
         </label>
         <label class="flex items-center justify-between p-3.5 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
           <div class="flex items-center gap-3">
-            <input type="radio" name="pay-method" class="text-emerald-600 focus:ring-emerald-500">
+            <input type="radio" name="pay-method" value="card" class="text-emerald-600 focus:ring-emerald-500">
             <div class="text-left">
               <div class="font-bold text-xs text-stone-900">Банковская карта РФ</div>
               <div class="text-[11px] text-stone-500">МИР, Visa, Mastercard</div>
@@ -802,16 +666,27 @@
   </div>
 
   <script>
-    // Active session and order variables
-    let currentOrderId = localStorage.getItem('mp_active_order_id') || 'MP2026-FAMILY';
-    let currentOrderData = null;
-    let isOrderPaid = false;
+    // Active session state
+    let currentUser = null;
+    let routes = [];            // Маршруты из GET /api/v1/routes
     let isDemoFinished = true;
     let activeDiplomaIdx = 0;
     let activeTicketIdx = 0;
-    let qrTicketInstance = null;
-    let qrFsInstance = null;
     let participants = [];
+
+    // Справочные цены для отображения (в API цены пока нет)
+    const ROUTE_PRICES = { 10: 400, 17: 450, 33: 500, 50: 600 };
+    const DEFAULT_PRICE = 450;
+
+    function routeDistance(routeName) {
+      const m = /(\d+)\s*км/i.exec(routeName || '');
+      return m ? parseInt(m[1], 10) : null;
+    }
+
+    function routePrice(routeName) {
+      const d = routeDistance(routeName);
+      return ROUTE_PRICES[d] || DEFAULT_PRICE;
+    }
 
     // --- ONBOARDING WIZARD CONTROLLER ---
     function openOnboardingModal() {
@@ -826,8 +701,6 @@
     }
 
     function startFreshRegistration() {
-      localStorage.removeItem('mp_active_order_id');
-      currentOrderId = null;
       const membersList = document.getElementById('wiz-members-list');
       if (membersList) membersList.innerHTML = '';
       const wForm = document.getElementById('wizard-form');
@@ -836,28 +709,8 @@
       openOnboardingModal();
     }
 
-    function loadDemoSmirnovs() {
-      localStorage.setItem('mp_active_order_id', 'MP2026-FAMILY');
-      currentOrderId = 'MP2026-FAMILY';
-      loadServerParticipants('MP2026-FAMILY');
-    }
-
-    async function resetDatabaseToDefault() {
-      if (!confirm('Сбросить базу данных фестиваля к исходным демо-данным? Все созданные тесты будут очищены.')) return;
-      try {
-        await fetch(mpApiUrl('/api/system/reset-db'), { method: 'POST' });
-        localStorage.removeItem('mp_active_order_id');
-        alert('База данных успешно сброшена к заводским настройкам.');
-        window.location.reload();
-      } catch(e) {
-        alert('Ошибка связи с сервером при сбросе базы.');
-      }
-    }
-
     function toggleWizardFamilyFields(isFamily) {
-      const boxFam = document.getElementById('wiz-box-family-name');
       const boxExtra = document.getElementById('wiz-extra-members-box');
-      if (boxFam) boxFam.style.display = isFamily ? 'block' : 'none';
       if (boxExtra) boxExtra.style.display = isFamily ? 'block' : 'none';
       const mList = document.getElementById('wiz-members-list');
       if (isFamily && mList && mList.children.length === 0) {
@@ -870,29 +723,28 @@
       wizardMemberCounter++;
       const list = document.getElementById('wiz-members-list');
       if (!list) return;
+      const routeOptions = routes.map((r, i) => `<option value="${r.id}" ${i === 0 ? 'selected' : ''}>${r.name}</option>`).join('') || '<option value="">нет маршрутов</option>';
       const row = document.createElement('div');
       row.className = "bg-white p-3 rounded-xl border border-stone-200 flex flex-wrap items-center gap-2.5 relative shadow-xs";
       row.id = `wiz-member-${wizardMemberCounter}`;
       row.innerHTML = `
-        <div class="flex-1 min-w-[140px]">
-          <input type="text" placeholder="ФИО спутника" required class="wiz-extra-fio w-full bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#ea580c]">
+        <div class="flex-1 min-w-[110px]">
+          <input type="text" placeholder="Фамилия" required class="wiz-extra-surname w-full bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#ea580c]">
         </div>
-        <div class="w-[120px]">
-          <select class="wiz-extra-role w-full bg-stone-50 border border-stone-300 rounded-lg px-2 py-1.5 text-xs text-stone-800">
-            <option value="Супруг(а)">Супруг(а)</option>
-            <option value="Сын">Сын</option>
-            <option value="Дочь">Дочь</option>
-            <option value="Родственник">Родственник</option>
-            <option value="Друг / Коллега">Друг / Коллега</option>
-          </select>
+        <div class="flex-1 min-w-[110px]">
+          <input type="text" placeholder="Имя" required class="wiz-extra-name w-full bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#ea580c]">
+        </div>
+        <div class="w-[140px]">
+          <input type="date" value="2010-06-01" required class="wiz-extra-birth w-full bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 tabular-nums focus:outline-none focus:ring-1 focus:ring-[#ea580c]">
         </div>
         <div class="w-[110px]">
-          <select class="wiz-extra-route w-full bg-stone-50 border border-stone-300 rounded-lg px-2 py-1.5 text-xs text-stone-800 font-bold text-[#ea580c]">
-            <option value="17">17 км (450 ₽)</option>
-            <option value="10">10 км (400 ₽)</option>
-            <option value="33">33 км (500 ₽)</option>
-            <option value="50">50 км (600 ₽)</option>
+          <select class="wiz-extra-gender w-full bg-stone-50 border border-stone-300 rounded-lg px-2 py-1.5 text-xs text-stone-800">
+            <option value="male">Мужской</option>
+            <option value="female">Женский</option>
           </select>
+        </div>
+        <div class="w-[180px]">
+          <select class="wiz-extra-route w-full bg-stone-50 border border-stone-300 rounded-lg px-2 py-1.5 text-xs text-stone-800 font-bold text-[#ea580c]">${routeOptions}</select>
         </div>
         <button type="button" onclick="this.parentElement.remove()" class="text-stone-400 hover:text-red-500 font-bold px-2 py-1 text-base rounded transition" title="Удалить спутника">&times;</button>
       `;
@@ -905,110 +757,83 @@
       btn.disabled = true;
       btn.innerHTML = `<span>Регистрация в базе данных...</span>`;
 
-      const isFamily = document.querySelector('input[name="wiz-reg-type"]:checked').value === 'family';
-      const familyName = isFamily ? (document.getElementById('wiz-family-name').value.trim() || 'Семья участников') : '';
       const surname = document.getElementById('wiz-surname').value.trim();
       const name = document.getElementById('wiz-name').value.trim();
       const patronymic = document.getElementById('wiz-patronymic').value.trim();
-      const fio = `${surname} ${name} ${patronymic}`.trim();
       const phone = document.getElementById('wiz-phone').value.trim();
       const email = document.getElementById('wiz-email').value.trim();
       const birth = document.getElementById('wiz-birth').value;
       const gender = document.getElementById('wiz-gender').value;
-      const city = document.getElementById('wiz-city').value.trim();
       const routeRadio = document.querySelector('input[name="wiz-route"]:checked');
-      const routeVal = routeRadio ? routeRadio.value : '17';
 
-      const rawMembers = [
-        {
-          fio: fio,
-          surname: surname,
-          name: name,
-          patronymic: patronymic,
-          role: isFamily ? 'Глава семьи / Заявитель' : 'Индивидуальный участник',
-          gender: gender,
-          birth: birth,
-          phone: phone,
-          email: email,
-          city: city,
-          dist: routeVal,
-          route: `${routeVal} км`,
-          soc: 'Зарегистрирован онлайн'
-        }
-      ];
+      if (!routeRadio) {
+        alert('Выберите дистанцию маршрута.');
+        btn.disabled = false;
+        btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
+        return;
+      }
+
+      const isFamily = document.querySelector('input[name="wiz-reg-type"]:checked').value === 'family';
+
+      const members = [{
+        surname: surname,
+        name: name,
+        middle_name: patronymic || null,
+        route_id: parseInt(routeRadio.value, 10),
+        date_of_birth: birth,
+        gender: gender,
+        email: email,
+        phone_number: phone
+      }];
 
       if (isFamily) {
         const extraRows = document.querySelectorAll('#wiz-members-list > div');
         extraRows.forEach(row => {
-          const eFio = row.querySelector('.wiz-extra-fio').value.trim();
-          if (eFio) {
-            const eRole = row.querySelector('.wiz-extra-role').value;
-            const eRoute = row.querySelector('.wiz-extra-route').value;
-            rawMembers.push({
-              fio: eFio,
-              surname: eFio.split(' ')[0] || '',
-              name: eFio.split(' ')[1] || '',
-              patronymic: eFio.split(' ')[2] || '',
-              role: eRole,
-              gender: 'М',
-              birth: '2000-01-01',
-              phone: phone,
-              email: email,
-              city: city,
-              dist: eRoute,
-              route: `${eRoute} км`,
-              soc: 'Член семьи'
-            });
-          }
+          const eSurname = row.querySelector('.wiz-extra-surname').value.trim();
+          const eName = row.querySelector('.wiz-extra-name').value.trim();
+          if (!eSurname || !eName) return;
+          members.push({
+            surname: eSurname,
+            name: eName,
+            middle_name: null,
+            route_id: parseInt(row.querySelector('.wiz-extra-route').value, 10),
+            date_of_birth: row.querySelector('.wiz-extra-birth').value,
+            gender: row.querySelector('.wiz-extra-gender').value,
+            email: email,
+            phone_number: phone
+          });
         });
       }
 
-      const payload = {
-        type: isFamily ? 'family' : 'individual',
-        familyName: familyName,
-        payerPhone: phone,
-        payerEmail: email,
-        paid: false,
-        participants: rawMembers
-      };
-
       try {
-        const resp = await fetch(mpApiUrl('/api/register'), {
+        const data = await apiRequest('/api/v1/participants/register', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: { participants: members }
         });
 
-        if (resp.ok) {
-          const data = await resp.json();
-          currentOrderId = data.order_id;
-          localStorage.setItem('mp_active_order_id', data.order_id);
-          closeOnboardingModal();
-          await loadServerParticipants(data.order_id);
-          openPaymentModal();
-        } else {
-          alert('Ошибка регистрации: ' + resp.statusText);
-        }
-      } catch(err) {
-        console.error("Registration error:", err);
-        alert('Ошибка связи с сервером при регистрации. Проверьте запуск бэкенда и настройку API_BASE_URL в api_config.js');
+        closeOnboardingModal();
+        await loadMyParticipants();
+        openPaymentModal();
+
+        const formIds = data.participants.map(p => p.form_id).join('\n');
+        alert(`✅ Зарегистрировано участников: ${data.participants.length}\n\nForm ID:\n${formIds}\n\nТеперь оплатите взнос — и QR-билеты активируются.`);
+      } catch (err) {
+        console.error('Registration error:', err);
+        alert('Ошибка регистрации: ' + err.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
       }
     }
 
-    function updateHeaderInfo(order, firstMember) {
+    function showAuthUser(me) {
       const headerInfo = document.getElementById('user-header-info');
       if (!headerInfo) return;
-      if (order && order.type === 'family') {
-        const fName = order.familyName || 'Семейная группа';
-        headerInfo.innerHTML = `${fName} • Заказ: <strong class="text-stone-700 font-mono">${order.order_id}</strong> • Тел: ${order.payer_phone}`;
-      } else if (order) {
-        headerInfo.innerHTML = `${order.payer_name} • Заказ: <strong class="text-stone-700 font-mono">${order.order_id}</strong> • Тел: ${order.payer_phone}`;
-      } else if (firstMember) {
-        headerInfo.innerHTML = `${firstMember.name} • Заказ: <strong class="text-stone-700 font-mono">${firstMember.order_id || currentOrderId}</strong>`;
-      }
+      const roleNames = {
+        user: 'Участник', typist: 'Наборщик', registrar: 'Регистратор',
+        marker: 'Маркёр', organizer: 'Организатор', admin: 'Администратор'
+      };
+      headerInfo.innerHTML = `Вы вошли как: <strong class="text-stone-700">${me.username}</strong> • ${roleNames[me.role] || me.role} • ${me.email}`;
     }
 
     // Render Grid
@@ -1016,60 +841,73 @@
       const grid = document.getElementById('participants-grid');
       const allPaid = participants.every(p => p.isPaid);
 
-      grid.innerHTML = participants.map((p, idx) => `
-        <div class="bg-white rounded-2xl p-5 border ${p.isPaid ? 'border-stone-200' : 'border-amber-300 ring-2 ring-amber-100'} shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-1.5 ${p.dist === '33' ? 'bg-blue-600' : 'bg-emerald-600'}"></div>
-          <div>
-            <div class="flex items-start justify-between gap-2 mb-2 pt-1">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
-                ${p.roleLabel}
-              </span>
-              <span class="text-xs font-bold px-2 py-0.5 rounded border ${p.isPaid ? 'text-emerald-800 bg-emerald-50 border-emerald-200' : 'text-amber-800 bg-amber-50 border-amber-300'}">
-                ${p.status}
-              </span>
+      if (participants.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white border-2 border-dashed border-stone-300 rounded-2xl p-8 text-center space-y-2">
+            <div class="text-3xl mb-1">🚶‍♂️</div>
+            <div class="font-unbounded font-bold text-sm text-[#122419]">Пока нет ни одного участника</div>
+            <p class="text-xs text-stone-500 max-w-md mx-auto">
+              Нажмите «Новая регистрация» или «Добавить в заказ», чтобы зарегистрировать себя и близких на Майскую прогулку 2026.
+            </p>
+          </div>
+        `;
+      } else {
+        grid.innerHTML = participants.map((p, idx) => `
+          <div class="bg-white rounded-2xl p-5 border ${p.isPaid ? 'border-stone-200' : 'border-amber-300 ring-2 ring-amber-100'} shadow-sm flex flex-col justify-between relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1.5 ${p.dist === 33 ? 'bg-blue-600' : 'bg-emerald-600'}"></div>
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2 pt-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
+                  Участник
+                </span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded border ${p.isPaid ? 'text-emerald-800 bg-emerald-50 border-emerald-200' : 'text-amber-800 bg-amber-50 border-amber-300'}">
+                  ${p.status}
+                </span>
+              </div>
+
+              <h4 class="font-unbounded font-bold text-base text-[#122419] mb-1">
+                ${p.name}
+              </h4>
+              <div class="text-xs text-[#ea580c] font-bold mb-3">
+                ${p.routeName}
+              </div>
+
+              <div class="space-y-1 text-xs text-stone-600 pt-2 border-t border-stone-100">
+                <div class="flex justify-between">
+                  <span class="text-stone-400">Form ID:</span>
+                  <span class="font-bold tabular-nums">${p.form_id}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-stone-400">Статус дистанции:</span>
+                  <span>${p.has_finished ? '🏁 Финишировал' : (p.has_started ? '🚶‍♂️ На маршруте' : '⏳ Ожидает старта')}</span>
+                </div>
+                ${p.map_barcode ? `
+                <div class="flex justify-between">
+                  <span class="text-stone-400">Карта:</span>
+                  <span class="font-bold tabular-nums">${p.map_barcode}</span>
+                </div>` : ''}
+              </div>
             </div>
 
-            <h4 class="font-unbounded font-bold text-base text-[#122419] mb-1">
-              ${p.name}
-            </h4>
-            <div class="text-xs text-[#ea580c] font-bold mb-3">
-              ${p.routeName}
-            </div>
-
-            <div class="space-y-1 text-xs text-stone-600 pt-2 border-t border-stone-100">
-              <div class="flex justify-between">
-                <span class="text-stone-400">Form ID:</span>
-                <span class="font-bold tabular-nums">${p.id}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-stone-400">Контакты:</span>
-                <span class="tabular-nums">${p.phone}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-stone-400">Социальный срез:</span>
-                <span>${p.soc}</span>
+            <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+              <span class="font-unbounded font-black text-sm text-[#122419] tabular-nums">
+                ${p.price} ₽
+              </span>
+              <div class="flex items-center gap-1.5">
+                ${p.isPaid ? `
+                  <button onclick="viewTicket(${idx})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-100 text-[#ea580c] hover:bg-orange-200 transition">
+                    Показать QR →
+                  </button>
+                ` : `
+                  <button onclick="openPaymentModal()" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition shadow-xs flex items-center gap-1">
+                    <span>Оплатить</span> →
+                  </button>
+                `}
               </div>
             </div>
           </div>
-
-          <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-            <span class="font-unbounded font-black text-sm text-[#122419] tabular-nums">
-              ${p.price} ₽
-            </span>
-            <div class="flex items-center gap-1.5">
-              ${p.isPaid ? `
-                <button onclick="viewTicket(${idx})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-100 text-[#ea580c] hover:bg-orange-200 transition">
-                  Показать QR →
-                </button>
-              ` : `
-                <button onclick="openPaymentModal()" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition shadow-xs flex items-center gap-1">
-                  <span>Оплатить</span> →
-                </button>
-              `}
-            </div>
-          </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
 
       // Update counters
       const total = participants.reduce((acc, cur) => acc + cur.price, 0);
@@ -1080,13 +918,17 @@
       // Update Pay button state in summary box
       const payBtn = document.getElementById('btn-pay');
       if (payBtn) {
-        if (allPaid) {
+        if (participants.length === 0) {
+          payBtn.className = "w-full md:w-auto bg-stone-300 text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl transition flex items-center justify-center gap-2 cursor-not-allowed";
+          payBtn.innerHTML = `<span>💳 Оплатить взнос</span>`;
+          payBtn.onclick = null;
+        } else if (allPaid) {
           payBtn.className = "w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2";
-          payBtn.innerHTML = `<span>✓ Корзина оплачена (${total.toLocaleString('ru-RU')} ₽)</span>`;
+          payBtn.innerHTML = `<span>✓ Все взносы оплачены (${total.toLocaleString('ru-RU')} ₽)</span>`;
           payBtn.onclick = () => switchTab('tickets');
         } else {
           payBtn.className = "w-full md:w-auto bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2";
-          payBtn.innerHTML = `<span>💳 Оплатить всю корзину (${total.toLocaleString('ru-RU')} ₽)</span> <span>→</span>`;
+          payBtn.innerHTML = `<span>💳 Оплатить взносы (${total.toLocaleString('ru-RU')} ₽)</span> <span>→</span>`;
           payBtn.onclick = openPaymentModal;
         }
       }
@@ -1099,27 +941,29 @@
       const container = document.getElementById('ticket-pills');
       container.innerHTML = participants.map((p, idx) => `
         <button onclick="selectTicket(${idx})" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${activeTicketIdx === idx ? 'bg-[#ea580c] text-white shadow-xs' : 'text-stone-600 hover:text-black'} flex items-center gap-1.5">
-          <span>${p.name.split(' ')[0]} (${p.dist} км)</span>
+          <span>${p.name.split(' ')[0]} (${p.dist || '?'} км)</span>
           ${p.isPaid ? '<span class="text-[10px]">✓</span>' : '<span class="text-[10px] text-amber-500">⏳</span>'}
         </button>
       `).join('');
     }
 
-    function renderQRCode(ticketCode) {
-      const qrBox = document.getElementById('ticket-qr-container');
-      if (qrBox && typeof QRCode !== 'undefined') {
-        qrBox.innerHTML = '';
+    function renderTicketBarcode(ticketCode) {
+      // Единый формат всех кодов мероприятия — QR:
+      // читается с любого угла, экрана и распечатки, сканируется камерой и 2D-сканером.
+      const box = document.getElementById('ticket-qr-container');
+      if (box && typeof QRCode !== 'undefined') {
+        box.innerHTML = '';
         try {
-          qrTicketInstance = new QRCode(qrBox, {
+          new QRCode(box, {
             text: ticketCode,
             width: 180,
             height: 180,
-            colorDark: "#122419",
-            colorLight: "#ffffff",
+            colorDark: '#122419',
+            colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel.M
           });
         } catch (e) {
-          console.error("QR render error:", e);
+          console.error('QR render error:', e);
         }
       }
 
@@ -1127,16 +971,16 @@
       if (fsBox && typeof QRCode !== 'undefined') {
         fsBox.innerHTML = '';
         try {
-          qrFsInstance = new QRCode(fsBox, {
+          new QRCode(fsBox, {
             text: ticketCode,
             width: 240,
             height: 240,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
+            colorDark: '#000000',
+            colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel.M
           });
         } catch (e) {
-          console.error("FS QR render error:", e);
+          console.error('Fullscreen QR render error:', e);
         }
       }
     }
@@ -1159,7 +1003,7 @@
       if (lockBox) lockBox.classList.add('hidden');
       if (ticketCard) ticketCard.classList.remove('hidden');
 
-      document.getElementById('t-form-id').textContent = p.id;
+      document.getElementById('t-form-id').textContent = p.form_id;
       document.getElementById('t-name').textContent = p.name;
       document.getElementById('t-route').textContent = p.routeName;
 
@@ -1172,14 +1016,14 @@
       document.getElementById('t-time').textContent = startWindows[p.dist] || '08:00 — 12:00';
 
       const qrCaption = document.getElementById('t-qr-caption');
-      if (qrCaption) qrCaption.textContent = `*${p.id}*`;
+      if (qrCaption) qrCaption.textContent = `*${p.form_id}*`;
 
       document.getElementById('fs-name').textContent = p.name;
       document.getElementById('fs-route').textContent = p.routeName;
-      document.getElementById('fs-form-id').textContent = p.id;
+      document.getElementById('fs-form-id').textContent = p.form_id;
 
-      // Render real scannable QR code
-      renderQRCode(p.id);
+      // Render real scannable QR code (регистратор ищет участника по form_id)
+      renderTicketBarcode(p.form_id);
     }
 
     // --- DIPLOMA & FINISHER CARD LOGIC FOR EACH MEMBER ---
@@ -1188,7 +1032,7 @@
       if (!container) return;
       container.innerHTML = participants.map((p, idx) => `
         <button onclick="selectDiploma(${idx})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${activeDiplomaIdx === idx ? 'bg-[#ea580c] text-white shadow-xs' : 'text-stone-700 hover:text-black bg-white'}">
-          ${p.name.split(' ')[0]} (${p.dist} км)
+          ${p.name.split(' ')[0]} (${p.dist || '?'} км)
         </button>
       `).join('');
     }
@@ -1226,13 +1070,13 @@
       const dipName = document.getElementById('diploma-name');
       if (dipName) dipName.textContent = p.name.toUpperCase();
       const dipCityVuz = document.getElementById('diploma-city-vuz');
-      if (dipCityVuz) dipCityVuz.textContent = `${p.city} • ${p.soc}`;
+      if (dipCityVuz) dipCityVuz.textContent = `г. Екатеринбург • Финишер Майской прогулки 2026`;
       const dipDist = document.getElementById('diploma-dist');
-      if (dipDist) dipDist.innerHTML = `${p.dist} <span class="text-2xl text-yellow-300">КМ</span>`;
+      if (dipDist) dipDist.innerHTML = `${p.dist || '?'} <span class="text-2xl text-yellow-300">КМ</span>`;
       const dipRoute = document.getElementById('diploma-route');
       if (dipRoute) dipRoute.textContent = p.routeName;
       const dipBadge = document.getElementById('diploma-badge-num');
-      if (dipBadge) dipBadge.textContent = p.id.replace('MP2026-', '');
+      if (dipBadge) dipBadge.textContent = (p.form_id || '').split('-').pop();
     }
 
     function toggleDemoFinisherStatus() {
@@ -1240,17 +1084,19 @@
       selectDiploma(activeDiplomaIdx);
     }
 
-    // --- PAYMENT SIMULATION ENGINE ---
+    // --- PAYMENT ENGINE (POST /api/v1/participants/{id}/pay) ---
     function openPaymentModal() {
       const modal = document.getElementById('payment-modal');
       const unpaid = participants.filter(p => !p.isPaid);
-      const total = unpaid.length > 0 
-        ? unpaid.reduce((acc, cur) => acc + cur.price, 0)
-        : participants.reduce((acc, cur) => acc + cur.price, 0);
+      if (unpaid.length === 0) {
+        alert('Все участники уже оплачены. ✓');
+        return;
+      }
+      const total = unpaid.reduce((acc, cur) => acc + cur.price, 0);
       document.getElementById('pay-modal-amount').textContent = `${total.toLocaleString('ru-RU')} ₽`;
       document.getElementById('pay-modal-desc').textContent = unpaid.length > 0
         ? `Оплата взноса за ${unpaid.length} участн. (${unpaid.map(u => u.name.split(' ')[0]).join(', ')}). Включает карты, чай на КП и памятные значки.`
-        : `Семейный взнос за ${participants.length} участников. Включает карты, чай на КП и значки.`;
+        : `Семейный взнос. Включает карты, чай на КП и значки.`;
       modal.classList.remove('hidden');
     }
 
@@ -1260,31 +1106,49 @@
 
     async function confirmSimulationPayment() {
       const btn = document.getElementById('btn-confirm-pay');
+      const methodInput = document.querySelector('input[name="pay-method"]:checked');
+      const method = (methodInput && methodInput.value) || 'sbp';
+      const unpaid = participants.filter(p => !p.isPaid);
+
+      if (unpaid.length === 0) {
+        closePaymentModal();
+        return;
+      }
+
       btn.disabled = true;
       btn.innerHTML = `
         <svg class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <span>ПРОВЕДЕНИЕ ПЛАТЕЖА СБП...</span>
+        <span>ПРОВЕДЕНИЕ ПЛАТЕЖА...</span>
       `;
 
-      try {
-        await fetch(mpApiUrl('/api/registrar/mark-paid'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lookup_id: currentOrderId || 'MP2026-FAMILY', method: 'СБП Онлайн' })
-        });
-      } catch(e) {}
+      const errors = [];
+      let paidCount = 0;
+      for (const p of unpaid) {
+        try {
+          await apiRequest(`/api/v1/participants/${p.id}/pay`, {
+            method: 'POST',
+            body: { payment_method: method }
+          });
+          paidCount++;
+        } catch (err) {
+          console.error('Payment error for', p.form_id, err);
+          errors.push(`${p.name}: ${err.message}`);
+        }
+      }
 
-      setTimeout(async () => {
-        closePaymentModal();
-        btn.disabled = false;
-        btn.innerHTML = `<span>🟢 Подтвердить оплату (Симуляция)</span>`;
+      closePaymentModal();
+      btn.disabled = false;
+      btn.innerHTML = `<span>🟢 Подтвердить оплату (Симуляция)</span>`;
 
-        await loadServerParticipants(currentOrderId);
-        switchTab('tickets');
-        selectTicket(0);
+      await loadMyParticipants();
+      switchTab('tickets');
+      selectTicket(0);
 
-        alert('🎉 ВЗНОС УСПЕШНО ОПЛАЧЕН ЧЕРЕЗ СБП!\n\nПлатеж сохранен в базе данных и не сбросится при перезагрузке.\nСформирован именной QR-билет для выдачи карты на старте.');
-      }, 600);
+      if (errors.length > 0) {
+        alert(`⚠️ Оплачено: ${paidCount} из ${unpaid.length}.\n\nОшибки оплаты:\n${errors.join('\n')}`);
+      } else {
+        alert(`🎉 ВЗНОС УСПЕШНО ОПЛАЧЕН (${method.toUpperCase()})!\n\nПлатеж сохранен в базе данных и не сбросится при перезагрузке.\nСформированы именные QR-билеты для выдачи карт на старте.`);
+      }
     }
 
     function viewTicket(idx) {
@@ -1320,105 +1184,48 @@
       document.getElementById('participant-modal').classList.add('hidden');
     }
 
-    // Conditional Fields
-    function handleSocChange(select) {
-      const val = select.value;
-      const boxVuz = document.getElementById('box-vuz');
-      const boxSchool = document.getElementById('box-school');
-
-      if (val === 'student' || val === 'teacher') {
-        boxVuz.classList.remove('hidden');
-        boxSchool.classList.add('hidden');
-      } else if (val === 'school') {
-        boxVuz.classList.add('hidden');
-        boxSchool.classList.remove('hidden');
-      } else {
-        boxVuz.classList.add('hidden');
-        boxSchool.classList.add('hidden');
-      }
-    }
-
-    function handleRegTypeChange(select) {
-      const isFamily = select.value === 'family';
-      document.getElementById('box-role').style.display = isFamily ? 'block' : 'none';
-      document.getElementById('box-family-name').style.display = isFamily ? 'block' : 'none';
-    }
-
-    // Save New Participant to Active Order
+    // Save New Participant (POST /api/v1/participants/register)
     async function saveParticipant(e) {
       e.preventDefault();
-      const regType = document.getElementById('f-reg-type').value;
-      const roleVal = regType === 'family' ? document.getElementById('f-role').value : 'Индивидуальный участник';
       const surname = document.getElementById('f-surname').value.trim();
       const name = document.getElementById('f-name').value.trim();
       const patronymic = document.getElementById('f-patronymic').value.trim();
-      const gender = document.querySelector('input[name="gender"]:checked').value;
+      const genderInput = document.querySelector('input[name="gender"]:checked');
       const birth = document.getElementById('f-birth').value;
       const phone = document.getElementById('f-phone').value.trim();
       const email = document.getElementById('f-email').value.trim();
-      const city = document.getElementById('f-city').value.trim();
-      const routeVal = document.querySelector('input[name="route"]:checked').value;
-      const soc = document.getElementById('f-soc').value;
+      const routeInput = document.querySelector('input[name="route"]:checked');
 
-      let socLabel = 'Специалист';
-      if (soc === 'student') {
-        const vuz = document.getElementById('f-vuz').value || 'УрФУ';
-        socLabel = `Студент (${vuz})`;
-      } else if (soc === 'teacher') {
-        const vuz = document.getElementById('f-vuz').value || 'УрФУ';
-        socLabel = `Преподаватель (${vuz})`;
-      } else if (soc === 'school') {
-        const school = document.getElementById('f-school-num').value.trim() || 'Гимназия №9';
-        socLabel = `Школьник (${school})`;
-      } else if (soc === 'it') {
-        socLabel = 'IT-специалист';
+      if (!routeInput) {
+        alert('Выберите дистанцию маршрута.');
+        return;
       }
-
-      const activeOrder = currentOrderId || 'MP2026-FAMILY';
 
       try {
-        const payload = {
-          order_id: activeOrder,
-          type: 'family',
-          payerPhone: phone,
-          payerEmail: email,
-          paid: false,
-          participants: [
-            {
-              fio: `${surname} ${name} ${patronymic}`.trim(),
+        const data = await apiRequest('/api/v1/participants/register', {
+          method: 'POST',
+          body: {
+            participants: [{
               surname: surname,
               name: name,
-              patronymic: patronymic,
-              role: roleVal,
-              gender: gender,
-              birth: birth,
-              phone: phone,
+              middle_name: patronymic || null,
+              route_id: parseInt(routeInput.value, 10),
+              date_of_birth: birth,
+              gender: genderInput ? genderInput.value : 'male',
               email: email,
-              city: city,
-              dist: routeVal,
-              route: `${routeVal} км`,
-              soc: socLabel
-            }
-          ]
-        };
-
-        const resp = await fetch(mpApiUrl('/api/register'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+              phone_number: phone
+            }]
+          }
         });
 
-        if (resp.ok) {
-          closeModal();
-          await loadServerParticipants(activeOrder);
-          selectTicket(participants.length - 1);
-          alert(`Участник ${surname} ${name} успешно добавлен в заказ!\nСтатус: Ожидает оплаты.\nНажмите «Оплатить» в корзине для формирования билета.`);
-          return;
-        }
+        closeModal();
+        await loadMyParticipants();
+        selectTicket(participants.length - 1);
+        alert(`Участник ${surname} ${name} успешно зарегистрирован!\nForm ID: ${data.participants[0].form_id}\nСтатус: Ожидает оплаты.\nНажмите «Оплатить» для формирования билета.`);
       } catch (err) {
         console.error('Error adding participant:', err);
+        alert('Ошибка регистрации: ' + err.message);
       }
-      closeModal();
     }
 
     function toggleFullscreenTicket() {
@@ -1427,16 +1234,7 @@
     }
 
     async function payAll() {
-      try {
-        await fetch(mpApiUrl('/api/registrar/mark-paid'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lookup_id: currentOrderId || 'MP2026-FAMILY', method: 'СБП Онлайн' })
-        });
-      } catch(e) {}
-      await loadServerParticipants(currentOrderId);
-      selectTicket(activeTicketIdx);
-      alert('Оплата через СБП успешно проведена и сохранена в базе!\nПерсональные QR-коды для выдачи карт на старте активны.');
+      openPaymentModal();
     }
 
     function downloadStoryCard() {
@@ -1454,12 +1252,12 @@
         <text x="300" y="80" fill="#facc15" font-family="'Unbounded', sans-serif" font-size="12" font-weight="bold" text-anchor="middle" letter-spacing="2">★ ОФИЦИАЛЬНЫЙ ФИНИШЕР 2026 ★</text>
         <text x="300" y="110" fill="#ffffff" font-family="'Onest', sans-serif" font-size="14" text-anchor="middle">17 МАЯ 2026 • ЕКАТЕРИНБУРГ • УрФУ</text>
         <text x="300" y="220" fill="#ffffff" font-family="'Unbounded', sans-serif" font-size="24" font-weight="bold" text-anchor="middle">${p.name.toUpperCase()}</text>
-        <text x="300" y="255" fill="#9ca3af" font-family="'Onest', sans-serif" font-size="15" text-anchor="middle">${p.city} • ${p.soc}</text>
+        <text x="300" y="255" fill="#9ca3af" font-family="'Onest', sans-serif" font-size="15" text-anchor="middle">г. Екатеринбург • Финишер 2026</text>
         <rect x="70" y="310" width="460" height="180" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" rx="20"/>
         <text x="300" y="355" fill="#facc15" font-family="'Onest', sans-serif" font-size="13" font-weight="bold" text-anchor="middle" letter-spacing="1">ПРОЙДЕННАЯ ДИСТАНЦИЯ</text>
         <text x="300" y="435" fill="#ffffff" font-family="'Unbounded', sans-serif" font-size="70" font-weight="900" text-anchor="middle">${p.dist} <tspan font-size="32" fill="#facc15">КМ</tspan></text>
         <text x="300" y="470" fill="#d1d5db" font-family="'Onest', sans-serif" font-size="14" text-anchor="middle">${p.routeName}</text>
-        <text x="300" y="580" fill="#22c55e" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">FORM ID: ${p.id}</text>
+        <text x="300" y="580" fill="#22c55e" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">FORM ID: ${p.form_id}</text>
         <text x="300" y="720" fill="#fef08a" font-family="'Unbounded', sans-serif" font-size="14" font-weight="bold" text-anchor="middle">«ПОБЕДИТЕЛЕМ СТАНОВИТСЯ КАЖДЫЙ,</text>
         <text x="300" y="745" fill="#fef08a" font-family="'Unbounded', sans-serif" font-size="14" font-weight="bold" text-anchor="middle">КТО ПРИШЕЛ НА ФИНИШ!»</text>
       </svg>`;
@@ -1467,7 +1265,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Mayprogulka2026_${p.id}.svg`;
+      a.download = `Mayprogulka2026_${p.form_id}.svg`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1477,12 +1275,16 @@
     function initSelectedRoute() {
       const urlParams = new URLSearchParams(window.location.search);
       const routeParam = urlParams.get('route') || localStorage.getItem('mp_selected_route');
-      if (routeParam && ['10', '17', '33', '50'].includes(routeParam)) {
-        const radio = document.querySelector(`input[name="route"][value="${routeParam}"]`);
-        if (radio) radio.checked = true;
-        const wizRadio = document.querySelector(`input[name="wiz-route"][value="${routeParam}"]`);
-        if (wizRadio) wizRadio.checked = true;
-      }
+      if (!routeParam) return;
+      const num = parseInt(routeParam, 10);
+      if (isNaN(num)) return;
+      // Ищем маршрут с подходящей дистанцией (параметр/локальное хранилище хранят километры)
+      const route = routes.find(r => r.distance === num);
+      if (!route) return;
+      const radio = document.querySelector(`input[name="route"][value="${route.id}"]`);
+      if (radio) radio.checked = true;
+      const wizRadio = document.querySelector(`input[name="wiz-route"][value="${route.id}"]`);
+      if (wizRadio) wizRadio.checked = true;
     }
 
     // Modal & ticket dismiss
@@ -1507,71 +1309,120 @@
       }
     });
 
-    // Server-synchronized Order Loader
-    async function loadServerParticipants(targetOrderId = null) {
-      const activeOrder = targetOrderId || localStorage.getItem('mp_active_order_id') || 'MP2026-FAMILY';
-      currentOrderId = activeOrder;
-      localStorage.setItem('mp_active_order_id', activeOrder);
-
+    // Маршруты для форм (GET /api/v1/routes — публичный эндпоинт)
+    async function loadRoutes() {
       try {
-        const resp = await fetch(mpApiUrl(`/api/participants/${encodeURIComponent(activeOrder)}`));
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.found && data.members && data.members.length > 0) {
-            currentOrderData = data.order || null;
-            updateHeaderInfo(data.order, data.members[0]);
-            
-            participants = data.members.map(p => ({
-              id: p.id,
-              order_id: p.order_id,
-              name: p.fio,
-              roleLabel: p.role,
-              gender: p.gender,
-              birth: p.birth,
-              phone: p.phone,
-              email: p.email,
-              city: p.city,
-              dist: p.dist,
-              routeName: p.routeName,
-              soc: p.soc,
-              price: p.price,
-              isPaid: p.paid,
-              status: p.paid ? (p.card_id ? `Карта выдана (${p.card_id})` : 'Оплачен • Билет готов') : 'Ожидает оплаты ⏳'
-            }));
-            renderParticipants();
-            selectTicket(0);
-            return true;
-          }
-        }
-      } catch(e) {
-        console.log('Error loading order from server:', e);
+        const data = await apiRequest('/api/v1/routes', { auth: false });
+        routes = (data.routes || []).filter(r => r.is_active);
+      } catch (e) {
+        console.log('Error loading routes:', e);
+        routes = [];
       }
-      const grid = document.getElementById('participants-grid');
-      if (grid && participants.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full bg-amber-50 border border-amber-300 rounded-2xl p-6 text-center space-y-2">
-            <div class="font-unbounded font-bold text-sm text-amber-900">Бэкенд не подключён или заказ не загружен</div>
-            <p class="text-xs text-amber-800 max-w-xl mx-auto">
-              Фронтенд ожидает ответ от <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono" id="mp-expected-endpoint">GET /api/participants/...</code>.
-              Подключите свой сервер или задайте адрес в <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono">api_config.js</code> (или через <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono">?api=http://localhost:8000</code>).
-            </p>
+      renderRoutePickers();
+    }
+
+    function renderRoutePickers() {
+      const wizBox = document.getElementById('wiz-routes-box');
+      const fBox = document.getElementById('f-routes-box');
+      if (!wizBox || !fBox) return;
+
+      if (routes.length === 0) {
+        const warn = '<div class="col-span-full text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">⚠️ Маршруты ещё не созданы администратором в базе. Регистрация недоступна до их появления.</div>';
+        wizBox.innerHTML = warn;
+        fBox.innerHTML = warn;
+        return;
+      }
+
+      wizBox.innerHTML = routes.map((r, i) => `
+        <label class="cursor-pointer border rounded-xl p-2.5 text-center transition has-[:checked]:border-[#ea580c] has-[:checked]:bg-orange-50">
+          <input type="radio" name="wiz-route" value="${r.id}" ${i === 0 ? 'checked' : ''} class="sr-only">
+          <div class="font-unbounded font-black text-sm text-stone-900">${r.distance} КМ</div>
+          <div class="text-[10px] text-stone-500 truncate" title="${r.name}">${r.name}</div>
+          <div class="font-bold text-[#ea580c] mt-1">${routePrice(r.name)} ₽</div>
+        </label>
+      `).join('');
+
+      fBox.innerHTML = routes.map((r, i) => `
+        <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50 has-[:checked]:border-[#ea580c] has-[:checked]:bg-orange-50/50">
+          <div class="flex items-center justify-between">
+            <span class="font-unbounded font-bold text-xs text-[#122419]">${r.distance} км</span>
+            <input type="radio" name="route" value="${r.id}" ${i === 0 ? 'checked' : ''} class="accent-[#ea580c]">
           </div>
-        `;
-        const epEl = document.getElementById('mp-expected-endpoint');
-        if (epEl) epEl.textContent = 'GET ' + mpApiUrl('/api/participants/' + encodeURIComponent(activeOrder));
+          <span class="text-[10px] text-stone-500 mt-1">${r.name} • ${routePrice(r.name)} ₽</span>
+        </label>
+      `).join('');
+
+      // Обновляем селекты уже добавленных спутников
+      const routeOptions = routes.map((r, i) => `<option value="${r.id}" ${i === 0 ? 'selected' : ''}>${r.name}</option>`).join('');
+      document.querySelectorAll('.wiz-extra-route').forEach(sel => { sel.innerHTML = routeOptions; });
+    }
+
+    // Server-synchronized My Participants Loader (GET /api/v1/participants/my)
+    async function loadMyParticipants() {
+      try {
+        const data = await apiRequest('/api/v1/participants/my?limit=200');
+        participants = (data.participants || []).map(p => {
+          const isPaid = p.payment_status === 'paid';
+          return {
+            id: p.id,
+            form_id: p.form_id,
+            name: [p.surname, p.name].filter(Boolean).join(' '),
+            routeName: p.route_name,
+            dist: routeDistance(p.route_name),
+            price: routePrice(p.route_name),
+            isPaid: isPaid,
+            has_started: p.has_started,
+            has_finished: p.has_finished,
+            map_barcode: p.map_barcode,
+            status: isPaid ? (p.map_barcode ? `Карта выдана (${p.map_barcode})` : 'Оплачен • Билет готов') : 'Ожидает оплаты ⏳'
+          };
+        });
+        renderParticipants();
+        selectTicket(0);
+        return true;
+      } catch (e) {
+        console.log('Error loading participants:', e);
+        const grid = document.getElementById('participants-grid');
+        if (grid && participants.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-full bg-amber-50 border border-amber-300 rounded-2xl p-6 text-center space-y-2">
+              <div class="font-unbounded font-bold text-sm text-amber-900">Не удалось загрузить список участников</div>
+              <p class="text-xs text-amber-800 max-w-xl mx-auto">
+                ${e.status === 401 ? 'Сессия истекла — войдите заново через страницу логина.' : 'Проверьте, что бэкенд запущен (' + (MP_CONFIG.API_BASE_URL || 'тот же origin') + ').'}
+                <br>Ожидаемый эндпоинт: <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono">GET /api/v1/participants/my</code>.
+              </p>
+            </div>
+          `;
+        }
+        return false;
       }
-      return false;
     }
 
     // Startup lifecycle
     window.addEventListener('DOMContentLoaded', async () => {
-      initSelectedRoute();
+      // Защита страницы: только авторизованные (user/organizer/admin)
+      const me = await requireAuth(['user', 'organizer', 'admin']);
+      if (!me) return;
+      currentUser = me;
+      showAuthUser(me);
+
       const urlParams = new URLSearchParams(window.location.search);
       const isForceNew = urlParams.get('new') === '1' || urlParams.get('register') === '1';
       const hasRouteParam = urlParams.has('route');
 
-      // Load background order state so page is always fully functional
-      await loadServerParticipants();
+      // Баннер «нет доступа» — редирект с защищённой страницы служб
+      const deniedParam = urlParams.get('denied');
+      if (deniedParam) {
+        const banner = document.getElementById('denied-banner');
+        const pageEl = document.getElementById('denied-page');
+        if (pageEl) pageEl.textContent = deniedParam;
+        if (banner) banner.classList.remove('hidden');
+      }
+
+      await loadRoutes();
+      initSelectedRoute();
+
+      await loadMyParticipants();
 
       // If user came to register for a route or requested new registration, open wizard
       if (isForceNew || hasRouteParam) {

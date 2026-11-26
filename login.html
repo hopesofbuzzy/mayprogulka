@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход • Майская прогулка 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api_config.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF542E',
+              'orange-hover': '#E0411D',
+              pine: '#122419',
+              'pine-card': '#193323',
+              bg: '#FFE8DA',
+              surface: '#FFF8F3',
+              dark: '#1F140E'
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Onest', 'sans-serif'],
+            sport: ['"Bebas Neue"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FFE8DA;
+      color: #1F140E;
+      font-family: 'Onest', sans-serif;
+    }
+    .hero-topo {
+      background-image: radial-gradient(#FF542E 0.75px, transparent 0.75px), radial-gradient(#122419 0.75px, #FFE8DA 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+    }
+    .mp-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 2px solid rgba(31, 20, 14, 0.12);
+      background: #FFFFFF;
+      font-size: 15px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+      outline: none;
+    }
+    .mp-input:focus {
+      border-color: #FF542E;
+      box-shadow: 0 0 0 4px rgba(255, 84, 46, 0.15);
+    }
+    .mp-tab {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 9999px;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: .02em;
+      transition: all .15s ease;
+    }
+    .mp-tab-active {
+      background: #FF542E;
+      color: #FFFFFF;
+      box-shadow: 0 6px 16px -4px rgba(255, 84, 46, 0.5);
+    }
+    .mp-tab-inactive {
+      color: #1F140E;
+      opacity: .65;
+    }
+    .mp-tab-inactive:hover { opacity: 1; }
+  </style>
+</head>
+<body class="min-h-screen hero-topo flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-[#122419] text-[#FFF8F3] border-b-4 border-[#FF542E] px-4 sm:px-8 py-4 shadow-xl">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-full bg-[#FF542E] flex items-center justify-center font-display font-black text-white text-lg shadow-md">
+          МП
+        </div>
+        <div>
+          <div class="font-display font-black text-base sm:text-lg tracking-tight leading-none text-white">
+            МАЙСКАЯ ПРОГУЛКА <span class="text-[#FF542E] font-sport text-2xl tracking-wider">2026</span>
+          </div>
+          <div class="text-[11px] font-mono text-emerald-400/90 tracking-wider uppercase mt-0.5">
+            Единый вход в цифровую экосистему
+          </div>
+        </div>
+      </a>
+      <span id="api-status" class="hidden sm:inline px-3 py-1 rounded bg-[#1C3627] text-emerald-300 border border-emerald-500/40 font-mono text-xs"></span>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="flex-1 flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-md">
+
+      <!-- Session check card (shown while /auth/me is being verified) -->
+      <div id="session-check" class="bg-white rounded-3xl p-8 shadow-2xl border-2 border-[#122419]/10 text-center">
+        <div class="inline-flex w-12 h-12 rounded-full bg-[#FF542E]/10 items-center justify-center mb-4">
+          <svg class="animate-spin w-6 h-6 text-[#FF542E]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+        </div>
+        <div class="font-mono text-xs text-[#1F140E]/60">Проверяем сохранённую сессию…</div>
+      </div>
+
+      <!-- Auth card -->
+      <div id="auth-card" class="hidden bg-white rounded-3xl p-7 sm:p-9 shadow-2xl border-2 border-[#122419]/10">
+        <div class="text-center mb-6">
+          <div class="w-14 h-14 mx-auto rounded-full bg-[#FF542E] flex items-center justify-center font-display font-black text-white text-xl shadow-lg mb-4">
+            МП
+          </div>
+          <h1 class="font-display font-black text-2xl tracking-tight mb-1">Вход в систему</h1>
+          <p class="text-sm text-[#1F140E]/60">Регистрация участников и доступ служб фестиваля</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 bg-[#FFE8DA]/70 p-1 rounded-full mb-6">
+          <button id="tab-login" class="mp-tab mp-tab-active" onclick="switchTab('login')">🔑 Вход</button>
+          <button id="tab-register" class="mp-tab mp-tab-inactive" onclick="switchTab('register')">✍️ Регистрация</button>
+        </div>
+
+        <!-- Error / info banner -->
+        <div id="form-error" class="hidden mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold"></div>
+        <div id="form-info" class="hidden mb-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold"></div>
+
+        <!-- LOGIN FORM -->
+        <form id="form-login" class="hidden space-y-4" autocomplete="on">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#1F140E]/60 mb-1.5">Имя пользователя</label>
+            <input id="login-username" class="mp-input" type="text" placeholder="например, kuznetsov" autocomplete="username" required>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#1F140E]/60 mb-1.5">Пароль</label>
+            <input id="login-password" class="mp-input" type="password" placeholder="••••••••" autocomplete="current-password" required>
+          </div>
+          <button type="submit" id="login-submit" class="w-full bg-[#FF542E] hover:bg-[#E0411D] text-white font-display font-bold text-sm tracking-wide py-3.5 rounded-xl shadow-lg shadow-[#FF542E]/30 transition disabled:opacity-60 disabled:cursor-not-allowed">
+            ВОЙТИ →
+          </button>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="form-register" class="hidden space-y-4" autocomplete="on">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#1F140E]/60 mb-1.5">Имя пользователя</label>
+            <input id="reg-username" class="mp-input" type="text" placeholder="например, kuznetsov" autocomplete="username" required>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#1F140E]/60 mb-1.5">Email</label>
+            <input id="reg-email" class="mp-input" type="email" placeholder="you@example.ru" autocomplete="email" required>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-[#1F140E]/60 mb-1.5">Пароль <span class="normal-case font-normal opacity-60">(минимум 6 символов)</span></label>
+            <input id="reg-password" class="mp-input" type="password" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+          </div>
+          <button type="submit" id="reg-submit" class="w-full bg-[#FF542E] hover:bg-[#E0411D] text-white font-display font-bold text-sm tracking-wide py-3.5 rounded-xl shadow-lg shadow-[#FF542E]/30 transition disabled:opacity-60 disabled:cursor-not-allowed">
+            СОЗДАТЬ АККАУНТ →
+          </button>
+          <p class="text-xs text-center text-[#1F140E]/50">Первые пользователи получают роль «Участник» (user)</p>
+        </form>
+      </div>
+
+      <p class="text-center font-mono text-[11px] text-[#1F140E]/40 mt-6">
+        API: <span id="api-url-hint"></span> • Спецификация: <code>/docs</code>
+      </p>
+    </div>
+  </main>
+
+  <!-- Universal Ecosystem Navigator -->
+  <script src="ecosystem_bar.js"></script>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const nextUrl = params.get('next');
+    const errParam = params.get('error');
+
+    const roleHome = (window.MP_CONFIG && MP_CONFIG.ROLE_HOME) || { user: 'user_cabinet.html' };
+
+    function showError(msg) {
+      const el = document.getElementById('form-error');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      document.getElementById('form-info').classList.add('hidden');
+    }
+
+    function showInfo(msg) {
+      const el = document.getElementById('form-info');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      document.getElementById('form-error').classList.add('hidden');
+    }
+
+    function hideBanners() {
+      document.getElementById('form-error').classList.add('hidden');
+      document.getElementById('form-info').classList.add('hidden');
+    }
+
+    function switchTab(tab) {
+      const tabLogin = document.getElementById('tab-login');
+      const tabReg = document.getElementById('tab-register');
+      const formLogin = document.getElementById('form-login');
+      const formReg = document.getElementById('form-register');
+
+      hideBanners();
+      if (tab === 'login') {
+        tabLogin.className = 'mp-tab mp-tab-active';
+        tabReg.className = 'mp-tab mp-tab-inactive';
+        formLogin.classList.remove('hidden');
+        formReg.classList.add('hidden');
+        document.getElementById('login-username').focus();
+      } else {
+        tabReg.className = 'mp-tab mp-tab-active';
+        tabLogin.className = 'mp-tab mp-tab-inactive';
+        formReg.classList.remove('hidden');
+        formLogin.classList.add('hidden');
+        document.getElementById('reg-username').focus();
+      }
+    }
+
+    async function verifyAndRedirect() {
+      // Проверяем токен и запоминаем пользователя (роль и т.д.).
+      // Вызывается только после успешного логина/регистрации — здесь next уместен:
+      // пользователь только что сам выбрал аккаунт.
+      const me = await apiRequest('/api/v1/auth/me', { auth: true });
+      setAuthUser(me);
+      const home = roleHome[me.role] || 'user_cabinet.html';
+      window.location.href = nextUrl || home;
+    }
+
+    function setBusy(btn, busy, busyText) {
+      if (busy) {
+        btn.dataset.label = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="inline-flex items-center gap-2"><svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>' + (busyText || 'ОБРАБОТКА…') + '</span>';
+      } else {
+        btn.disabled = false;
+        if (btn.dataset.label) btn.innerHTML = btn.dataset.label;
+      }
+    }
+
+    function extractDetail(err) {
+      const d = err && err.data && err.data.detail;
+      if (!d) return null;
+      if (typeof d === 'string') return d;
+      if (Array.isArray(d)) {
+        return d.map(item => (item.loc ? (item.loc.join('.') + ': ') : '') + (item.msg || 'некорректное значение')).join('; ');
+      }
+      return JSON.stringify(d);
+    }
+
+    // --- LOGIN ---
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideBanners();
+      const btn = document.getElementById('login-submit');
+      setBusy(btn, true, 'ВХОДИМ…');
+
+      try {
+        const tokenResp = await apiRequest('/api/v1/auth/login', {
+          method: 'POST',
+          body: {
+            username: document.getElementById('login-username').value.trim(),
+            password: document.getElementById('login-password').value
+          }
+        });
+        setAuthToken(tokenResp.access_token);
+        await verifyAndRedirect();
+      } catch (err) {
+        setBusy(btn, false);
+        if (err.status === 401) {
+          showError('Неверное имя пользователя или пароль.');
+        } else if (err.status === 0 || !err.status) {
+          showError('Не удалось связаться с сервером. Убедитесь, что бэкенд запущен.');
+        } else {
+          const detail = extractDetail(err);
+          showError(detail || err.message);
+        }
+      }
+    });
+
+    // --- REGISTER ---
+    document.getElementById('form-register').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideBanners();
+      const btn = document.getElementById('reg-submit');
+      setBusy(btn, true, 'СОЗДАЁМ АККАУНТ…');
+
+      try {
+        const tokenResp = await apiRequest('/api/v1/auth/register', {
+          method: 'POST',
+          body: {
+            username: document.getElementById('reg-username').value.trim(),
+            email: document.getElementById('reg-email').value.trim(),
+            password: document.getElementById('reg-password').value
+          }
+        });
+        setAuthToken(tokenResp.access_token);
+        await verifyAndRedirect();
+      } catch (err) {
+        setBusy(btn, false);
+        if (err.status === 409 || err.status === 400) {
+          showError('Пользователь с таким именем или email уже существует.');
+        } else if (err.status === 422) {
+          const detail = extractDetail(err);
+          showError('Проверьте корректность полей: ' + (detail || 'пароль не короче 6 символов, email в правильном формате.'));
+        } else if (err.status === 0 || !err.status) {
+          showError('Не удалось связаться с сервером. Убедитесь, что бэкенд запущен.');
+        } else {
+          const detail = extractDetail(err);
+          showError(detail || err.message);
+        }
+      }
+    });
+
+    // --- INIT ---
+    (async function init() {
+      // API badge in header
+      const statusEl = document.getElementById('api-status');
+      const hintEl = document.getElementById('api-url-hint');
+      const apiLabel = (MP_CONFIG.API_BASE_URL || 'тот же origin') + ' /api/v1';
+      if (statusEl) statusEl.textContent = '⬤ ' + apiLabel;
+      if (hintEl) hintEl.textContent = apiLabel;
+
+      // Поведение при редиректе с защищённой страницы
+      document.getElementById('session-check').classList.add('hidden');
+      document.getElementById('auth-card').classList.remove('hidden');
+
+      // Уже вошёл? Отправляем на домашнюю страницу РОЛИ, игнорируя next:
+      // next мог указывать на раздел, недоступный этой роли — иначе цикл
+      // «страница -> логин -> страница» (мерцание).
+      if (getAuthToken()) {
+        try {
+          const me = await apiRequest('/api/v1/auth/me', { auth: true });
+          setAuthUser(me);
+          const home = roleHome[me.role] || 'user_cabinet.html';
+          window.location.href = home;
+          return;
+        } catch (e) {
+          // Токен невалиден — apiRequest уже очистил сессию.
+        }
+      }
+
+      // Вкладка по умолчанию (switchTab очищает баннеры — баннеры показываем после)
+      switchTab('login');
+
+      if (errParam === 'forbidden') {
+        showError('Недостаточно прав для этого раздела. Войдите под аккаунтом с подходящей ролью.');
+      } else if (errParam === 'auth') {
+        showInfo('Для доступа к разделу войдите в систему.');
+      }
+    })();
+  </script>
+</body>
+</html>

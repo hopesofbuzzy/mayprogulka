@@ -546,22 +546,9 @@
       const card = document.getElementById('sos-card-id').value;
       closeEmergencyModal();
       soundError();
-      
-      // F6: Send incident to Safety Engine
-      try {
-        fetch(mpApiUrl('/api/safety/emergency'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: type,
-            card_id: card || 'Не указана',
-            location: 'КП-03 • Родник (Шарташ)',
-            timestamp: new Date().toTimeString().split(' ')[0]
-          })
-        }).catch(e => console.log('SOS logged offline:', e));
-      } catch(e) {}
 
-      alert(`СИГНАЛ ПЕРЕДАН В ШТАБ:\n${type}\nКарта: ${card || 'Не указана'}\nКоманда спасателей МЧС выехала на КП-03.`);
+      // ЗАГЛУШКА: эндпоинт /api/v1/safety/emergency пока не реализован в бэкенде.
+      alert(`⏳ ФУНКЦИОНАЛ СКОРО БУДЕТ ДОСТУПЕН\n\nАвтоматическая передача SOS-сигнала в штаб появится после обновления бэкенда.\n\nТип: ${type}\nКарта: ${card || 'Не указана'}\n\n⚠️ Сообщите в штаб по рации!`);
     }
 
     // --- HTML5 QR / BARCODE SCANNER FOR MOBILE MARKER ---

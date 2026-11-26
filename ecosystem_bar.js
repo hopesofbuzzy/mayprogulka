@@ -5,6 +5,22 @@
 (function() {
   const currentPath = window.location.pathname.split('/').pop() || 'index.html';
 
+  // Текущий пользователь (заполняется на странице логина / requireAuth)
+  let currentUser = null;
+  try {
+    const raw = localStorage.getItem('mp_auth_user');
+    currentUser = raw ? JSON.parse(raw) : null;
+  } catch (e) { currentUser = null; }
+
+  const ROLE_LABELS = {
+    user: 'Участник',
+    typist: 'Наборщик',
+    registrar: 'Регистратор',
+    marker: 'Маркёр',
+    organizer: 'Организатор',
+    admin: 'Администратор'
+  };
+
   const modules = [
     {
       group: 'I. ПУБЛИЧНЫЙ КОНТУР',
@@ -16,20 +32,28 @@
     {
       group: 'II. ЛИЧНЫЙ КАБИНЕТ (USER)',
       items: [
-        { title: 'Кабинет семьи и QR-билеты', file: 'user_cabinet.html', url: '/cabinet', icon: '👤', tag: 'Участник' }
+        { title: 'Кабинет и QR-билеты', file: 'user_cabinet.html', url: '/cabinet', icon: '👤', tag: 'Участник', roles: ['user', 'organizer', 'admin'] }
       ]
     },
     {
       group: 'III. СЛУЖЕБНЫЙ КОНТУР (STAFF)',
       items: [
-        { title: 'Стартовый терминал (2 сек)', file: 'registrar_terminal.html', url: '/registrar', icon: '⚡', tag: 'Старт' },
-        { title: 'Офлайн-сканер КП (Лес)', file: 'marker_terminal.html', url: '/marker', icon: '📱', tag: 'Маркёр' },
-        { title: 'Штаб безопасности (МЧС)', file: 'safety_dashboard.html', url: '/safety', icon: '🚨', tag: 'Safety Engine' },
-        { title: 'Станция оцифровки анкет', file: 'typist_station.html', url: '/typist', icon: '📝', tag: 'AI-OCR' },
-        { title: 'Витрина QR и штрихкодов карт', file: 'registrar_terminal.html?open=cards', url: '/registrar?open=cards', icon: '📋', tag: 'Образцы' }
+        { title: 'Стартовый терминал (2 сек)', file: 'registrar_terminal.html', url: '/registrar', icon: '⚡', tag: 'Старт', roles: ['registrar', 'organizer', 'admin'] },
+        { title: 'Офлайн-сканер КП (Лес)', file: 'marker_terminal.html', url: '/marker', icon: '📱', tag: 'Маркёр', roles: ['marker', 'organizer', 'admin'] },
+        { title: 'Штаб безопасности (МЧС)', file: 'safety_dashboard.html', url: '/safety', icon: '🚨', tag: 'Safety Engine', roles: ['marker', 'organizer', 'admin'] },
+        { title: 'Станция оцифровки анкет', file: 'typist_station.html', url: '/typist', icon: '📝', tag: 'Наборщик', roles: ['typist', 'organizer', 'admin'] },
+        { title: 'Витрина QR и штрихкодов карт', file: 'registrar_terminal.html?open=cards', url: '/registrar?open=cards', icon: '📋', tag: 'Образцы', roles: ['registrar', 'organizer', 'admin'] }
       ]
     }
   ];
+
+  function userRole() {
+    return currentUser ? currentUser.role : null;
+  }
+
+  function hasAccess(item) {
+    return !item.roles || (userRole() && item.roles.indexOf(userRole()) !== -1);
+  }
 
   // Helper to determine URL based on environment (file:// vs http://)
   function resolveUrl(item) {
@@ -184,8 +208,10 @@
     <div class="mp-eco-panel" id="mp-eco-panel">
       <div class="mp-eco-head">
         <span class="mp-eco-title">Экосистема Майской прогулки</span>
-        <span style="font-size: 11px; color: #64748b; font-family: monospace;">7 модулей</span>
+        <span style="font-size: 11px; color: #64748b; font-family: monospace;" id="mp-eco-count">7 модулей</span>
       </div>
+
+      <div id="mp-eco-auth"></div>
 
       <div id="mp-eco-groups"></div>
 
@@ -197,19 +223,27 @@
     <button class="mp-eco-trigger" id="mp-eco-trigger" title="Переключение между модулями системы">
       <span class="mp-eco-dot"></span>
       <span>Экосистема</span>
-      <span style="background: #FF542E; color: white; padding: 1px 6px; border-radius: 9999px; font-size: 11px;">7</span>
+      <span id="mp-eco-trigger-count" style="background: #FF542E; color: white; padding: 1px 6px; border-radius: 9999px; font-size: 11px;">7</span>
     </button>
   `;
 
   document.body.appendChild(container);
 
-  // Render Groups & Items
+  // Render Groups & Items (with role-based filtering)
   const groupsContainer = document.getElementById('mp-eco-groups');
+  const authContainer = document.getElementById('mp-eco-auth');
+  const countEl = document.getElementById('mp-eco-count');
   let html = '';
+  let visibleCount = 0;
+
   modules.forEach(group => {
+    const allowedItems = group.items.filter(hasAccess);
+    if (allowedItems.length === 0) return;
+    visibleCount += allowedItems.length;
+
     html += `<div class="mp-eco-group-title">${group.group}</div>`;
-    group.items.forEach(item => {
-      const isCurrent = (currentPath && currentPath.includes(item.file)) || 
+    allowedItems.forEach(item => {
+      const isCurrent = (currentPath && currentPath.includes(item.file)) ||
                         window.location.pathname === item.url ||
                         window.location.pathname === item.url + '/';
       html += `
@@ -223,7 +257,56 @@
       `;
     });
   });
+
+  if (userRole() === null) {
+    html += `
+      <div class="mp-eco-group-title">ДОСТУП ОГРАНИЧЕН</div>
+      <a href="login.html" class="mp-eco-item" style="border-color:#FF542E;">
+        <div class="mp-eco-item-left">
+          <span>🔑</span>
+          <span>Войдите, чтобы открыть служебный контур</span>
+        </div>
+        <span class="mp-eco-item-tag">Вход</span>
+      </a>
+    `;
+  }
+
+  if (countEl) countEl.textContent = visibleCount + ' модулей';
+  const triggerCount = document.getElementById('mp-eco-trigger-count');
+  if (triggerCount) triggerCount.textContent = visibleCount;
   groupsContainer.innerHTML = html;
+
+  // Auth widget (current user + logout)
+  if (authContainer) {
+    if (currentUser) {
+      const roleLabel = ROLE_LABELS[currentUser.role] || currentUser.role;
+      authContainer.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;margin-bottom:10px;border-radius:10px;background:#0D1B12;border:1px solid #244732;">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <span style="width:26px;height:26px;border-radius:50%;background:#FF542E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0;">${(currentUser.username || '?').charAt(0).toUpperCase()}</span>
+            <div style="min-width:0;">
+              <div style="font-size:12px;font-weight:700;color:#FFF8F3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${currentUser.username || ''}</div>
+              <div style="font-size:10px;color:#22c55e;font-family:monospace;">${roleLabel}</div>
+            </div>
+          </div>
+          <button id="mp-eco-logout" title="Выйти из системы" style="background:rgba(255,84,46,0.15);border:1px solid rgba(255,84,46,0.5);color:#FF542E;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;flex-shrink:0;">⎋ Выйти</button>
+        </div>
+      `;
+      const logoutBtn = document.getElementById('mp-eco-logout');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          try {
+            localStorage.removeItem('mp_auth_token');
+            localStorage.removeItem('mp_auth_user');
+          } catch (err) { /* noop */ }
+          window.location.href = 'login.html';
+        });
+      }
+    } else {
+      authContainer.innerHTML = '';
+    }
+  }
 
   // Toggle Panel
   const trigger = document.getElementById('mp-eco-trigger');
