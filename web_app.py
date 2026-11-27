@@ -12,6 +12,14 @@ app = FastAPI(title="Mayprogulka AI-OCR Station")
 pipeline = FormOCRPipeline()
 
 REAL_SAMPLE_PATH = r"C:/Users/yulia/.gemini/antigravity/brain/716b16ca-a259-447f-848c-30e9c20c576a/.user_uploaded/media_1795443673179_eacf35dd.jpg"
+FALLBACK_REAL_SAMPLE_PATH = "ocr_system/user_real_aligned.png"
+
+def _get_real_sample_path():
+    if os.path.exists(REAL_SAMPLE_PATH):
+        return REAL_SAMPLE_PATH
+    if os.path.exists(FALLBACK_REAL_SAMPLE_PATH):
+        return FALLBACK_REAL_SAMPLE_PATH
+    return None
 
 MOCK_CASES = [
     ('ИВАНОВ', 'ИВАН', 'ИВАНОВИЧ', '21', '03', '1985', 'M', '9041234567', 'ЕКАТЕРИНБУРГ', '02', 0, '012345'),
@@ -388,8 +396,8 @@ def index():
 
             document.getElementById('metric-conf').innerText = res.overall_confidence + '%';
             document.getElementById('conf-val').innerText = res.overall_confidence + '%';
-            document.getElementById('metric-dist').innerText = d.distance ? String(d.distance).split(' ')[0] + ' км' : '—';
-            document.getElementById('metric-age').innerText = (d.calculated_age || '—') + ' лет';
+            const distText = d.distance ? String(d.distance) : ''; document.getElementById('metric-dist').innerText = (distText && distText !== 'Не выбрана') ? distText.split(' ')[0] + ' км' : '—';
+            document.getElementById('metric-age').innerText = (d.calculated_age !== null && d.calculated_age !== undefined) ? (d.calculated_age + ' лет') : '—';
 
             if (res.status === 'APPROVED') {
                 sc.className = 'status-box status-approved';
@@ -420,8 +428,8 @@ def index():
 
 @app.get("/api/real-image")
 def get_real_image():
-    if os.path.exists(REAL_SAMPLE_PATH):
-        img = cv2.imread(REAL_SAMPLE_PATH)
+    if _get_real_sample_path():
+        img = cv2.imread(_get_real_sample_path())
         _, buffer = cv2.imencode(".jpg", img)
         return HTMLResponse(content=buffer.tobytes(), media_type="image/jpeg")
     return HTMLResponse(content=b"", status_code=404)
@@ -436,8 +444,8 @@ def get_mock_image(case: int = 0):
 @app.get("/api/recognize-sample")
 def recognize_sample(type: str = Query("real")):
     if type == "real":
-        if os.path.exists(REAL_SAMPLE_PATH):
-            img = cv2.imread(REAL_SAMPLE_PATH)
+        if _get_real_sample_path():
+            img = cv2.imread(_get_real_sample_path())
             return JSONResponse(content=pipeline.process_image(img))
     elif type == "mock0":
         c = MOCK_CASES[0]

@@ -15,10 +15,37 @@ COMMON_RUSSIAN_CITIES = [
 
 COMMON_RUSSIAN_NAMES = [
     "АЛЕКСЕЙ", "АЛЕКСАНДР", "ИВАН", "ДМИТРИЙ", "МАКСИМ", "СЕРГЕЙ", "АНДРЕЙ",
-    "АРТЕМ", "ИЛЬЯ", "МИХАИЛ", "НИКИТА", "ЕГОР", "МАТВЕЙ", "ТИМОФЕЙ", "РОМАН",
-    "ВЛАДИМИР", "ЯРОСЛАВ", "ФЕДОР", "ГЛЕБ", "КОНСТАНТИН", "АННА", "ЕЛЕНА",
-    "ОЛЬГА", "МАРИЯ", "ЕКАТЕРИНА", "НАТАЛЬЯ", "ИРИНА", "СВЕТЛАНА", "ЮЛИЯ", "ДАРЬЯ",
-    "ПАВЕЛ", "ОЛЕГ", "ВИКТОР", "ТАТЬЯНА", "ВАСИЛИЙ", "ПЕТР", "НИКОЛАЙ", "МАРИНА",
+    "АРТЕМ", "АРТЁМ", "ИЛЬЯ", "МИХАИЛ", "НИКИТА", "ЕГОР", "МАТВЕЙ", "ТИМОФЕЙ", "РОМАН",
+    "ВЛАДИМИР", "ЯРОСЛАВ", "ФЕДОР", "ФЁДОР", "ГЛЕБ", "КОНСТАНТИН", "ГЕОРГИЙ", "ГРИГОРИЙ",
+    "АННА", "ЕЛЕНА", "ОЛЬГА", "МАРИЯ", "ЕКАТЕРИНА", "НАТАЛЬЯ", "ИРИНА", "СВЕТЛАНА",
+    "ЮЛИЯ", "ДАРЬЯ", "ПАВЕЛ", "ОЛЕГ", "ВИКТОР", "ТАТЬЯНА", "ВАСИЛИЙ", "ПЕТР", "ПЁТР",
+    "НИКОЛАЙ", "МАРИНА", "КИРИЛЛ", "АНТОН", "ДЕНИС", "ВАДИМ", "ЕВГЕНИЙ", "ВЯЧЕСЛАВ",
+    "СТАНИСЛАВ", "ЮРИЙ", "ИГОРЬ", "БОРИС", "РУСЛАН", "ТИМУР", "ДАНИИЛ", "ВАЛЕРИЙ",
+    "ГЕННАДИЙ", "ЭДУАРД", "АРСЕНИЙ", "МАРК", "ЛЕВ", "АЛЕКСАНДРА", "АНАСТАСИЯ", "ВИКТОРИЯ",
+    "ПОЛИНА", "КСЕНИЯ", "СОФЬЯ", "ГАЛИНА", "ЛАРИСА", "ЛЮДМИЛА", "НАДЕЖДА", "ТАМАРА",
+    "ВАЛЕНТИНА", "ВЕРА", "ЛЮБОВЬ", "ЛИДИЯ", "ЕВГЕНИЯ", "АЛИНА", "ДИАНА", "КРИСТИНА",
+    "ВАЛЕРИЯ", "АЛЕНА", "АЛЁНА", "ТАИСИЯ",
+]
+
+COMMON_RUSSIAN_PATRONYMICS = [
+    "АЛЕКСАНДРОВИЧ", "АЛЕКСАНДРОВНА", "АЛЕКСЕЕВИЧ", "АЛЕКСЕЕВНА",
+    "АНАТОЛЬЕВИЧ", "АНАТОЛЬЕВНА", "АНДРЕЕВИЧ", "АНДРЕЕВНА",
+    "АРТЕМОВИЧ", "АРТЕМОВНА", "БОРИСОВИЧ", "БОРИСОВНА",
+    "ВАЛЕРЬЕВИЧ", "ВАЛЕРЬЕВНА", "ВАСИЛЬЕВИЧ", "ВАСИЛЬЕВНА",
+    "ВИКТОРОВИЧ", "ВИКТОРОВНА", "ВЛАДИМИРОВИЧ", "ВЛАДИМИРОВНА",
+    "ВЯЧЕСЛАВОВИЧ", "ВЯЧЕСЛАВОВНА", "ГЕННАДЬЕВИЧ", "ГЕННАДЬЕВНА",
+    "ГЕОРГИЕВИЧ", "ГЕОРГИЕВНА", "ГРИГОРЬЕВИЧ", "ГРИГОРЬЕВНА",
+    "ДЕНИСОВИЧ", "ДЕНИСОВНА", "ДМИТРИЕВИЧ", "ДМИТРИЕВНА",
+    "ЕВГЕНЬЕВИЧ", "ЕВГЕНЬЕВНА", "ЕГОРОВИЧ", "ЕГОРОВНА",
+    "ИВАНОВИЧ", "ИВАНОВНА", "ИГОРЕВИЧ", "ИГОРЕВНА",
+    "ИЛЬИЧ", "ИЛЬИНИЧНА", "КОНСТАНТИНОВИЧ", "КОНСТАНТИНОВНА",
+    "МАКСИМОВИЧ", "МАКСИМОВНА", "МИХАЙЛОВИЧ", "МИХАЙЛОВНА",
+    "НИКИТИЧ", "НИКИТИЧНА", "НИКОЛАЕВИЧ", "НИКОЛАЕВНА",
+    "ОЛЕГОВИЧ", "ОЛЕГОВНА", "ПАВЛОВИЧ", "ПАВЛОВНА",
+    "ПЕТРОВИЧ", "ПЕТРОВНА", "РОМАНОВИЧ", "РОМАНОВНА",
+    "СЕРГЕЕВИЧ", "СЕРГЕЕВНА", "СТАНИСЛАВОВИЧ", "СТАНИСЛАВОВНА",
+    "ТИМУРОВИЧ", "ТИМУРОВНА", "ФЕДОРОВИЧ", "ФЕДОРОВНА",
+    "ЮРЬЕВИЧ", "ЮРЬЕВНА", "ЯРОСЛАВОВИЧ", "ЯРОСЛАВОВНА",
 ]
 
 _LAT_TO_CYR = str.maketrans({
@@ -81,6 +108,8 @@ def _fuzzy_match_from_list(cleaned, candidates):
     scored = []
     for cand in candidates:
         cand_compact = cand.replace(" ", "").replace("-", "")
+        if abs(len(compact) - len(cand_compact)) > 1:
+            continue
         d = levenshtein_dist(compact, cand_compact)
         max_allowed = 1 if len(cand_compact) <= 7 else 2
         if d <= max_allowed:
@@ -108,14 +137,22 @@ class DeepLearningOCRClassifier:
         hw_onnx_path="ocr_system/models/handwritten_char.onnx",
         hw_dict_path="ocr_system/models/handwritten_dict.txt",
     ):
+        # Отключение det/cls через конструктор совместимо как с rapidocr-onnxruntime 1.2.3, так и с 1.4.x
         if os.path.exists(model_path) and os.path.exists(dict_path):
             self.engine = RapidOCR(
                 rec_model_path=model_path, rec_keys_path=dict_path
             )
-            self.latin_engine = RapidOCR()
+            self.rec_engine = RapidOCR(
+                use_det=False,
+                use_cls=False,
+                rec_model_path=model_path,
+                rec_keys_path=dict_path,
+            )
+            self.latin_engine = RapidOCR(use_det=False, use_cls=False)
         else:
             self.engine = RapidOCR()
-            self.latin_engine = self.engine
+            self.rec_engine = RapidOCR(use_det=False, use_cls=False)
+            self.latin_engine = self.rec_engine
 
         self.char_sess = None
         self.char_classes = []
@@ -144,6 +181,47 @@ class DeepLearningOCRClassifier:
                     dtype=bool,
                 ),
             }
+
+    @staticmethod
+    def _parse_ocr_result(res):
+        """Унифицированный разбор ответа RapidOCR ([box, text, score] или (text, score), со строковым или float score)."""
+        if not res:
+            return "", 0.0
+
+        items = []
+        for entry in res:
+            if not isinstance(entry, (list, tuple)) or len(entry) < 2:
+                continue
+            if len(entry) == 2 and not isinstance(entry[0], (list, tuple)):
+                txt = str(entry[0]).strip()
+                try:
+                    conf = float(entry[1])
+                except (TypeError, ValueError):
+                    conf = 0.0
+                items.append((0.0, txt, conf))
+            elif len(entry) >= 3:
+                box = entry[0]
+                txt = str(entry[1]).strip()
+                try:
+                    conf = float(entry[2])
+                except (TypeError, ValueError):
+                    conf = 0.0
+                try:
+                    x_left = float(min(pt[0] for pt in box))
+                except Exception:
+                    x_left = 0.0
+                items.append((x_left, txt, conf))
+
+        if not items:
+            return "", 0.0
+
+        items.sort(key=lambda t: t[0])
+        non_empty = [t for t in items if t[1]]
+        if not non_empty:
+            return "", 0.0
+        full_text = "".join(t[1] for t in non_empty)
+        avg_conf = float(np.mean([t[2] for t in non_empty]))
+        return full_text, avg_conf
 
     @staticmethod
     def _cell_to_48x48(cell_bgr):
@@ -191,13 +269,20 @@ class DeepLearningOCRClassifier:
         avg_conf = float(np.mean(probs.max(axis=1)))
         return text, probs, avg_conf
 
-    def fuse_cyrillic_with_handwritten(self, med_raw, hw_str, hw_probs):
+    def fuse_cyrillic_with_handwritten(self, med_raw, hw_str, hw_probs, hw_conf=0.0):
         """
         Объединяет строковый выход PP-OCRv6 (контекст слова) с поклеточной
-        рукописной ONNX-моделью, заменяя только символы, где рукописная модель уверена.
+        рукописной ONNX-моделью. Если PP-OCRv6 потерял/склеил ячейки (разная длина),
+        а поклеточная модель уверена — опирается на поклеточное распознавание.
         """
         med_clean = self._clean_cyrillic(med_raw).replace(" ", "")
-        if not med_clean or not hw_str or hw_probs is None or len(med_clean) != len(hw_str):
+        if not hw_str or hw_probs is None:
+            return med_clean
+        if not med_clean:
+            return hw_str
+        if len(med_clean) != len(hw_str):
+            if len(hw_str) > len(med_clean) and hw_conf >= 0.68:
+                return hw_str
             return med_clean
 
         out = []
@@ -235,6 +320,14 @@ class DeepLearningOCRClassifier:
         if len(cleaned) <= 4:
             return cleaned
         return _fuzzy_match_from_list(cleaned, COMMON_RUSSIAN_NAMES)
+
+    def decode_patronymic(self, raw_str):
+        cleaned = self._clean_cyrillic(raw_str).replace(" ", "")
+        if not cleaned:
+            return ""
+        if len(cleaned) <= 4:
+            return cleaned
+        return _fuzzy_match_from_list(cleaned, COMMON_RUSSIAN_PATRONYMICS)
 
     def decode_city(self, raw_str):
         cleaned = self._clean_cyrillic(raw_str)
@@ -383,22 +476,12 @@ class DeepLearningOCRClassifier:
     def predict_packed_cells(self, packed_bgr, use_latin=False):
         if packed_bgr is None or packed_bgr.size == 0:
             return "", 0.0
-        eng = self.latin_engine if use_latin else self.engine
-        res, _ = eng(packed_bgr, use_det=False, use_cls=False)
-        if not res:
-            return "", 0.0
-        txt, conf = res[0]
-        return txt.strip(), float(conf)
+        eng = self.latin_engine if use_latin else self.rec_engine
+        res, _ = eng(packed_bgr)
+        return self._parse_ocr_result(res)
 
     def predict_field_strip(self, strip_bgr):
         if strip_bgr is None or strip_bgr.size == 0:
             return "", 0.0
-
         res, _ = self.engine(strip_bgr)
-        if not res:
-            return "", 0.0
-
-        sorted_tokens = sorted(res, key=lambda item: item[0][0][0])
-        full_text = "".join([item[1].strip() for item in sorted_tokens])
-        avg_conf = float(np.mean([item[2] for item in sorted_tokens]))
-        return full_text, avg_conf
+        return self._parse_ocr_result(res)

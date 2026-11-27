@@ -5,7 +5,7 @@ import numpy as np
 class DocumentAligner:
     """
     Выравнивание перспективы бланка анкеты к единому формату 1200x1600:
-    1. ArUco-маркеры (0=TL, 1=TR, 2=BR, 3=BL) — новый машиночитаемый бланк.
+    1. ArUco-маркеры (0=TL, 1=TR, 2=BR, 3=BL) — новый машиночитаемый бланк (поддержка 3 из 4 и пересветов).
     2. 4 угловых чёрных реперных квадрата — классический бланк (масштабируется под любое разрешение фото).
     3. Внешний контур листа бумаги (CamScanner-подход).
     """
@@ -16,6 +16,25 @@ class DocumentAligner:
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.detector = cv2.aruco.ArucoDetector(self.aruco_dict)
 
+        relaxed_params = cv2.aruco.DetectorParameters()
+        relaxed_params.adaptiveThreshWinSizeMin = 3
+        relaxed_params.adaptiveThreshWinSizeMax = 53
+        relaxed_params.adaptiveThreshWinSizeStep = 4
+        relaxed_params.minMarkerPerimeterRate = 0.015
+        relaxed_params.polygonalApproxAccuracyRate = 0.06
+        relaxed_params.errorCorrectionRate = 0.8
+        self.relaxed_detector = cv2.aruco.ArucoDetector(self.aruco_dict, relaxed_params)
+
+        # Точные центры ArUco-маркеров в FormGenerator (marker_size=70 -> half=34.5)
+        self.aruco_centers = {
+            0: [54.5, 54.5],
+            1: [float(self.target_w - 55.5), 54.5],
+            2: [float(self.target_w - 55.5), float(self.target_h - 55.5)],
+            3: [54.5, float(self.target_h - 55.5)],
+        }
+        self.aruco_half = 34.5
+
+        # Центры чёрных угловых квадратов на классическом бланке
         self.dst_centers = {
             0: [50.0, 50.0],
             1: [float(self.target_w - 50), 50.0],
@@ -23,33 +42,79 @@ class DocumentAligner:
             3: [50.0, float(self.target_h - 50)],
         }
 
-    def _align_aruco(self, image_np):
-        gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
-        corners, ids, _ = self.detector.detectMarkers(gray)
+    def _collect_aruco_markers(self, gray):
+        id_map = {}
 
-        if ids is not None and len(ids) >= 4:
-            id_map = {}
+        def _merge(detector, img_g):
+            corners, ids, _ = detector.detectMarkers(img_g)
+            if ids is None:
+                return
             for i in range(len(ids)):
                 mid = int(ids[i][0]) if hasattr(ids[i], "__len__") else int(ids[i])
-                id_map[mid] = corners[i][0]
+                if mid in (0, 1, 2, 3) and mid not in id_map:
+                    id_map[mid] = corners[i][0]
 
-            if all(k in id_map for k in [0, 1, 2, 3]):
-                src_pts = []
-                dst_pts = []
-                for k in [0, 1, 2, 3]:
-                    marker_corners = id_map[k]
-                    cx = float(np.mean(marker_corners[:, 0]))
-                    cy = float(np.mean(marker_corners[:, 1]))
-                    src_pts.append([cx, cy])
-                    dst_pts.append(self.dst_centers[k])
+        _merge(self.detector, gray)
+        if len(id_map) < 4:
+            _merge(self.relaxed_detector, gray)
+        if len(id_map) < 4:
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8)).apply(gray)
+            _merge(self.relaxed_detector, clahe)
+        if len(id_map) < 4:
+            # Гамма-коррекция помогает на сильно засвеченных сканах
+            gamma = np.clip((gray.astype(np.float32) / 255.0) ** 2.0 * 255.0, 0, 255).astype(np.uint8)
+            _merge(self.relaxed_detector, gamma)
 
-                matrix = cv2.getPerspectiveTransform(
-                    np.float32(src_pts), np.float32(dst_pts)
-                )
-                warped = cv2.warpPerspective(
-                    image_np, matrix, (self.target_w, self.target_h)
-                )
-                return warped, True
+        return id_map
+
+    def _align_aruco(self, image_np):
+        gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+        id_map = self._collect_aruco_markers(gray)
+
+        if all(k in id_map for k in (0, 1, 2, 3)):
+            src_pts = []
+            dst_pts = []
+            for k in (0, 1, 2, 3):
+                marker_corners = id_map[k]
+                cx = float(np.mean(marker_corners[:, 0]))
+                cy = float(np.mean(marker_corners[:, 1]))
+                src_pts.append([cx, cy])
+                dst_pts.append(self.aruco_centers[k])
+
+            matrix = cv2.getPerspectiveTransform(
+                np.float32(src_pts), np.float32(dst_pts)
+            )
+            warped = cv2.warpPerspective(
+                image_np, matrix, (self.target_w, self.target_h)
+            )
+            return warped, True
+
+        # Резерв: если видны 3 из 4 угловых ArUco-маркеров, 12 угловых точек дают точную гомографию
+        if len(id_map) == 3:
+            src_pts = []
+            dst_pts = []
+            h = self.aruco_half
+            for k in sorted(id_map.keys()):
+                mc = id_map[k]
+                if len(mc) != 4:
+                    continue
+                cx, cy = self.aruco_centers[k]
+                dst_corners = [
+                    [cx - h, cy - h],
+                    [cx + h, cy - h],
+                    [cx + h, cy + h],
+                    [cx - h, cy + h],
+                ]
+                for pt_s, pt_d in zip(mc, dst_corners):
+                    src_pts.append([float(pt_s[0]), float(pt_s[1])])
+                    dst_pts.append(pt_d)
+            if len(src_pts) >= 12:
+                matrix, _ = cv2.findHomography(np.float32(src_pts), np.float32(dst_pts))
+                if matrix is not None:
+                    warped = cv2.warpPerspective(
+                        image_np, matrix, (self.target_w, self.target_h)
+                    )
+                    return warped, True
 
         return None, False
 
@@ -85,7 +150,13 @@ class DocumentAligner:
                     continue
                 aspect = float(bw) / bh
                 solidity = area / float(bw * bh)
-                if not (0.65 <= aspect <= 1.45 and solidity >= 0.70):
+                if not (0.65 <= aspect <= 1.45 and solidity >= 0.72):
+                    continue
+                # Отсеиваем маркеры со светлыми внутренними ячейками (остаются только сплошные чёрные квадраты)
+                px1, py1 = x + max(1, bw // 5), y + max(1, bh // 5)
+                px2, py2 = x + bw - max(1, bw // 5), y + bh - max(1, bh // 5)
+                inner_fill = float((thresh[py1:py2, px1:px2] > 0).mean()) if (px2 > px1 and py2 > py1) else 0.0
+                if inner_fill < 0.72:
                     continue
                 M = cv2.moments(cnt)
                 if M["m00"] == 0:
@@ -107,9 +178,19 @@ class DocumentAligner:
         с адаптацией под разное разрешение и освещение.
         """
         gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8)).apply(gray)
 
-        for thresh_val in (95, 120, 75):
-            detected = self._find_squares_in_quadrants(gray, thresh_val)
+        candidates = [
+            (gray, 95),
+            (gray, 120),
+            (gray, 75),
+            (gray, 145),
+            (clahe, 95),
+            (clahe, 120),
+        ]
+
+        for img_g, thresh_val in candidates:
+            detected = self._find_squares_in_quadrants(img_g, thresh_val)
             if all(detected[k] is not None for k in ["TL", "TR", "BR", "BL"]):
                 src_pts = np.float32(
                     [detected["TL"], detected["TR"], detected["BR"], detected["BL"]]
