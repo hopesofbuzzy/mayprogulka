@@ -3,6 +3,7 @@
 ## Запуск
 ```bash
 git clone https://github.com/hopesofbuzzy/mayprogulka.git
+python -m venv .venv
 pip install uv
 # Запуск API-сервиса
 uv run fastapi dev
