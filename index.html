@@ -21,6 +21,15 @@
       opacity: 0.98;
     }
   </style>
+  <style>
+    .contour-meta-text { display: contents; }
+    @media (max-width: 639px) {
+      .contour-meta-header { flex-wrap: wrap; justify-content: flex-start; gap: .5rem; }
+      .contour-meta-row { align-items: baseline; }
+      .contour-meta-row > :first-child { flex-shrink: 0; }
+      .contour-meta-text { display: block; min-width: 0; }
+    }
+  </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-[#FF542E] selection:text-white hero-topo">
 
@@ -91,7 +100,7 @@
       <!-- CONTOUR 1: PUBLIC PORTAL -->
       <div class="bg-white rounded-2xl p-6 border-2 border-[#122419]/10 shadow-xl flex flex-col justify-between hover:border-[#15803D] transition group">
         <div>
-          <div class="flex items-center justify-between mb-4">
+          <div class="contour-meta-header flex items-center justify-between mb-4">
             <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
               КОНТУР I • ПУБЛИЧНЫЙ
             </span>
@@ -107,21 +116,21 @@
           </p>
 
           <ul class="space-y-2.5 text-xs font-mono text-neutral-700 border-t border-neutral-100 pt-4 mb-6">
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <strong>Главный лендинг</strong> (таймер, фото, партнеры)
+              <span class="contour-meta-text"><strong>Главный лендинг</strong> (таймер, фото, партнеры)</span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <strong>Селектор маршрутов</strong> (10, 17, 33, 50 км)
+              <span class="contour-meta-text"><strong>Селектор маршрутов</strong> (10, 17, 33, 50 км)</span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <strong>Профиль перепада высот</strong> (SVG)
+              <span class="contour-meta-text"><strong>Профиль перепада высот</strong> (SVG)</span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <strong>Памятка безопасности</strong> (клещи, дождевик)
+              <span class="contour-meta-text"><strong>Памятка безопасности</strong> (клещи, дождевик)</span>
             </li>
           </ul>
         </div>
@@ -184,7 +193,7 @@
       <!-- CONTOUR 3: OPERATIONS & SAFETY -->
       <div class="bg-[#122419] text-white rounded-2xl p-6 border-2 border-[#244732] shadow-xl flex flex-col justify-between hover:border-[#FF542E] transition group">
         <div>
-          <div class="flex items-center justify-between mb-4">
+          <div class="contour-meta-header flex items-center justify-between mb-4">
             <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#FF542E]/20 text-[#FF542E] border border-[#FF542E]/40">
               КОНТУР III • ОПЕРАЦИИ
             </span>
@@ -200,21 +209,21 @@
           </p>
 
           <ul class="space-y-2.5 text-xs font-mono text-white/80 border-t border-[#244732] pt-4 mb-6">
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
-              <strong>Стартовый терминал</strong> (выдача за 2 сек)
+              <span class="contour-meta-text"><strong>Стартовый терминал</strong> (выдача за 2 сек)</span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
-              <strong>PWA-сканер маркёра</strong> (офлайн в лесу)
+              <span class="contour-meta-text"><strong>PWA-сканер маркёра</strong> (офлайн в лесу)</span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
-              <strong>Safety Engine Штаб</strong> (закат, МЧС)
+              <span class="contour-meta-text"><strong>Safety Engine Штаб</strong> (закат, МЧС)</span>
             </li>
-            <li class="flex items-center gap-2">
+            <li class="contour-meta-row flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-[#FF542E]"></span>
-              <strong>Станция OCR</strong> (валидация бумаги)
+              <span class="contour-meta-text"><strong>Станция OCR</strong> (валидация бумаги)</span>
             </li>
           </ul>
         </div>

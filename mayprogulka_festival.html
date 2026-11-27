@@ -24,13 +24,30 @@
       font-family: 'Onest', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--brand-bg);
       color: var(--brand-dark);
-      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
     .font-unbounded { font-family: 'Unbounded', sans-serif; }
     .font-bebas { font-family: 'Bebas Neue', sans-serif; }
     .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    .festival-nav-actions a:focus-visible {
+      outline: 3px solid #122419;
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 639px) {
+      .festival-nav { display: grid; gap: .75rem; padding-inline: .75rem; }
+      .festival-nav-logo { min-width: 0; }
+      .festival-nav-logo > :first-child { flex-shrink: 0; }
+      .festival-nav-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .festival-nav-actions a { justify-content: center; padding-inline: .375rem; gap: .375rem; }
+      .festival-countdown { display: grid; grid-template-columns: 1.13fr repeat(3, minmax(0, 1fr)); gap: .25rem; }
+      .festival-countdown > div { min-width: 0; padding: .625rem .125rem; border-radius: .75rem; }
+      .festival-countdown > span { display: none; }
+      .festival-countdown > div > :first-child { font-size: clamp(1rem, 5.6vw, 1.5rem); }
+      .festival-countdown > div > :last-child { letter-spacing: 0; }
+    }
 
     /* Marquee animation */
     @keyframes marquee {
@@ -46,12 +63,32 @@
       animation-play-state: paused;
     }
 
+    .timing-details { min-width: 0; }
+    .timing-details > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+    @media (max-width: 639px) {
+      .timing-details { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+      .timing-details > span:first-child { min-width: 0; }
+    }
+
     /* 3D Medal Badge */
     .badge-3d {
+      display: block;
+      max-width: 100%;
       perspective: 900px;
       transform-style: preserve-3d;
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    .badge-3d:focus-visible { outline: 3px solid #122419; outline-offset: 4px; }
+    .badge-3d[aria-pressed="true"] { width: min(100%, 18rem); }
+    .badge-3d[aria-pressed="true"] > .badge-inner { width: 100%; height: auto; aspect-ratio: 1; }
+    @media (max-width: 639px) {
+      .badge-3d[aria-pressed="false"] > .badge-inner { width: min(100%, 12.5rem); height: auto; aspect-ratio: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .badge-3d { transition: none; }
+      .badge-inner::after { animation: none !important; }
+    }
+
     .badge-inner {
       background: linear-gradient(135deg, #ffd700 0%, #ff8c00 45%, #b8860b 80%, #fff2a3 100%);
       box-shadow: 0 16px 36px -8px rgba(255, 84, 46, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.8), inset 0 -4px 8px rgba(0, 0, 0, 0.35);
@@ -123,8 +160,8 @@
 
   <!-- NAVIGATION HEADER -->
   <header class="max-w-6xl mx-auto px-4 py-4 sm:py-6 sticky top-2 z-40">
-    <nav class="bg-white/95 backdrop-blur-md rounded-2xl px-5 py-3 shadow-sm border border-stone-200/80 flex items-center justify-between gap-4">
-      <a href="#" class="flex items-center gap-3 group">
+    <nav class="festival-nav bg-white/95 backdrop-blur-md rounded-2xl px-5 py-3 shadow-sm border border-stone-200/80 flex items-center justify-between gap-4">
+      <a href="#" class="festival-nav-logo flex items-center gap-3 group">
         <div class="w-10 h-10 rounded-xl bg-[#ff542e] text-white flex items-center justify-center font-unbounded font-black text-sm shadow-md group-hover:scale-105 transition-transform">
           МП
         </div>
@@ -147,7 +184,7 @@
         <a href="#faq" class="hover:text-[#ff542e] transition">Вопрос-ответ</a>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-3">
+      <div class="festival-nav-actions flex items-center gap-2 sm:gap-3">
         <!-- Кнопка Личный кабинет -->
         <a href="user_cabinet.html" class="inline-flex items-center gap-2 bg-[#122419] hover:bg-[#1c3627] text-white text-xs sm:text-sm font-sans font-bold px-3.5 sm:px-4 py-2.5 rounded-xl transition border border-[#244732] shadow-sm hover:scale-102">
           <svg class="w-4 h-4 text-[#ff542e]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -190,22 +227,22 @@
           </p>
 
           <!-- Real Ticking Live Countdown -->
-          <div class="flex items-center gap-2 sm:gap-4 mb-8">
+          <div class="festival-countdown flex items-center gap-2 sm:gap-4 mb-8">
             <div class="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-3 sm:p-4 text-center min-w-[70px] sm:min-w-[85px] shadow-inner">
               <span id="timer-days" class="font-unbounded font-black text-2xl sm:text-4xl block tabular-nums leading-none">84</span>
               <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/80 mt-1 block">дней</span>
             </div>
-            <span class="text-2xl sm:text-4xl font-bold opacity-60">:</span>
+            <span aria-hidden="true" class="text-2xl sm:text-4xl font-bold opacity-60">:</span>
             <div class="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-3 sm:p-4 text-center min-w-[70px] sm:min-w-[85px] shadow-inner">
               <span id="timer-hours" class="font-unbounded font-black text-2xl sm:text-4xl block tabular-nums leading-none">10</span>
               <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/80 mt-1 block">часов</span>
             </div>
-            <span class="text-2xl sm:text-4xl font-bold opacity-60">:</span>
+            <span aria-hidden="true" class="text-2xl sm:text-4xl font-bold opacity-60">:</span>
             <div class="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-3 sm:p-4 text-center min-w-[70px] sm:min-w-[85px] shadow-inner">
               <span id="timer-mins" class="font-unbounded font-black text-2xl sm:text-4xl block tabular-nums leading-none">24</span>
               <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/80 mt-1 block">минут</span>
             </div>
-            <span class="text-2xl sm:text-4xl font-bold opacity-60">:</span>
+            <span aria-hidden="true" class="text-2xl sm:text-4xl font-bold opacity-60">:</span>
             <div class="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-3 sm:p-4 text-center min-w-[70px] sm:min-w-[85px] shadow-inner border-yellow-300/40">
               <span id="timer-secs" class="font-unbounded font-black text-2xl sm:text-4xl block tabular-nums leading-none text-yellow-300">58</span>
               <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-yellow-200 mt-1 block">секунд</span>
@@ -224,9 +261,10 @@
 
         <!-- 3D Finisher Badge -->
         <div class="lg:col-span-5 flex flex-col items-center justify-center text-center">
-          <div class="badge-3d cursor-pointer group" id="finisher-badge">
-            <div class="badge-inner w-56 h-56 sm:w-64 sm:h-64 rounded-full border-4 border-[#fff3b0] flex flex-col items-center justify-center p-6 text-[#4a2600]">
-              <div class="w-full h-full rounded-full border-2 border-dashed border-[#b36b00]/40 flex flex-col items-center justify-center">
+          <button type="button" class="badge-3d cursor-pointer group" id="finisher-badge"
+            aria-label="Увеличить значок финишера" aria-pressed="false" aria-describedby="badge-hint">
+            <span class="badge-inner w-56 h-56 sm:w-64 sm:h-64 rounded-full border-4 border-[#fff3b0] flex flex-col items-center justify-center p-6 text-[#4a2600]">
+              <span class="w-full h-full rounded-full border-2 border-dashed border-[#b36b00]/40 flex flex-col items-center justify-center">
                 <span class="text-[10px] font-unbounded font-black tracking-widest uppercase text-[#733b00]">Екатеринбург • 1984</span>
                 <span class="text-3xl sm:text-4xl my-1">🌲🚶‍♂️🌲</span>
                 <span class="font-unbounded font-black text-base sm:text-lg leading-tight uppercase tracking-tight text-center">
@@ -236,11 +274,11 @@
                 <span class="text-[9px] font-bold uppercase tracking-wider bg-[#803300] text-yellow-200 px-2.5 py-0.5 rounded-full mt-1">
                   Литой значок
                 </span>
-              </div>
-            </div>
-          </div>
-          <p class="text-xs text-white/90 mt-3 font-medium">
-            ✨ Наведите курсор на значок: литая награда каждому на финише!
+              </span>
+            </span>
+          </button>
+          <p id="badge-hint" class="text-xs text-white/90 mt-3 font-medium">
+            ✨ Нажмите на значок, чтобы увеличить его. Литая награда каждому на финише!
           </p>
         </div>
       </div>
@@ -464,7 +502,7 @@
 
       <div class="max-w-3xl mx-auto divide-y divide-stone-200">
         <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div class="flex items-center gap-4">
+          <div class="timing-details flex items-center gap-4">
             <span class="font-bebas text-2xl sm:text-3xl text-[#ff542e] min-w-[140px] tabular-nums">07:00 — 09:00</span>
             <span class="font-unbounded font-bold text-sm sm:text-base text-[#1f140e]">Старт 50 км «Классика»</span>
           </div>
@@ -472,7 +510,7 @@
         </div>
 
         <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div class="flex items-center gap-4">
+          <div class="timing-details flex items-center gap-4">
             <span class="font-bebas text-2xl sm:text-3xl text-blue-600 min-w-[140px] tabular-nums">08:00 — 11:00</span>
             <span class="font-unbounded font-bold text-sm sm:text-base text-[#1f140e]">Старт 33 км «В Новокольцовский»</span>
           </div>
@@ -480,7 +518,7 @@
         </div>
 
         <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div class="flex items-center gap-4">
+          <div class="timing-details flex items-center gap-4">
             <span class="font-bebas text-2xl sm:text-3xl text-emerald-600 min-w-[140px] tabular-nums">09:00 — 12:00</span>
             <span class="font-unbounded font-bold text-sm sm:text-base text-[#1f140e]">Старт 17 км «Шарташская кругосветка»</span>
           </div>
@@ -488,7 +526,7 @@
         </div>
 
         <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div class="flex items-center gap-4">
+          <div class="timing-details flex items-center gap-4">
             <span class="font-bebas text-2xl sm:text-3xl text-purple-600 min-w-[140px] tabular-nums">11:00 — 13:00</span>
             <span class="font-unbounded font-bold text-sm sm:text-base text-[#1f140e]">Старт 10 км «Исетский променад / Городской»</span>
           </div>
@@ -496,7 +534,7 @@
         </div>
 
         <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-orange-50/60 rounded-xl px-4 mt-2">
-          <div class="flex items-center gap-4">
+          <div class="timing-details flex items-center gap-4">
             <span class="font-bebas text-2xl sm:text-3xl text-[#ff542e] min-w-[140px] tabular-nums">12:00 — 21:00</span>
             <span class="font-unbounded font-bold text-sm sm:text-base text-[#1f140e]">Финиш для всех дистанций</span>
           </div>
@@ -862,16 +900,23 @@
     timerInterval = setInterval(tick, 1000);
     tick();
 
-    // 2. 3D Tilt Badge
+    // 2. Finisher badge: mouse tilt and an explicit, steady enlarged view.
     const badge = document.getElementById('finisher-badge');
-    badge.addEventListener('mousemove', (e) => {
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const resetBadgeTilt = () => badge.style.removeProperty('transform');
+    badge.addEventListener('pointermove', event => {
+      if (event.pointerType !== 'mouse' || reducedMotion.matches || badge.ariaPressed === 'true') return;
       const rect = badge.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-      badge.style.transform = `rotateY(${x * 0.15}deg) rotateX(${-y * 0.15}deg) scale(1.05)`;
+      const x = event.clientX - rect.left - rect.width / 2;
+      const y = event.clientY - rect.top - rect.height / 2;
+      badge.style.transform = 'rotateY(' + (x * .15) + 'deg) rotateX(' + (-y * .15) + 'deg) scale(1.05)';
     });
-    badge.addEventListener('mouseleave', () => {
-      badge.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
+    badge.addEventListener('pointerleave', resetBadgeTilt);
+    badge.addEventListener('pointercancel', resetBadgeTilt);
+    reducedMotion.addEventListener('change', resetBadgeTilt);
+    badge.addEventListener('click', () => {
+      resetBadgeTilt();
+      badge.ariaPressed = String(badge.ariaPressed !== 'true');
     });
 
     // 3. Complete 4 Routes Data from mayprogulka.ru
