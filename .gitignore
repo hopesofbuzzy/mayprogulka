@@ -4,3 +4,11 @@ Thumbs.db
 *.log
 node_modules/
 dist/
+
+.env.*
+!.env.example
+/.venv-ocr/
+__pycache__/
+/AGENTS.md
+/TASK-*.md
+/test-results/

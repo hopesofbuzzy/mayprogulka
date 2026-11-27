@@ -18,6 +18,7 @@
 (function (global) {
   const DEFAULT_API_BASE_URL = 'http://localhost:8000';
 
+  const gateway = global.MP_LOOPBACK_GATEWAY === true;
   const STORAGE_KEY = 'mp_api_base';
   const AUTH_TOKEN_KEY = 'mp_auth_token';
   const AUTH_USER_KEY = 'mp_auth_user';
@@ -37,7 +38,7 @@
     try { document.documentElement.classList.remove('mp-auth-wait'); } catch (e) { /* noop */ }
   }
 
-  try {
+  if (!gateway) try {
     const params = new URLSearchParams(global.location.search);
     const apiParam = params.get('api');
     if (apiParam === 'reset') {
@@ -50,13 +51,13 @@
   }
 
   let savedBase = '';
-  try {
+  if (!gateway) try {
     savedBase = global.localStorage.getItem(STORAGE_KEY) || '';
   } catch (e) {
     savedBase = '';
   }
 
-  const baseUrl = (savedBase || DEFAULT_API_BASE_URL || '').replace(/\/+$/, '');
+  const baseUrl = gateway ? '' : (savedBase || DEFAULT_API_BASE_URL || '').replace(/\/+$/, '');
 
   // --- Домашняя страница для каждой роли (после входа) ---
   const ROLE_HOME = {
@@ -65,7 +66,7 @@
     registrar: 'registrar_terminal.html',
     marker: 'marker_terminal.html',
     organizer: 'control_panel.html',
-    admin: 'control_panel.html'
+    admin: gateway ? 'typist_station.html' : 'control_panel.html'
   };
 
   // --- Хранилище токена и пользователя ---
@@ -123,6 +124,7 @@
 
   function mpApiUrl(path) {
     if (!path) return baseUrl || '/';
+    if (gateway && !path.startsWith('/api/v1/')) throw new Error('Недопустимый путь API');
     if (/^https?:\/\//i.test(path)) return path;
     const normalizedPath = path.startsWith('/') ? path : '/' + path;
     return baseUrl ? baseUrl + normalizedPath : normalizedPath;
@@ -160,6 +162,8 @@
     const resp = await fetch(mpApiUrl(path), {
       method: method,
       headers: headers,
+      signal: opts.signal,
+      redirect: gateway ? 'error' : 'follow',
       body: body === null ? undefined : (body instanceof FormData ? body : JSON.stringify(body))
     });
 
@@ -182,7 +186,7 @@
       throw err;
     }
 
-    return data;
+    return opts.withStatus ? { status: resp.status, data } : data;
   }
 
   /**
