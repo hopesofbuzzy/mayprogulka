@@ -31,8 +31,7 @@ from benchmark.augment import degrade
 from benchmark.ground_truth import (
     FIELD_EXPECTED_LEN,
     FIELD_STRIPS,
-    REAL_PHOTO_FORM,
-    REAL_PHOTO_PATH,
+    REAL_PHOTOS,
     normalize_field,
 )
 
@@ -87,13 +86,13 @@ def cer(ref, hyp):
 
 # ---------------------------------------------------------------- диагностика
 
-def diagnose_real(pipeline, artifacts=True):
+def diagnose_real(pipeline, photo, artifacts=True):
     """Прогон реального фото + разбор по стадиям без правок пайплайна."""
-    img = cv2.imread(REAL_PHOTO_PATH)
+    img = cv2.imread(photo["path"])
     if img is None:
-        return {"error": f"не удалось прочитать {REAL_PHOTO_PATH}"}
+        return {"error": f"не удалось прочитать {photo['path']}"}
 
-    diag = {"image": REAL_PHOTO_PATH, "image_shape": list(img.shape)}
+    diag = {"image": photo["path"], "image_shape": list(img.shape), "template": photo["template"]}
 
     t0 = time.perf_counter()
     aligned, is_form, align_type = pipeline._verify_and_align(img)
@@ -105,6 +104,7 @@ def diagnose_real(pipeline, artifacts=True):
     t0 = time.perf_counter()
     rows = pipeline._detect_row_anchors(aligned, align_type)
     diag["t_rows_s"] = round(time.perf_counter() - t0, 3)
+    diag["gt_form"] = photo["form"]
     diag["row_anchors"] = {k: int(v) for k, v in rows.items()}
 
     # Сколько ячеек реально найдено в каждой строке против ожидаемого числа символов
@@ -120,7 +120,7 @@ def diagnose_real(pipeline, artifacts=True):
         }
         if artifacts:
             os.makedirs(ART_DIR, exist_ok=True)
-            cv2.imwrite(os.path.join(ART_DIR, f"real_strip_{field}.png"), strip)
+            cv2.imwrite(os.path.join(ART_DIR, f"real_strip_{photo['template']}_{field}.png"), strip)
     diag["cells"] = cells
 
     # Прямой вызов распознавателей — видно «сырой» выход моделей до постобработки
@@ -144,7 +144,8 @@ def diagnose_real(pipeline, artifacts=True):
 
     if artifacts:
         os.makedirs(ART_DIR, exist_ok=True)
-        cv2.imwrite(os.path.join(ART_DIR, "real_aligned.png"), aligned)
+        tag = photo["template"]
+        cv2.imwrite(os.path.join(ART_DIR, f"real_aligned_{tag}.png"), aligned)
 
     diag["result"] = result
     return diag
@@ -153,9 +154,10 @@ def diagnose_real(pipeline, artifacts=True):
 def compare_real(diag):
     result = diag.get("result", {})
     got = result.get("data", {})
+    gt_form = diag["gt_form"]
     rows = []
     for field in FIELD_ORDER:
-        gt = normalize_field(field, REAL_PHOTO_FORM[field])
+        gt = normalize_field(field, gt_form[field])
         pred = normalize_field(field, got.get(field, ""))
         rows.append({
             "field": field,
@@ -291,13 +293,15 @@ def aggregate_synthetic(results):
 
 # ---------------------------------------------------------------- отчёт
 
-def write_report(real_diag, real_cmp, syn_agg, latencies, path):
+def write_report(reals, syn_agg, latencies, path):
     L = []
     L.append("# Отчёт: бенчмарк OCR-пайплайна анкет «Майской прогулки»\n")
     L.append("*Автогенерация: benchmark/run_benchmark.py. Пайплайн не изменялся.*\n")
 
-    if real_cmp:
-        L.append("\n## 1. Реальное фото (test_data/20261127_212948.jpg)\n")
+    for real_diag, real_cmp in reals:
+        if real_diag is None or real_cmp is None:
+            continue
+        L.append(f"\n## Реальное фото ({real_diag.get('image')}) — шаблон {real_diag.get('template')}\n")
         L.append(f"- Стратегия выравнивания: **{real_diag.get('align_type')}**")
         L.append(f"- Статус пайплайна: **{real_cmp['status']}**, уверенность {real_cmp['confidence']}%")
         L.append(f"- Верных полей: **{real_cmp['exact_n']} из {real_cmp['total']}** ({real_cmp['accuracy']*100:.0f}%)\n")
@@ -324,9 +328,7 @@ def write_report(real_diag, real_cmp, syn_agg, latencies, path):
                 txt = d.get("raw", d.get("raw_med", ""))
                 conf = d.get("conf", "—")
                 L.append(f"| {f} | `{txt}` | {conf} |")
-        L.append("\nВыровненное изображение: `benchmark/artifacts/real_aligned.png`, кропы строк: `benchmark/artifacts/real_strip_*.png`.")
-
-        L.append("\n### Латентность по стадиям (реальное фото, CPU)\n")
+        L.append("\n### Латентность по стадиям (CPU)\n")
         L.append(f"- Выравнивание: **{real_diag.get('t_align_s')} c** · Детекция строк: **{real_diag.get('t_rows_s')} c** · Распознавание: **{real_diag.get('t_process_s')} c** (полный прогон)")
 
     if syn_agg:
@@ -374,12 +376,14 @@ def main():
     from ocr_system.pipeline import FormOCRPipeline
     pipeline = FormOCRPipeline()
 
-    real_diag, real_cmp = None, None
+    reals = []
     if not args.skip_real:
-        print("== Реальное фото ==")
-        real_diag = diagnose_real(pipeline)
-        real_cmp = compare_real(real_diag)
-        print(json.dumps(real_cmp, ensure_ascii=False, indent=2))
+        for photo in REAL_PHOTOS:
+            print(f"== Реальное фото {photo['path']} ({photo['template']}) ==")
+            diag = diagnose_real(pipeline, photo)
+            cmp_ = compare_real(diag)
+            reals.append((diag, cmp_))
+            print(json.dumps(cmp_, ensure_ascii=False, indent=2))
 
     syn_results, syn_agg = [], None
     if not args.skip_synthetic:
@@ -391,9 +395,9 @@ def main():
     latencies = [r["latency_s"] for r in syn_results]
 
     with open("benchmark/results.json", "w", encoding="utf-8") as f:
-        json.dump({"real": real_diag, "synthetic_aggregated": syn_agg,
+        json.dump({"reals": [d for d, _ in reals], "synthetic_aggregated": syn_agg,
                    "synthetic_raw": syn_results}, f, ensure_ascii=False, indent=2, default=str)
-    write_report(real_diag, real_cmp, syn_agg, latencies, "benchmark/report.md")
+    write_report(reals, syn_agg, latencies, "benchmark/report.md")
     print("\nГотово: benchmark/results.json, benchmark/report.md")
 
 

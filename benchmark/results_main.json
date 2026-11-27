@@ -1,0 +1,2245 @@
+{
+  "real": {
+    "image": "test_data/20261127_212948.jpg",
+    "image_shape": [
+      4000,
+      3000,
+      3
+    ],
+    "t_align_s": 0.144,
+    "align_type": "black_squares",
+    "t_rows_s": 4.088,
+    "row_anchors": {
+      "dist": 160,
+      "surname": 220,
+      "name": 276,
+      "patronymic": 332,
+      "date": 387,
+      "phone": 442,
+      "email": 496,
+      "city": 551,
+      "prev": 604,
+      "card": 804
+    },
+    "cells": {
+      "surname": {
+        "boxes_found": 24,
+        "expected_chars": 12,
+        "row_y": 220
+      },
+      "name": {
+        "boxes_found": 17,
+        "expected_chars": 7,
+        "row_y": 276
+      },
+      "patronymic": {
+        "boxes_found": 22,
+        "expected_chars": 8,
+        "row_y": 332
+      },
+      "date": {
+        "boxes_found": 3,
+        "expected_chars": 8,
+        "row_y": 387
+      },
+      "phone": {
+        "boxes_found": 7,
+        "expected_chars": 10,
+        "row_y": 442
+      },
+      "email": {
+        "boxes_found": 22,
+        "expected_chars": 15,
+        "row_y": 496
+      },
+      "city": {
+        "boxes_found": 16,
+        "expected_chars": 12,
+        "row_y": 551
+      },
+      "prev": {
+        "boxes_found": 1,
+        "expected_chars": 2,
+        "row_y": 604
+      },
+      "card": {
+        "boxes_found": 6,
+        "expected_chars": 6,
+        "row_y": 804
+      }
+    },
+    "t_raw_reads_s": 0.831,
+    "raw_reads": {
+      "surname": {
+        "raw": "БАГРИНОВСКИЙ",
+        "conf": 0.997
+      },
+      "name": {
+        "raw": "СРМ",
+        "conf": 0.775
+      },
+      "patronymic": {
+        "raw": "ЛЕГОИЧ",
+        "conf": 0.982
+      },
+      "date": {
+        "raw": "101",
+        "conf": 0.837
+      },
+      "phone": {
+        "raw": "9134567",
+        "conf": 0.974
+      },
+      "city": {
+        "raw": "ЕАТЕРНБУРГ",
+        "conf": 0.924
+      },
+      "email": {
+        "raw_med": "TESTАMAИ",
+        "raw_lat": "TESTAEC@MAIL.U",
+        "raw_hw": "TE51A8CXMAI1-4",
+        "hw_conf": 0.577,
+        "conf": 0.831
+      }
+    },
+    "t_process_s": 6.772,
+    "result": {
+      "success": true,
+      "strictly_aligned": true,
+      "align_type": "black_squares",
+      "overall_confidence": 91.6,
+      "status": "REQUIRES_REVIEW",
+      "event_year": 2026,
+      "data": {
+        "event_year": 2026,
+        "distance": "33 км (Лесной)",
+        "gender": "Мужской",
+        "surname": "БАГРИНОВСКИЙ",
+        "name": "СРМ",
+        "patronymic": "ЛЕГОИЧ",
+        "birth_date": "",
+        "calculated_age": null,
+        "phone": "9134567",
+        "email": "testaec@mail.ru",
+        "city": "ЕКАТЕРИНБУРГ",
+        "prev_participations": "0",
+        "card_number": "009813"
+      },
+      "validations": {
+        "date_valid": false,
+        "phone_valid": false,
+        "city_matched": "ЕКАТЕРИНБУРГ"
+      }
+    }
+  },
+  "synthetic_aggregated": {
+    "mild": {
+      "n": 12,
+      "fields": {
+        "distance": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "gender": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "surname": {
+          "accuracy": 0.917,
+          "mean_cer": 0.008
+        },
+        "name": {
+          "accuracy": 0.917,
+          "mean_cer": 0.021
+        },
+        "patronymic": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "birth_date": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "phone": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "email": {
+          "accuracy": 0.75,
+          "mean_cer": 0.024
+        },
+        "city": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "prev_participations": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "card_number": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        }
+      },
+      "form_accuracy": 0.667,
+      "approved_share": 1.0,
+      "review_share": 0.0,
+      "mean_conf": 98.4,
+      "latency_mean_s": 5.36
+    },
+    "medium": {
+      "n": 12,
+      "fields": {
+        "distance": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "gender": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "surname": {
+          "accuracy": 0.583,
+          "mean_cer": 0.054
+        },
+        "name": {
+          "accuracy": 0.833,
+          "mean_cer": 0.033
+        },
+        "patronymic": {
+          "accuracy": 0.667,
+          "mean_cer": 0.068
+        },
+        "birth_date": {
+          "accuracy": 0.917,
+          "mean_cer": 0.083
+        },
+        "phone": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "email": {
+          "accuracy": 0.25,
+          "mean_cer": 0.129
+        },
+        "city": {
+          "accuracy": 0.833,
+          "mean_cer": 0.049
+        },
+        "prev_participations": {
+          "accuracy": 0.917,
+          "mean_cer": 0.083
+        },
+        "card_number": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        }
+      },
+      "form_accuracy": 0.167,
+      "approved_share": 0.917,
+      "review_share": 0.083,
+      "mean_conf": 97.7,
+      "latency_mean_s": 5.04
+    },
+    "hard": {
+      "n": 12,
+      "fields": {
+        "distance": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "gender": {
+          "accuracy": 1.0,
+          "mean_cer": 0.0
+        },
+        "surname": {
+          "accuracy": 0.083,
+          "mean_cer": 0.405
+        },
+        "name": {
+          "accuracy": 0.417,
+          "mean_cer": 0.309
+        },
+        "patronymic": {
+          "accuracy": 0.417,
+          "mean_cer": 0.302
+        },
+        "birth_date": {
+          "accuracy": 0.25,
+          "mean_cer": 0.458
+        },
+        "phone": {
+          "accuracy": 0.083,
+          "mean_cer": 0.258
+        },
+        "email": {
+          "accuracy": 0.083,
+          "mean_cer": 0.352
+        },
+        "city": {
+          "accuracy": 0.5,
+          "mean_cer": 0.3
+        },
+        "prev_participations": {
+          "accuracy": 0.583,
+          "mean_cer": 0.417
+        },
+        "card_number": {
+          "accuracy": 0.0,
+          "mean_cer": 0.708
+        }
+      },
+      "form_accuracy": 0.0,
+      "approved_share": 0.583,
+      "review_share": 0.417,
+      "mean_conf": 91.5,
+      "latency_mean_s": 4.7
+    }
+  },
+  "synthetic_raw": [
+    {
+      "severity": "mild",
+      "record_idx": 0,
+      "status": "APPROVED",
+      "confidence": 98.5,
+      "latency_s": 5.62,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 1,
+      "status": "APPROVED",
+      "confidence": 98.5,
+      "latency_s": 5.67,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.053
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 2,
+      "status": "APPROVED",
+      "confidence": 98.7,
+      "latency_s": 5.27,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 3,
+      "status": "APPROVED",
+      "confidence": 97.6,
+      "latency_s": 5.38,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 4,
+      "status": "APPROVED",
+      "confidence": 98.6,
+      "latency_s": 5.35,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 5,
+      "status": "APPROVED",
+      "confidence": 98.4,
+      "latency_s": 5.25,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.118
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 6,
+      "status": "APPROVED",
+      "confidence": 98.9,
+      "latency_s": 5.24,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 7,
+      "status": "APPROVED",
+      "confidence": 98.8,
+      "latency_s": 5.74,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 8,
+      "status": "APPROVED",
+      "confidence": 97.6,
+      "latency_s": 5.01,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 9,
+      "status": "APPROVED",
+      "confidence": 98.0,
+      "latency_s": 5.25,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.118
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 10,
+      "status": "APPROVED",
+      "confidence": 98.5,
+      "latency_s": 5.49,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "mild",
+      "record_idx": 11,
+      "status": "APPROVED",
+      "confidence": 98.5,
+      "latency_s": 5.09,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 0,
+      "status": "APPROVED",
+      "confidence": 98.7,
+      "latency_s": 5.28,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.067
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 1,
+      "status": "APPROVED",
+      "confidence": 98.8,
+      "latency_s": 5.12,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.143
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.375
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.368
+        },
+        "city": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 2,
+      "status": "APPROVED",
+      "confidence": 98.3,
+      "latency_s": 4.97,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.083
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.125
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.231
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 3,
+      "status": "APPROVED",
+      "confidence": 96.6,
+      "latency_s": 5.08,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 4,
+      "status": "APPROVED",
+      "confidence": 97.6,
+      "latency_s": 4.98,
+      "all_fields_exact": true,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 5,
+      "status": "APPROVED",
+      "confidence": 98.4,
+      "latency_s": 4.72,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.235
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 6,
+      "status": "APPROVED",
+      "confidence": 98.3,
+      "latency_s": 5.07,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.059
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 7,
+      "status": "APPROVED",
+      "confidence": 96.8,
+      "latency_s": 5.02,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.214
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 8,
+      "status": "APPROVED",
+      "confidence": 96.6,
+      "latency_s": 5.23,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.077
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.2
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.133
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 9,
+      "status": "APPROVED",
+      "confidence": 98.2,
+      "latency_s": 4.92,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.176
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 10,
+      "status": "APPROVED",
+      "confidence": 96.3,
+      "latency_s": 4.9,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.143
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": false,
+          "cer": 0.333
+        },
+        "prev_participations": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "medium",
+      "record_idx": 11,
+      "status": "REQUIRES_REVIEW",
+      "confidence": 97.3,
+      "latency_s": 5.23,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.111
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.067
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": true,
+          "cer": 0.0
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 0,
+      "status": "APPROVED",
+      "confidence": 93.5,
+      "latency_s": 4.65,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.286
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 0.125
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.2
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.267
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.667
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 1,
+      "status": "APPROVED",
+      "confidence": 97.8,
+      "latency_s": 4.66,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.143
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.2
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.105
+        },
+        "city": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.5
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 2,
+      "status": "APPROVED",
+      "confidence": 95.6,
+      "latency_s": 4.63,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.143
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.125
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 0.125
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.154
+        },
+        "city": {
+          "exact": false,
+          "cer": 0.286
+        },
+        "prev_participations": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.833
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 3,
+      "status": "APPROVED",
+      "confidence": 91.9,
+      "latency_s": 4.18,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 0.125
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "email": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.333
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 4,
+      "status": "REQUIRES_REVIEW",
+      "confidence": 89.8,
+      "latency_s": 8.35,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "phone": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.833
+        },
+        "city": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 1.0
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 5,
+      "status": "APPROVED",
+      "confidence": 94.3,
+      "latency_s": 4.09,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.375
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.3
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.059
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.667
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 6,
+      "status": "REQUIRES_REVIEW",
+      "confidence": 93.2,
+      "latency_s": 4.28,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.25
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.4
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.5
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.235
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.667
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 7,
+      "status": "APPROVED",
+      "confidence": 95.4,
+      "latency_s": 4.5,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.2
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.444
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 0.125
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.429
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.833
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 8,
+      "status": "REQUIRES_REVIEW",
+      "confidence": 94.7,
+      "latency_s": 4.28,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.077
+        },
+        "name": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "patronymic": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.2
+        },
+        "city": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.333
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 9,
+      "status": "REQUIRES_REVIEW",
+      "confidence": 73.3,
+      "latency_s": 3.85,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.8
+        },
+        "name": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.714
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.5
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.941
+        },
+        "city": {
+          "exact": false,
+          "cer": 0.765
+        },
+        "prev_participations": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.833
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 10,
+      "status": "APPROVED",
+      "confidence": 87.9,
+      "latency_s": 4.13,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.6
+        },
+        "name": {
+          "exact": false,
+          "cer": 0.714
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.286
+        },
+        "birth_date": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.1
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.067
+        },
+        "city": {
+          "exact": false,
+          "cer": 0.5
+        },
+        "prev_participations": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 0.833
+        }
+      }
+    },
+    {
+      "severity": "hard",
+      "record_idx": 11,
+      "status": "REQUIRES_REVIEW",
+      "confidence": 90.6,
+      "latency_s": 4.78,
+      "all_fields_exact": false,
+      "per_field": {
+        "distance": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "gender": {
+          "exact": true,
+          "cer": 0.0
+        },
+        "surname": {
+          "exact": false,
+          "cer": 0.875
+        },
+        "name": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "patronymic": {
+          "exact": false,
+          "cer": 0.556
+        },
+        "birth_date": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "phone": {
+          "exact": false,
+          "cer": 0.5
+        },
+        "email": {
+          "exact": false,
+          "cer": 0.933
+        },
+        "city": {
+          "exact": false,
+          "cer": 0.8
+        },
+        "prev_participations": {
+          "exact": false,
+          "cer": 1.0
+        },
+        "card_number": {
+          "exact": false,
+          "cer": 1.0
+        }
+      }
+    }
+  ]
+}

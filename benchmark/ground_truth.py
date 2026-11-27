@@ -1,25 +1,48 @@
 # -*- coding: utf-8 -*-
 """Эталонные данные для бенчмарка OCR-пайплайна «Майской прогулки».
 
-REAL_PHOTO_FORM: ручная транскрипция test_data/20261127_212948.jpg
-(фото повернуто на 90°, лист изогнут, освещение тусклое).
+Два реальных фото:
+1) test_data/20261127_212948.jpg — шаблон с чёрными угловыми квадратами (№ карты 009813)
+2) test_data/20261127_191952.jpg — шаблон v2 с ArUco-маркерами (№ карты 014073)
+Оба сняты с поворотом на ~90°, лист изогнут, освещение тусклое.
 """
 
-REAL_PHOTO_PATH = "test_data/20261127_212948.jpg"
-
-REAL_PHOTO_FORM = {
-    "distance": "33 км (Лесной)",
-    "gender": "Мужской",
-    "surname": "БАГРИНОВСКИЙ",
-    "name": "ГЕОРГИЙ",
-    "patronymic": "ОЛЕГОВИЧ",
-    "birth_date": "14.06.2007",
-    "phone": "+7 (912) 345-67-89",
-    "email": "testabc@mail.ru",
-    "city": "ЕКАТЕРИНБУРГ",
-    "prev_participations": "3",
-    "card_number": "009813",
-}
+REAL_PHOTOS = [
+    {
+        "path": "test_data/20261127_212948.jpg",
+        "template": "black_squares",
+        "form": {
+            "distance": "33 км (Лесной)",
+            "gender": "Мужской",
+            "surname": "БАГРИНОВСКИЙ",
+            "name": "ГЕОРГИЙ",
+            "patronymic": "ОЛЕГОВИЧ",
+            "birth_date": "14.06.2007",
+            "phone": "+7 (912) 345-67-89",
+            "email": "testabc@mail.ru",
+            "city": "ЕКАТЕРИНБУРГ",
+            "prev_participations": "3",
+            "card_number": "009813",
+        },
+    },
+    {
+        "path": "test_data/20261127_191952.jpg",
+        "template": "aruco",
+        "form": {
+            "distance": "33 км (Лесной)",
+            "gender": "Мужской",
+            "surname": "БАГРИНОВСКИЙ",
+            "name": "ГЕОРГИЙ",
+            "patronymic": "ОЛЕГОВИЧ",
+            "birth_date": "14.06.2007",
+            "phone": "+7 (912) 345-67-89",
+            "email": "testabc@mail.ru",
+            "city": "ЕКАТЕРИНБУРГ",
+            "prev_participations": "3",
+            "card_number": "014073",
+        },
+    },
+]
 
 # Диапазоны X, которые pipeline.process_image использует для чтения полей
 # (для диагностики сегментации; mirror значений из ocr_system/pipeline.py)
