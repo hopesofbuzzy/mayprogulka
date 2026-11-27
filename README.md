@@ -41,7 +41,7 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 | `mayprogulka_festival.html` | Публичный | Всем | Лендинг фестиваля: таймер, дистанции, атмосфера |
 | `route_selector.html` | Публичный | Всем | Выбор маршрута, описание КП, профиль высот, GPX |
 | `login.html` | Авторизация | Всем | Вход и регистрация, переадресация по роли |
-| `user_cabinet.html` | Личный кабинет | `user`, `admin` | Регистрация участников, оплата, QR-билеты, диплом |
+| `user_cabinet.html` | Личный кабинет | `user`, `admin` | Регистрация, тестовая оплата, QR, отметки и карточка финишера |
 | `registrar_terminal.html` | Служебный | `registrar`, `organizer`, `admin` | Стартовый терминал: поиск анкеты, оплата, выдача карты |
 | `typist_station.html` | Служебный | `typist`, `admin` | Ввод бумажных анкет, OCR, сопоставление анкеты и карты |
 | `marker_terminal.html` | Служебный | `marker`, `organizer`, `admin` | Сканирование карт на КП, офлайн-очередь |
@@ -193,7 +193,7 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 Если меняются классы оформления, локальные стили всех страниц пересобираются из корня:
 
 ```powershell
-npm.cmd exec --yes --package=tailwindcss@3.4.17 -- tailwindcss -c ocr_system/tailwind.config.cjs --content "*.html,typist_ocr.js,mp_toast.js,ecosystem_bar.js" -o ocr_system/typist-gateway.css --minify
+npm.cmd exec --yes --package=tailwindcss@3.4.17 -- tailwindcss -c ocr_system/tailwind.config.cjs --content "*.html,typist_ocr.js,user_cabinet.js,mp_toast.js,ecosystem_bar.js" -o ocr_system/typist-gateway.css --minify
 ```
 
 ---

@@ -8,6 +8,7 @@
   <script src="api_config.js"></script>
   <script src="mp_toast.js"></script>
   <script src="qrcode.min.js"></script>
+  <script src="html5-qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -64,7 +65,7 @@
     <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>Майская прогулка 2026 • Регистрация открыта • Старт 17 мая (стадион УрФУ)</span>
+        <span>Майская прогулка 2026 • Кабинет участника</span>
       </div>
       <div class="flex items-center gap-4 text-stone-300">
         <a href="route_selector.html" class="hover:text-white underline underline-offset-2 transition">Карта маршрутов</a>
@@ -110,7 +111,7 @@
     <div class="flex items-center gap-2 border-b border-stone-200 overflow-x-auto pb-1" id="nav-tabs">
       <button onclick="switchTab('team')" id="tab-btn-team" class="px-4 py-2.5 rounded-t-xl font-unbounded font-bold text-xs sm:text-sm border-b-2 border-[#ea580c] text-[#ea580c] bg-white transition flex items-center gap-2">
         <span>👨‍👩‍👧‍👦 Мои участники (Семья)</span>
-        <span id="badge-count" class="px-2 py-0.5 rounded-full bg-orange-100 text-[#ea580c] text-[11px] font-bold">3</span>
+        <span id="badge-count" class="px-2 py-0.5 rounded-full bg-orange-100 text-[#ea580c] text-[11px] font-bold">0</span>
       </button>
 
       <button onclick="switchTab('tickets')" id="tab-btn-tickets" class="px-4 py-2.5 rounded-t-xl font-unbounded font-bold text-xs sm:text-sm border-b-2 border-transparent text-stone-600 hover:text-[#122419] transition flex items-center gap-2">
@@ -118,12 +119,14 @@
       </button>
 
       <button onclick="switchTab('diploma')" id="tab-btn-diploma" class="px-4 py-2.5 rounded-t-xl font-unbounded font-bold text-xs sm:text-sm border-b-2 border-transparent text-stone-600 hover:text-[#122419] transition flex items-center gap-2">
-        <span>🎖️ Диплом и карточка финишера</span>
+        <span>🎖️ Прогресс и награда</span>
       </button>
     </div>
   </div>
 
   <main class="max-w-6xl mx-auto px-4 pt-4">
+    <button type="button" id="cabinet-refresh" class="underline text-sm mb-3">Обновить данные</button>
+    <p id="cabinet-message" role="status" class="text-sm mb-3"></p>
 
     <!-- TAB 1: МОИ УЧАСТНИКИ (СЕМЕЙНЫЙ ПРОФИЛЬ) -->
     <section id="tab-team" class="space-y-6">
@@ -162,204 +165,87 @@
       <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
           <span class="text-xs text-stone-500 uppercase tracking-wider font-bold block mb-1">
-            Итоговая корзина регистрации
+            Оплата выбранного участника
           </span>
           <div class="flex items-baseline gap-3">
             <span id="cart-total" class="font-unbounded font-black text-2xl sm:text-3xl text-[#122419] tabular-nums">
-              1 400 ₽
+              Цена: нет данных
             </span>
-            <span class="text-xs text-stone-500 font-medium">за <span id="cart-count">3</span> участников (включает значки и карты)</span>
+            <span class="text-xs text-stone-500 font-medium">Тестовая оплата без списания средств</span>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <button onclick="payAll()" id="btn-pay" class="w-full md:w-auto bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
-            <span>💳 Оплатить всю корзину (СБП / Карта)</span>
+          <button onclick="openPaymentModal()" id="btn-pay" disabled class="w-full md:w-auto bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+            <span>Проверить тестовую оплату</span>
             <span>→</span>
           </button>
         </div>
       </div>
     </section>
 
-    <!-- TAB 2: ЭЛЕКТРОННЫЕ БИЛЕТЫ (QR-КОДЫ) -->
     <section id="tab-tickets" class="hidden space-y-6">
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm">
-        <div class="max-w-2xl mx-auto text-center mb-8">
-          <span class="text-xs font-bold uppercase tracking-wider text-[#ea580c] bg-orange-50 px-3 py-1 rounded-full inline-block mb-2">
-            Экспресс-старт без очередей
-          </span>
-          <h2 class="text-2xl sm:text-3xl font-unbounded font-black text-[#122419]">
-            ЭЛЕКТРОННЫЕ БИЛЕТЫ И QR-КОДЫ
-          </h2>
-          <p class="text-xs sm:text-sm text-stone-600 mt-2">
-            На старте подойдите к экспресс-окну выдачи карт и покажите QR-код с экрана телефона волонтеру-регистратору. Считывание занимает 2 секунды!
-          </p>
+      <div class="bg-white rounded-3xl p-4 sm:p-8 border border-stone-200 shadow-sm">
+        <h2 class="text-2xl font-unbounded font-black text-[#122419]">Электронные билеты</h2>
+        <p class="text-sm text-stone-600 mt-2">Покажите стартовый QR регистратору. Код выданной карты отображается отдельно.</p>
+        <div id="ticket-pills" class="flex flex-wrap gap-2 my-4"></div>
+        <p id="ticket-state" role="status" class="text-sm text-stone-600"></p>
+        <div id="unpaid-ticket-lock" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 mt-3">
+          Взнос не подтверждён.
+          <button type="button" id="ticket-pay" disabled onclick="openPaymentModal()" class="font-bold underline disabled:opacity-50">Тестовая оплата</button>
         </div>
-
-        <!-- Participant Selector for Ticket -->
-        <div class="flex justify-center mb-8">
-          <div class="bg-stone-100 p-1 rounded-xl flex flex-wrap gap-1" id="ticket-pills">
-            <!-- Populated dynamically -->
-          </div>
+        <div id="active-ticket-container" class="hidden max-w-md mx-auto bg-stone-50 rounded-2xl border-2 border-dashed border-stone-300 p-4 mt-4 text-center">
+          <h3 id="t-name" class="font-unbounded font-black text-xl break-words"></h3>
+          <p id="t-route" class="text-sm mb-2 break-words"></p>
+          <p class="text-sm font-bold">Стартовый QR</p>
+          <div id="ticket-qr-container" class="mx-auto w-fit bg-white p-2"></div>
+          <p id="t-form-id" class="text-sm break-all"></p>
+          <button type="button" onclick="toggleFullscreenTicket()" class="bg-[#122419] text-white rounded-lg px-3 py-2 my-3 text-xs font-bold">Во весь экран</button>
+          <p class="text-sm font-bold">Код карты</p>
+          <div id="map-qr-container" class="mx-auto w-fit bg-white p-2 hidden"></div>
+          <p id="t-map" class="text-sm break-all"></p>
+          <p class="text-xs text-stone-500 mt-3">PDF и окно старта: нет подтверждённых данных.</p>
         </div>
+      </div>
 
-        <!-- UNPAID TICKET LOCK CONTAINER (Shown before payment) -->
-        <div id="unpaid-ticket-lock" class="hidden max-w-md mx-auto bg-amber-50 rounded-3xl border-2 border-dashed border-amber-300 p-8 text-center shadow-sm">
-          <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
-            🔒
+      <div class="bg-white rounded-3xl p-4 sm:p-8 border border-stone-200 shadow-sm">
+        <h2 class="text-xl font-unbounded font-black text-[#122419]">Отметка на КП</h2>
+        <p id="scan-state" role="status" class="text-sm text-stone-600 my-2"></p>
+        <fieldset id="scan-controls" disabled class="space-y-3">
+          <div class="flex flex-wrap gap-2 text-sm">
+            <button type="button" id="scan-camera" class="bg-[#122419] text-white rounded-lg px-3 py-2">Включить камеру</button>
+            <label class="cursor-pointer bg-stone-100 rounded-lg px-3 py-2">
+              QR из файла <input type="file" id="scan-file" accept="image/*" class="sr-only">
+            </label>
+            <button type="button" id="scan-close" class="hidden underline">Закрыть сканер</button>
           </div>
-          <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100/70 px-3 py-1 rounded-full inline-block mb-2">
-            Взнос не подтвержден
-          </span>
-          <h3 class="font-unbounded font-black text-xl text-stone-900 mb-2">
-            QR-билет формируется после оплаты
-          </h3>
-          <p class="text-xs text-stone-600 mb-6 leading-relaxed">
-            Для каждого участника будет сгенерирован персональный QR-код для моментального прохода на старте и выдачи карты маршрута.
-          </p>
-          <button onclick="openPaymentModal()" class="w-full bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs py-3.5 px-6 rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
-            <span>💳 Оплатить взнос (Симуляция СБП)</span>
-            <span>→</span>
-          </button>
-        </div>
-
-        <!-- Big Ticket Visual Card -->
-        <div id="active-ticket-container" class="max-w-md mx-auto bg-stone-50 rounded-2xl border-2 border-dashed border-stone-300 p-6 shadow-sm relative overflow-hidden">
-          <!-- Top Tag -->
-          <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
-            <div>
-              <span class="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">ID заявки (Form ID)</span>
-              <span id="t-form-id" class="font-unbounded font-bold text-base text-[#122419] tabular-nums">MP2026-849201</span>
-            </div>
-            <span id="t-paid-status" class="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold uppercase">
-              ✓ Оплачено
-            </span>
-          </div>
-
-          <!-- Participant Info -->
-          <div class="mb-4">
-            <h3 id="t-name" class="font-unbounded font-black text-xl text-[#122419] mb-1">
-              Смирнов Алексей
-            </h3>
-            <div class="text-xs text-stone-600 flex flex-wrap gap-x-4 gap-y-1">
-              <span>Маршрут: <strong id="t-route" class="text-[#ea580c]">33 км «В Новокольцовский»</strong></span>
-              <span>Старт: <strong id="t-time" class="tabular-nums">08:00 — 11:00</strong></span>
-            </div>
-          </div>
-
-          <!-- QR Code Display Box -->
-          <div class="bg-white rounded-xl p-6 border border-stone-200 text-center shadow-inner flex flex-col items-center justify-center my-4">
-            <!-- Dynamic High-Contrast Scannable QR Code -->
-            <div id="ticket-qr-container" class="mx-auto flex items-center justify-center min-w-[180px] min-h-[180px]"></div>
-            <span id="t-qr-caption" class="font-bebas text-lg tracking-widest text-stone-700 mt-2 block tabular-nums">
-              *MP2026-849201*
-            </span>
-          </div>
-
-          <!-- Buttons: Fullscreen & PDF -->
-          <div class="grid grid-cols-2 gap-2 mt-4 text-xs font-semibold">
-            <button onclick="toggleFullscreenTicket()" class="py-2.5 px-3 rounded-lg bg-[#122419] text-white hover:bg-stone-800 transition shadow-xs flex items-center justify-center gap-1.5">
-              <span>☀️</span> Во весь экран
-            </button>
-            <button onclick="MPToast.show('PDF-анкета с договором-офертой скачана', 'info')" class="py-2.5 px-3 rounded-lg bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center justify-center gap-1.5">
-              <span>📄</span> Скачать PDF
-            </button>
-          </div>
-        </div>
+          <div id="checkpoint-reader" class="hidden max-w-sm w-full"></div>
+          <form id="scan-form" class="flex flex-wrap gap-2">
+            <label class="text-sm">Код КП
+              <input id="scan-code" required maxlength="120" autocomplete="off" class="block border border-stone-300 rounded-lg px-3 py-2">
+            </label>
+            <button type="submit" class="bg-stone-100 rounded-lg px-3 py-2 text-sm">Проверить код</button>
+          </form>
+          <button type="button" id="scan-confirm" disabled class="bg-[#ea580c] text-white rounded-lg px-3 py-2 text-sm disabled:opacity-50">Подтвердить отметку</button>
+        </fieldset>
       </div>
     </section>
 
-    <!-- TAB 3: ДИПЛОМ И ГЕНЕРАТИВНАЯ КАРТОЧКА ФИНИШЕРА -->
     <section id="tab-diploma" class="hidden space-y-6">
-      <div class="bg-white rounded-3xl p-6 sm:p-10 border border-stone-200 shadow-sm">
-        <div class="max-w-2xl mx-auto text-center mb-8">
-          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full inline-block mb-2">
-            Виральный контент для соцсетей
-          </span>
-          <h2 class="text-2xl sm:text-3xl font-unbounded font-black text-[#122419]">
-            КАРТОЧКА ФИНИШЕРА 2026
-          </h2>
-          <p class="text-xs sm:text-sm text-stone-600 mt-2">
-            После фиксации прохождения последнего КП здесь генерируется персональный диплом. Сохраните его и поделитесь в Telegram, VK или сторис!
-          </p>
-        </div>
-
-        <!-- Participant Selector for Diploma & Card -->
-        <div class="flex flex-col items-center justify-center mb-8 gap-3">
-          <div class="bg-stone-100 p-1.5 rounded-2xl flex flex-wrap gap-1.5" id="diploma-pills">
-            <!-- Populated dynamically -->
-          </div>
-          <div class="flex items-center gap-2 font-mono text-xs">
-            <span id="diploma-status-badge" class="px-2.5 py-1 rounded-md font-bold uppercase bg-emerald-100 text-emerald-800">
-              🏁 Финишировал (17 мая 2026, 16:42)
-            </span>
-            <button onclick="toggleDemoFinisherStatus()" class="text-xs text-stone-500 hover:text-[#ea580c] underline">
-              (симуляция статуса для демо)
-            </button>
-          </div>
-        </div>
-
-        <!-- Finisher Card Preview (Story aspect ratio: 9:16 or stylish card) -->
-        <div id="diploma-card-box" class="max-w-sm mx-auto bg-gradient-to-br from-[#122419] via-[#1b3324] to-[#0f1d14] text-white rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-[#ea580c] relative overflow-hidden">
-          <!-- Background Ural Contour Silhouette -->
-          <div class="absolute -right-10 -bottom-10 opacity-20 pointer-events-none">
-            <svg width="250" height="250" viewBox="0 0 100 100" fill="white">
-              <polygon points="50,15 90,85 10,85"/>
-              <polygon points="70,35 100,85 40,85"/>
-            </svg>
-          </div>
-
-          <div class="relative z-10 text-center">
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-unbounded font-bold uppercase tracking-wider text-yellow-300 mb-4">
-              🎖️ Официальный финишер • 17 мая 2026
-            </div>
-
-            <h3 id="diploma-name" class="font-unbounded font-black text-2xl text-white tracking-tight mb-1">
-              СМИРНОВ АЛЕКСЕЙ
-            </h3>
-            <span id="diploma-city-vuz" class="text-xs text-stone-300 font-semibold block mb-6">
-              г. Екатеринбург • УрФУ
-            </span>
-
-            <!-- Massive Achievement Number -->
-            <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 mb-6">
-              <span class="text-xs text-yellow-300 font-bold uppercase tracking-wider block mb-1">Пройденная дистанция</span>
-              <div id="diploma-dist" class="font-unbounded font-black text-5xl text-white tracking-tight leading-none tabular-nums">
-                33 <span class="text-2xl text-yellow-300">КМ</span>
-              </div>
-              <span id="diploma-route" class="text-[11px] text-stone-300 mt-2 block">Маршрут «В Новокольцовский»</span>
-            </div>
-
-            <!-- Stats Matrix -->
-            <div class="grid grid-cols-3 gap-2 text-center text-xs mb-6">
-              <div class="bg-white/5 rounded-xl p-2.5 border border-white/10">
-                <span class="text-[10px] text-stone-400 uppercase block">Время</span>
-                <span class="font-bold text-sm text-white tabular-nums mt-0.5 block">7ч 14м</span>
-              </div>
-              <div class="bg-white/5 rounded-xl p-2.5 border border-white/10">
-                <span class="text-[10px] text-stone-400 uppercase block">Калории</span>
-                <span class="font-bold text-sm text-yellow-300 tabular-nums mt-0.5 block">~2 180</span>
-              </div>
-              <div class="bg-white/5 rounded-xl p-2.5 border border-white/10">
-                <span class="text-[10px] text-stone-400 uppercase block">Значок №</span>
-                <span id="diploma-badge-num" class="font-bold text-sm text-emerald-400 tabular-nums mt-0.5 block">849201</span>
-              </div>
-            </div>
-
-            <div class="text-[11px] font-unbounded font-black tracking-tight text-yellow-200 uppercase pt-2 border-t border-white/20">
-              «Победителем становится каждый,<br>кто пришел на финиш!»
-            </div>
-          </div>
-        </div>
-
-        <div class="text-center mt-6">
-          <button onclick="downloadStoryCard()" class="bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs px-6 py-3 rounded-xl shadow-md transition active:scale-95 inline-flex items-center gap-2">
-            <span>📥 Скачать карточку финишера (SVG/PNG)</span>
-          </button>
+      <div class="bg-white rounded-3xl p-4 sm:p-8 border border-stone-200 shadow-sm">
+        <h2 class="text-2xl font-unbounded font-black text-[#122419]">Прогресс и награда</h2>
+        <div id="diploma-pills" class="flex flex-wrap gap-2 my-4"></div>
+        <p id="diploma-status-badge" role="status" class="text-sm font-bold"></p>
+        <p id="progress-note" class="text-sm text-stone-600 mt-2"></p>
+        <ol id="progress-list" class="space-y-2 my-4 text-sm"></ol>
+        <div id="diploma-card-box" class="hidden max-w-sm mx-auto bg-gradient-to-br from-[#122419] via-[#1b3324] to-[#0f1d14] text-white rounded-3xl p-6 border-4 border-[#ea580c] text-center">
+          <p class="text-yellow-300 text-xs font-bold uppercase">Карточка финишера</p>
+          <h3 id="diploma-name" class="font-unbounded font-black text-2xl break-words my-3"></h3>
+          <p id="diploma-route" class="break-words"></p>
+          <button type="button" id="award-download" class="bg-[#ea580c] text-white rounded-xl px-4 py-2 mt-4 text-sm">Скачать карточку (SVG)</button>
         </div>
       </div>
     </section>
-
   </main>
 
   <!-- MODAL: ОНБОРДИНГ / РЕГИСТРАЦИЯ С НУЛЯ (ИНДИВИДУАЛЬНО ИЛИ СЕМЬЯ) -->
@@ -437,11 +323,12 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-stone-700 mb-1">Дата рождения *</label>
-            <input type="date" id="wiz-birth" required value="1992-05-15" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
+            <input type="date" id="wiz-birth" required class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
           </div>
           <div>
             <label class="block font-bold text-stone-700 mb-1">Пол</label>
-            <select id="wiz-gender" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
+            <select id="wiz-gender" required class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#ea580c]">
+              <option value="">Выберите пол</option>
               <option value="male">Мужской</option>
               <option value="female">Женский</option>
             </select>
@@ -525,7 +412,7 @@
             <label class="block font-semibold text-stone-700 mb-1">Пол *</label>
             <div class="grid grid-cols-2 gap-2">
               <label class="flex items-center justify-center gap-2 p-2.5 bg-stone-50 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-100 font-medium">
-                <input type="radio" name="gender" value="male" checked class="accent-[#ea580c]">
+                <input type="radio" name="gender" value="male" required class="accent-[#ea580c]">
                 <span>Мужской</span>
               </label>
               <label class="flex items-center justify-center gap-2 p-2.5 bg-stone-50 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-100 font-medium">
@@ -536,7 +423,7 @@
           </div>
           <div>
             <label class="block font-semibold text-stone-700 mb-1">Дата рождения *</label>
-            <input type="date" id="f-birth" required value="1995-06-15" class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium tabular-nums focus:outline-none focus:border-[#ea580c]">
+            <input type="date" id="f-birth" required class="w-full bg-stone-50 border border-stone-300 rounded-lg p-2.5 text-stone-900 font-medium tabular-nums focus:outline-none focus:border-[#ea580c]">
           </div>
         </div>
 
@@ -589,29 +476,23 @@
     </button>
     <div class="text-center max-w-sm w-full">
       <span class="text-xs font-bold uppercase tracking-wider text-[#ea580c] bg-orange-100 px-3 py-1 rounded-full mb-3 inline-block">
-        МАЙСКАЯ ПРОГУЛКА 2026 • ЭКСПРЕСС-СТАРТ
+        СТАРТОВЫЙ QR
       </span>
-      <h2 id="fs-name" class="text-2xl font-unbounded font-black text-[#122419] mb-1">
-        Смирнов Алексей
-      </h2>
-      <div id="fs-route" class="text-sm font-bold text-[#ea580c] mb-6">
-        33 км «В Новокольцовский»
-      </div>
+      <h2 id="fs-name" class="text-2xl font-unbounded font-black text-[#122419] mb-1"></h2>
+      <div id="fs-route" class="text-sm font-bold text-[#ea580c] mb-6"></div>
 
       <!-- Maximum Brightness Dynamic QR Code -->
       <div class="bg-white p-6 border-4 border-black rounded-3xl shadow-xl inline-block mb-4">
-        <div id="fs-qr-container" class="mx-auto flex items-center justify-center min-w-[240px] min-h-[240px]"></div>
+        <div id="fs-qr-container" class="mx-auto flex items-center justify-center w-fit"></div>
       </div>
-      <div id="fs-form-id" class="font-unbounded font-black text-xl text-black tabular-nums tracking-widest">
-        MP2026-849201
-      </div>
+      <div id="fs-form-id" class="break-all font-unbounded font-black text-xl text-black tabular-nums tracking-widest"></div>
       <p class="text-xs text-stone-500 mt-2">
         Покажите этот экран регистратору в палатке выдачи карт
       </p>
     </div>
   </div>
 
-  <!-- PAYMENT SIMULATOR MODAL (SBP / CARD) -->
+  <!-- PAYMENT SIMULATOR MODAL -->
   <div id="payment-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
       <button onclick="closePaymentModal()" class="absolute top-5 right-5 text-stone-400 hover:text-stone-700 text-xl font-bold w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center transition">✕</button>
@@ -625,11 +506,9 @@
           Оплата участия
         </h3>
         <div id="pay-modal-amount" class="font-unbounded font-black text-3xl text-[#ea580c] my-2 tabular-nums">
-          1 400 ₽
+          Цена: нет данных
         </div>
-        <p id="pay-modal-desc" class="text-xs text-stone-500">
-          Семейный взнос за 3 участников. Включает карты, чай на КП и фирменные сувенирные значки финишера.
-        </p>
+        <p id="pay-modal-desc" class="text-xs text-stone-500"></p>
       </div>
 
       <!-- Payment Methods Selector -->
@@ -638,18 +517,17 @@
           <div class="flex items-center gap-3">
             <input type="radio" name="pay-method" value="sbp" checked class="text-emerald-600 focus:ring-emerald-500">
             <div class="text-left">
-              <div class="font-bold text-xs text-stone-900">СБП по QR / Ссылка в банк</div>
-              <div class="text-[11px] text-stone-500">Т-Банк, Сбербанк, ВТБ, Альфа (0% комиссии)</div>
+              <div class="font-bold text-xs text-stone-900">СБП (симуляция)</div>
+              <div class="text-[11px] text-stone-500"></div>
             </div>
           </div>
-          <span class="text-xs font-bold text-emerald-600 font-mono">0%</span>
         </label>
         <label class="flex items-center justify-between p-3.5 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
           <div class="flex items-center gap-3">
             <input type="radio" name="pay-method" value="card" class="text-emerald-600 focus:ring-emerald-500">
             <div class="text-left">
-              <div class="font-bold text-xs text-stone-900">Банковская карта РФ</div>
-              <div class="text-[11px] text-stone-500">МИР, Visa, Mastercard</div>
+              <div class="font-bold text-xs text-stone-900">Карта (симуляция)</div>
+              <div class="text-[11px] text-stone-500"></div>
             </div>
           </div>
           <span class="text-xs font-bold text-stone-400 font-mono">МИР</span>
@@ -661,777 +539,12 @@
       </button>
 
       <p class="text-[10px] text-stone-400 text-center mt-3">
-        Тестовый шлюз: оплата списывается в режиме демонстрации, QR-билеты разблокируются моментально.
+        Деньги не списываются. QR появится после проверки статуса на сервере.
       </p>
     </div>
   </div>
 
-  <script>
-    // Active session state
-    let currentUser = null;
-    let routes = [];            // Маршруты из GET /api/v1/routes
-    let isDemoFinished = true;
-    let activeDiplomaIdx = 0;
-    let activeTicketIdx = 0;
-    let participants = [];
-
-    // Справочные цены для отображения (в API цены пока нет)
-    const ROUTE_PRICES = { 10: 400, 17: 450, 33: 500, 50: 600 };
-    const DEFAULT_PRICE = 450;
-
-    function routeDistance(routeName) {
-      const m = /(\d+)\s*км/i.exec(routeName || '');
-      return m ? parseInt(m[1], 10) : null;
-    }
-
-    function routePrice(routeName) {
-      const d = routeDistance(routeName);
-      return ROUTE_PRICES[d] || DEFAULT_PRICE;
-    }
-
-    // --- ONBOARDING WIZARD CONTROLLER ---
-    function openOnboardingModal() {
-      const modal = document.getElementById('onboarding-wizard-modal');
-      if (modal) modal.classList.remove('hidden');
-      initSelectedRoute();
-    }
-
-    function closeOnboardingModal() {
-      const modal = document.getElementById('onboarding-wizard-modal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function startFreshRegistration() {
-      const membersList = document.getElementById('wiz-members-list');
-      if (membersList) membersList.innerHTML = '';
-      const wForm = document.getElementById('wizard-form');
-      if (wForm) wForm.reset();
-      toggleWizardFamilyFields(false);
-      openOnboardingModal();
-    }
-
-    function toggleWizardFamilyFields(isFamily) {
-      const boxExtra = document.getElementById('wiz-extra-members-box');
-      if (boxExtra) boxExtra.style.display = isFamily ? 'block' : 'none';
-      const mList = document.getElementById('wiz-members-list');
-      if (isFamily && mList && mList.children.length === 0) {
-        addWizardMemberRow();
-      }
-    }
-
-    let wizardMemberCounter = 0;
-    function addWizardMemberRow() {
-      wizardMemberCounter++;
-      const list = document.getElementById('wiz-members-list');
-      if (!list) return;
-      const routeOptions = routes.map((r, i) => `<option value="${r.id}" ${i === 0 ? 'selected' : ''}>${r.name}</option>`).join('') || '<option value="">нет маршрутов</option>';
-      const row = document.createElement('div');
-      row.className = "bg-white p-3 rounded-xl border border-stone-200 flex flex-wrap items-center gap-2.5 relative shadow-xs";
-      row.id = `wiz-member-${wizardMemberCounter}`;
-      row.innerHTML = `
-        <div class="flex-1 min-w-[110px]">
-          <input type="text" placeholder="Фамилия" required class="wiz-extra-surname w-full bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#ea580c]">
-        </div>
-        <div class="flex-1 min-w-[110px]">
-          <input type="text" placeholder="Имя" required class="wiz-extra-name w-full bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#ea580c]">
-        </div>
-        <div class="w-[140px]">
-          <input type="date" value="2010-06-01" required class="wiz-extra-birth w-full bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 tabular-nums focus:outline-none focus:ring-1 focus:ring-[#ea580c]">
-        </div>
-        <div class="w-[110px]">
-          <select class="wiz-extra-gender w-full bg-stone-50 border border-stone-300 rounded-lg px-2 py-1.5 text-xs text-stone-800">
-            <option value="male">Мужской</option>
-            <option value="female">Женский</option>
-          </select>
-        </div>
-        <div class="w-[180px]">
-          <select class="wiz-extra-route w-full bg-stone-50 border border-stone-300 rounded-lg px-2 py-1.5 text-xs text-stone-800 font-bold text-[#ea580c]">${routeOptions}</select>
-        </div>
-        <button type="button" onclick="this.parentElement.remove()" class="text-stone-400 hover:text-red-500 font-bold px-2 py-1 text-base rounded transition" title="Удалить спутника">&times;</button>
-      `;
-      list.appendChild(row);
-    }
-
-    async function submitOnboardingRegistration(e) {
-      e.preventDefault();
-      const btn = document.getElementById('btn-submit-wizard');
-      btn.disabled = true;
-      btn.innerHTML = `<span>Регистрация в базе данных...</span>`;
-
-      const surname = document.getElementById('wiz-surname').value.trim();
-      const name = document.getElementById('wiz-name').value.trim();
-      const patronymic = document.getElementById('wiz-patronymic').value.trim();
-      const phone = document.getElementById('wiz-phone').value.trim();
-      const email = document.getElementById('wiz-email').value.trim();
-      const birth = document.getElementById('wiz-birth').value;
-      const gender = document.getElementById('wiz-gender').value;
-      const routeRadio = document.querySelector('input[name="wiz-route"]:checked');
-
-      if (!routeRadio) {
-        MPToast.show('Выберите дистанцию маршрута.', 'warn');
-        btn.disabled = false;
-        btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
-        return;
-      }
-
-      const isFamily = document.querySelector('input[name="wiz-reg-type"]:checked').value === 'family';
-
-      const members = [{
-        surname: surname,
-        name: name,
-        middle_name: patronymic || null,
-        route_id: parseInt(routeRadio.value, 10),
-        date_of_birth: birth,
-        gender: gender,
-        email: email,
-        phone_number: phone
-      }];
-
-      if (isFamily) {
-        const extraRows = document.querySelectorAll('#wiz-members-list > div');
-        extraRows.forEach(row => {
-          const eSurname = row.querySelector('.wiz-extra-surname').value.trim();
-          const eName = row.querySelector('.wiz-extra-name').value.trim();
-          if (!eSurname || !eName) return;
-          members.push({
-            surname: eSurname,
-            name: eName,
-            middle_name: null,
-            route_id: parseInt(row.querySelector('.wiz-extra-route').value, 10),
-            date_of_birth: row.querySelector('.wiz-extra-birth').value,
-            gender: row.querySelector('.wiz-extra-gender').value,
-            email: email,
-            phone_number: phone
-          });
-        });
-      }
-
-      try {
-        const data = await apiRequest('/api/v1/participants/register', {
-          method: 'POST',
-          body: { participants: members }
-        });
-
-        closeOnboardingModal();
-        await loadMyParticipants();
-        openPaymentModal();
-
-        const formIds = data.participants.map(p => p.form_id).join('\n');
-        MPToast.dialog('Регистрация завершена', `✅ Зарегистрировано участников: ${data.participants.length}\n\nForm ID:\n${formIds}\n\nТеперь оплатите взнос — и QR-билеты активируются.`, 'success');
-      } catch (err) {
-        console.error('Registration error:', err);
-        MPToast.show('Ошибка регистрации: ' + err.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Зарегистрироваться и сформировать заказ</span> <span>→</span>`;
-      }
-    }
-
-    function showAuthUser(me) {
-      const headerInfo = document.getElementById('user-header-info');
-      if (!headerInfo) return;
-      const roleNames = {
-        user: 'Участник', typist: 'Наборщик', registrar: 'Регистратор',
-        marker: 'Маркёр', organizer: 'Организатор', admin: 'Администратор'
-      };
-      headerInfo.innerHTML = `Вы вошли как: <strong class="text-stone-700">${me.username}</strong> • ${roleNames[me.role] || me.role} • ${me.email}`;
-    }
-
-    // Render Grid
-    function renderParticipants() {
-      const grid = document.getElementById('participants-grid');
-      const allPaid = participants.every(p => p.isPaid);
-
-      if (participants.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full bg-white border-2 border-dashed border-stone-300 rounded-2xl p-8 text-center space-y-2">
-            <div class="text-3xl mb-1">🚶‍♂️</div>
-            <div class="font-unbounded font-bold text-sm text-[#122419]">Пока нет ни одного участника</div>
-            <p class="text-xs text-stone-500 max-w-md mx-auto">
-              Нажмите «Новая регистрация» или «Добавить в заказ», чтобы зарегистрировать себя и близких на Майскую прогулку 2026.
-            </p>
-          </div>
-        `;
-      } else {
-        grid.innerHTML = participants.map((p, idx) => `
-          <div class="bg-white rounded-2xl p-5 border ${p.isPaid ? 'border-stone-200' : 'border-amber-300 ring-2 ring-amber-100'} shadow-sm flex flex-col justify-between relative overflow-hidden">
-            <div class="absolute top-0 left-0 right-0 h-1.5 ${p.dist === 33 ? 'bg-blue-600' : 'bg-emerald-600'}"></div>
-            <div>
-              <div class="flex items-start justify-between gap-2 mb-2 pt-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
-                  Участник
-                </span>
-                <span class="text-xs font-bold px-2 py-0.5 rounded border ${p.isPaid ? 'text-emerald-800 bg-emerald-50 border-emerald-200' : 'text-amber-800 bg-amber-50 border-amber-300'}">
-                  ${p.status}
-                </span>
-              </div>
-
-              <h4 class="font-unbounded font-bold text-base text-[#122419] mb-1">
-                ${p.name}
-              </h4>
-              <div class="text-xs text-[#ea580c] font-bold mb-3">
-                ${p.routeName}
-              </div>
-
-              <div class="space-y-1 text-xs text-stone-600 pt-2 border-t border-stone-100">
-                <div class="flex justify-between">
-                  <span class="text-stone-400">Form ID:</span>
-                  <span class="font-bold tabular-nums">${p.form_id}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-stone-400">Статус дистанции:</span>
-                  <span>${p.has_finished ? '🏁 Финишировал' : (p.has_started ? '🚶‍♂️ На маршруте' : '⏳ Ожидает старта')}</span>
-                </div>
-                ${p.map_barcode ? `
-                <div class="flex justify-between">
-                  <span class="text-stone-400">Карта:</span>
-                  <span class="font-bold tabular-nums">${p.map_barcode}</span>
-                </div>` : ''}
-              </div>
-            </div>
-
-            <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-              <span class="font-unbounded font-black text-sm text-[#122419] tabular-nums">
-                ${p.price} ₽
-              </span>
-              <div class="flex items-center gap-1.5">
-                ${p.isPaid ? `
-                  <button onclick="viewTicket(${idx})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-100 text-[#ea580c] hover:bg-orange-200 transition">
-                    Показать QR →
-                  </button>
-                ` : `
-                  <button onclick="openPaymentModal()" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition shadow-xs flex items-center gap-1">
-                    <span>Оплатить</span> →
-                  </button>
-                `}
-              </div>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      // Update counters
-      const total = participants.reduce((acc, cur) => acc + cur.price, 0);
-      document.getElementById('cart-total').textContent = `${total.toLocaleString('ru-RU')} ₽`;
-      document.getElementById('cart-count').textContent = participants.length;
-      document.getElementById('badge-count').textContent = participants.length;
-
-      // Update Pay button state in summary box
-      const payBtn = document.getElementById('btn-pay');
-      if (payBtn) {
-        if (participants.length === 0) {
-          payBtn.className = "w-full md:w-auto bg-stone-300 text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl transition flex items-center justify-center gap-2 cursor-not-allowed";
-          payBtn.innerHTML = `<span>💳 Оплатить взнос</span>`;
-          payBtn.onclick = null;
-        } else if (allPaid) {
-          payBtn.className = "w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2";
-          payBtn.innerHTML = `<span>✓ Все взносы оплачены (${total.toLocaleString('ru-RU')} ₽)</span>`;
-          payBtn.onclick = () => switchTab('tickets');
-        } else {
-          payBtn.className = "w-full md:w-auto bg-[#ea580c] hover:bg-[#c2410c] text-white font-unbounded font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2";
-          payBtn.innerHTML = `<span>💳 Оплатить взносы (${total.toLocaleString('ru-RU')} ₽)</span> <span>→</span>`;
-          payBtn.onclick = openPaymentModal;
-        }
-      }
-
-      renderTicketPills();
-      renderDiplomaPills();
-    }
-
-    function renderTicketPills() {
-      const container = document.getElementById('ticket-pills');
-      container.innerHTML = participants.map((p, idx) => `
-        <button onclick="selectTicket(${idx})" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${activeTicketIdx === idx ? 'bg-[#ea580c] text-white shadow-xs' : 'text-stone-600 hover:text-black'} flex items-center gap-1.5">
-          <span>${p.name.split(' ')[0]} (${p.dist || '?'} км)</span>
-          ${p.isPaid ? '<span class="text-[10px]">✓</span>' : '<span class="text-[10px] text-amber-500">⏳</span>'}
-        </button>
-      `).join('');
-    }
-
-    function renderTicketBarcode(ticketCode) {
-      // Единый формат всех кодов мероприятия — QR:
-      // читается с любого угла, экрана и распечатки, сканируется камерой и 2D-сканером.
-      const box = document.getElementById('ticket-qr-container');
-      if (box && typeof QRCode !== 'undefined') {
-        box.innerHTML = '';
-        try {
-          new QRCode(box, {
-            text: ticketCode,
-            width: 180,
-            height: 180,
-            colorDark: '#122419',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
-          });
-        } catch (e) {
-          console.error('QR render error:', e);
-        }
-      }
-
-      const fsBox = document.getElementById('fs-qr-container');
-      if (fsBox && typeof QRCode !== 'undefined') {
-        fsBox.innerHTML = '';
-        try {
-          new QRCode(fsBox, {
-            text: ticketCode,
-            width: 240,
-            height: 240,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
-          });
-        } catch (e) {
-          console.error('Fullscreen QR render error:', e);
-        }
-      }
-    }
-
-    function selectTicket(idx) {
-      if (idx < 0 || idx >= participants.length) return;
-      activeTicketIdx = idx;
-      renderTicketPills();
-      const p = participants[idx];
-
-      const lockBox = document.getElementById('unpaid-ticket-lock');
-      const ticketCard = document.getElementById('active-ticket-container');
-
-      if (!p.isPaid) {
-        if (lockBox) lockBox.classList.remove('hidden');
-        if (ticketCard) ticketCard.classList.add('hidden');
-        return;
-      }
-
-      if (lockBox) lockBox.classList.add('hidden');
-      if (ticketCard) ticketCard.classList.remove('hidden');
-
-      document.getElementById('t-form-id').textContent = p.form_id;
-      document.getElementById('t-name').textContent = p.name;
-      document.getElementById('t-route').textContent = p.routeName;
-
-      const startWindows = {
-        '10': '11:00 — 13:00',
-        '17': '09:00 — 12:00',
-        '33': '08:00 — 11:00',
-        '50': '07:00 — 09:00'
-      };
-      document.getElementById('t-time').textContent = startWindows[p.dist] || '08:00 — 12:00';
-
-      const qrCaption = document.getElementById('t-qr-caption');
-      if (qrCaption) qrCaption.textContent = `*${p.form_id}*`;
-
-      document.getElementById('fs-name').textContent = p.name;
-      document.getElementById('fs-route').textContent = p.routeName;
-      document.getElementById('fs-form-id').textContent = p.form_id;
-
-      // Render real scannable QR code (регистратор ищет участника по form_id)
-      renderTicketBarcode(p.form_id);
-    }
-
-    // --- DIPLOMA & FINISHER CARD LOGIC FOR EACH MEMBER ---
-    function renderDiplomaPills() {
-      const container = document.getElementById('diploma-pills');
-      if (!container) return;
-      container.innerHTML = participants.map((p, idx) => `
-        <button onclick="selectDiploma(${idx})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${activeDiplomaIdx === idx ? 'bg-[#ea580c] text-white shadow-xs' : 'text-stone-700 hover:text-black bg-white'}">
-          ${p.name.split(' ')[0]} (${p.dist || '?'} км)
-        </button>
-      `).join('');
-    }
-
-    function selectDiploma(idx) {
-      if (idx < 0 || idx >= participants.length) return;
-      activeDiplomaIdx = idx;
-      renderDiplomaPills();
-      const p = participants[idx];
-
-      const cardBox = document.getElementById('diploma-card-box');
-      const statusBadge = document.getElementById('diploma-status-badge');
-
-      if (!isDemoFinished) {
-        if (statusBadge) {
-          statusBadge.className = "px-2.5 py-1 rounded-md font-bold uppercase bg-amber-100 text-amber-800";
-          statusBadge.textContent = "🚶‍♂️ На маршруте (КП-2)";
-        }
-      } else {
-        if (statusBadge) {
-          statusBadge.className = "px-2.5 py-1 rounded-md font-bold uppercase bg-emerald-100 text-emerald-800";
-          statusBadge.textContent = "🏁 Финишировал (17 мая 2026, 16:42)";
-        }
-      }
-
-      // Dynamic stats calculation by distance
-      const statsMap = {
-        '10': { time: '2ч 15м', cal: '~680' },
-        '17': { time: '3ч 50м', cal: '~1 180' },
-        '33': { time: '7ч 14м', cal: '~2 180' },
-        '50': { time: '10ч 45м', cal: '~3 450' }
-      };
-      const curStats = statsMap[p.dist] || { time: '5ч 00м', cal: '~1 500' };
-
-      const dipName = document.getElementById('diploma-name');
-      if (dipName) dipName.textContent = p.name.toUpperCase();
-      const dipCityVuz = document.getElementById('diploma-city-vuz');
-      if (dipCityVuz) dipCityVuz.textContent = `г. Екатеринбург • Финишер Майской прогулки 2026`;
-      const dipDist = document.getElementById('diploma-dist');
-      if (dipDist) dipDist.innerHTML = `${p.dist || '?'} <span class="text-2xl text-yellow-300">КМ</span>`;
-      const dipRoute = document.getElementById('diploma-route');
-      if (dipRoute) dipRoute.textContent = p.routeName;
-      const dipBadge = document.getElementById('diploma-badge-num');
-      if (dipBadge) dipBadge.textContent = (p.form_id || '').split('-').pop();
-    }
-
-    function toggleDemoFinisherStatus() {
-      isDemoFinished = !isDemoFinished;
-      selectDiploma(activeDiplomaIdx);
-    }
-
-    // --- PAYMENT ENGINE (POST /api/v1/participants/{id}/pay) ---
-    function openPaymentModal() {
-      const modal = document.getElementById('payment-modal');
-      const unpaid = participants.filter(p => !p.isPaid);
-      if (unpaid.length === 0) {
-        MPToast.show('Все участники уже оплачены ✓', 'info');
-        return;
-      }
-      const total = unpaid.reduce((acc, cur) => acc + cur.price, 0);
-      document.getElementById('pay-modal-amount').textContent = `${total.toLocaleString('ru-RU')} ₽`;
-      document.getElementById('pay-modal-desc').textContent = unpaid.length > 0
-        ? `Оплата взноса за ${unpaid.length} участн. (${unpaid.map(u => u.name.split(' ')[0]).join(', ')}). Включает карты, чай на КП и памятные значки.`
-        : `Семейный взнос. Включает карты, чай на КП и значки.`;
-      modal.classList.remove('hidden');
-    }
-
-    function closePaymentModal() {
-      document.getElementById('payment-modal').classList.add('hidden');
-    }
-
-    async function confirmSimulationPayment() {
-      const btn = document.getElementById('btn-confirm-pay');
-      const methodInput = document.querySelector('input[name="pay-method"]:checked');
-      const method = (methodInput && methodInput.value) || 'sbp';
-      const unpaid = participants.filter(p => !p.isPaid);
-
-      if (unpaid.length === 0) {
-        closePaymentModal();
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = `
-        <svg class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <span>ПРОВЕДЕНИЕ ПЛАТЕЖА...</span>
-      `;
-
-      const errors = [];
-      let paidCount = 0;
-      for (const p of unpaid) {
-        try {
-          await apiRequest(`/api/v1/participants/${p.id}/pay`, {
-            method: 'POST',
-            body: { payment_method: method }
-          });
-          paidCount++;
-        } catch (err) {
-          console.error('Payment error for', p.form_id, err);
-          errors.push(`${p.name}: ${err.message}`);
-        }
-      }
-
-      closePaymentModal();
-      btn.disabled = false;
-      btn.innerHTML = `<span>🟢 Подтвердить оплату (Симуляция)</span>`;
-
-      await loadMyParticipants();
-      switchTab('tickets');
-      selectTicket(0);
-
-      if (errors.length > 0) {
-        MPToast.dialog('Оплата завершена частично', `⚠ Оплачено: ${paidCount} из ${unpaid.length}.\n\nОшибки оплаты:\n${errors.join('\n')}`, 'warn');
-      } else {
-        MPToast.dialog('Взнос успешно оплачен', `🎉 Оплата (${method.toUpperCase()}) сохранена в базе данных и не сбросится при перезагрузке.\nСформированы именные QR-билеты для выдачи карт на старте.`, 'success');
-      }
-    }
-
-    function viewTicket(idx) {
-      switchTab('tickets');
-      selectTicket(idx);
-    }
-
-    // Tabs switching
-    function switchTab(tabId) {
-      ['team', 'tickets', 'diploma'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        const btn = document.getElementById(`tab-btn-${t}`);
-        if (btn) {
-          btn.classList.remove('border-[#ea580c]', 'text-[#ea580c]');
-          btn.classList.add('border-transparent', 'text-stone-600');
-        }
-      });
-
-      const targetTab = document.getElementById(`tab-${tabId}`);
-      if (targetTab) targetTab.classList.remove('hidden');
-      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
-      if (activeBtn) {
-        activeBtn.classList.remove('border-transparent', 'text-stone-600');
-        activeBtn.classList.add('border-[#ea580c]', 'text-[#ea580c]');
-      }
-    }
-
-    // Modal logic
-    function openModal() {
-      document.getElementById('participant-modal').classList.remove('hidden');
-    }
-    function closeModal() {
-      document.getElementById('participant-modal').classList.add('hidden');
-    }
-
-    // Save New Participant (POST /api/v1/participants/register)
-    async function saveParticipant(e) {
-      e.preventDefault();
-      const surname = document.getElementById('f-surname').value.trim();
-      const name = document.getElementById('f-name').value.trim();
-      const patronymic = document.getElementById('f-patronymic').value.trim();
-      const genderInput = document.querySelector('input[name="gender"]:checked');
-      const birth = document.getElementById('f-birth').value;
-      const phone = document.getElementById('f-phone').value.trim();
-      const email = document.getElementById('f-email').value.trim();
-      const routeInput = document.querySelector('input[name="route"]:checked');
-
-      if (!routeInput) {
-        MPToast.show('Выберите дистанцию маршрута.', 'warn');
-        return;
-      }
-
-      try {
-        const data = await apiRequest('/api/v1/participants/register', {
-          method: 'POST',
-          body: {
-            participants: [{
-              surname: surname,
-              name: name,
-              middle_name: patronymic || null,
-              route_id: parseInt(routeInput.value, 10),
-              date_of_birth: birth,
-              gender: genderInput ? genderInput.value : 'male',
-              email: email,
-              phone_number: phone
-            }]
-          }
-        });
-
-        closeModal();
-        await loadMyParticipants();
-        selectTicket(participants.length - 1);
-        MPToast.dialog('Участник зарегистрирован', `Участник ${surname} ${name} успешно зарегистрирован!\nForm ID: ${data.participants[0].form_id}\nСтатус: ожидает оплаты.\n\nНажмите «Оплатить» для формирования билета.`, 'success');
-      } catch (err) {
-        console.error('Error adding participant:', err);
-        MPToast.show('Ошибка регистрации: ' + err.message, 'error');
-      }
-    }
-
-    function toggleFullscreenTicket() {
-      const fs = document.getElementById('fs-ticket');
-      fs.classList.toggle('hidden');
-    }
-
-    async function payAll() {
-      openPaymentModal();
-    }
-
-    function downloadStoryCard() {
-      const p = participants[activeTicketIdx] || participants[0];
-      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
-        <defs>
-          <linearGradient id="card-bg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#122419"/>
-            <stop offset="50%" stop-color="#1b3324"/>
-            <stop offset="100%" stop-color="#0f1d14"/>
-          </linearGradient>
-        </defs>
-        <rect width="600" height="900" fill="url(#card-bg)" rx="28"/>
-        <rect x="20" y="20" width="560" height="860" fill="none" stroke="#ea580c" stroke-width="5" rx="20"/>
-        <text x="300" y="80" fill="#facc15" font-family="'Unbounded', sans-serif" font-size="12" font-weight="bold" text-anchor="middle" letter-spacing="2">★ ОФИЦИАЛЬНЫЙ ФИНИШЕР 2026 ★</text>
-        <text x="300" y="110" fill="#ffffff" font-family="'Onest', sans-serif" font-size="14" text-anchor="middle">17 МАЯ 2026 • ЕКАТЕРИНБУРГ • УрФУ</text>
-        <text x="300" y="220" fill="#ffffff" font-family="'Unbounded', sans-serif" font-size="24" font-weight="bold" text-anchor="middle">${p.name.toUpperCase()}</text>
-        <text x="300" y="255" fill="#9ca3af" font-family="'Onest', sans-serif" font-size="15" text-anchor="middle">г. Екатеринбург • Финишер 2026</text>
-        <rect x="70" y="310" width="460" height="180" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" rx="20"/>
-        <text x="300" y="355" fill="#facc15" font-family="'Onest', sans-serif" font-size="13" font-weight="bold" text-anchor="middle" letter-spacing="1">ПРОЙДЕННАЯ ДИСТАНЦИЯ</text>
-        <text x="300" y="435" fill="#ffffff" font-family="'Unbounded', sans-serif" font-size="70" font-weight="900" text-anchor="middle">${p.dist} <tspan font-size="32" fill="#facc15">КМ</tspan></text>
-        <text x="300" y="470" fill="#d1d5db" font-family="'Onest', sans-serif" font-size="14" text-anchor="middle">${p.routeName}</text>
-        <text x="300" y="580" fill="#22c55e" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">FORM ID: ${p.form_id}</text>
-        <text x="300" y="720" fill="#fef08a" font-family="'Unbounded', sans-serif" font-size="14" font-weight="bold" text-anchor="middle">«ПОБЕДИТЕЛЕМ СТАНОВИТСЯ КАЖДЫЙ,</text>
-        <text x="300" y="745" fill="#fef08a" font-family="'Unbounded', sans-serif" font-size="14" font-weight="bold" text-anchor="middle">КТО ПРИШЕЛ НА ФИНИШ!»</text>
-      </svg>`;
-      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Mayprogulka2026_${p.form_id}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function initSelectedRoute() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const routeParam = urlParams.get('route') || localStorage.getItem('mp_selected_route');
-      if (!routeParam) return;
-      const num = parseInt(routeParam, 10);
-      if (isNaN(num)) return;
-      // Ищем маршрут с подходящей дистанцией (параметр/локальное хранилище хранят километры)
-      const route = routes.find(r => r.distance === num);
-      if (!route) return;
-      const radio = document.querySelector(`input[name="route"][value="${route.id}"]`);
-      if (radio) radio.checked = true;
-      const wizRadio = document.querySelector(`input[name="wiz-route"][value="${route.id}"]`);
-      if (wizRadio) wizRadio.checked = true;
-    }
-
-    // Modal & ticket dismiss
-    document.getElementById('participant-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'participant-modal') closeModal();
-    });
-    const wizModal = document.getElementById('onboarding-wizard-modal');
-    if (wizModal) {
-      wizModal.addEventListener('click', (e) => {
-        if (e.target.id === 'onboarding-wizard-modal') closeOnboardingModal();
-      });
-    }
-    document.getElementById('fs-ticket').addEventListener('click', (e) => {
-      if (e.target.id === 'fs-ticket') toggleFullscreenTicket();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeModal();
-        closeOnboardingModal();
-        const fs = document.getElementById('fs-ticket');
-        if (fs && !fs.classList.contains('hidden')) fs.classList.add('hidden');
-      }
-    });
-
-    // Маршруты для форм (GET /api/v1/routes — публичный эндпоинт)
-    async function loadRoutes() {
-      try {
-        const data = await apiRequest('/api/v1/routes', { auth: false });
-        routes = (data.routes || []).filter(r => r.is_active);
-      } catch (e) {
-        console.log('Error loading routes:', e);
-        routes = [];
-      }
-      renderRoutePickers();
-    }
-
-    function renderRoutePickers() {
-      const wizBox = document.getElementById('wiz-routes-box');
-      const fBox = document.getElementById('f-routes-box');
-      if (!wizBox || !fBox) return;
-
-      if (routes.length === 0) {
-        const warn = '<div class="col-span-full text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">⚠️ Маршруты ещё не созданы администратором в базе. Регистрация недоступна до их появления.</div>';
-        wizBox.innerHTML = warn;
-        fBox.innerHTML = warn;
-        return;
-      }
-
-      wizBox.innerHTML = routes.map((r, i) => `
-        <label class="cursor-pointer border rounded-xl p-2.5 text-center transition has-[:checked]:border-[#ea580c] has-[:checked]:bg-orange-50">
-          <input type="radio" name="wiz-route" value="${r.id}" ${i === 0 ? 'checked' : ''} class="sr-only">
-          <div class="font-unbounded font-black text-sm text-stone-900">${r.distance} КМ</div>
-          <div class="text-[10px] text-stone-500 truncate" title="${r.name}">${r.name}</div>
-          <div class="font-bold text-[#ea580c] mt-1">${routePrice(r.name)} ₽</div>
-        </label>
-      `).join('');
-
-      fBox.innerHTML = routes.map((r, i) => `
-        <label class="border border-stone-300 rounded-xl p-3 cursor-pointer hover:border-[#ea580c] transition flex flex-col justify-between bg-stone-50 has-[:checked]:border-[#ea580c] has-[:checked]:bg-orange-50/50">
-          <div class="flex items-center justify-between">
-            <span class="font-unbounded font-bold text-xs text-[#122419]">${r.distance} км</span>
-            <input type="radio" name="route" value="${r.id}" ${i === 0 ? 'checked' : ''} class="accent-[#ea580c]">
-          </div>
-          <span class="text-[10px] text-stone-500 mt-1">${r.name} • ${routePrice(r.name)} ₽</span>
-        </label>
-      `).join('');
-
-      // Обновляем селекты уже добавленных спутников
-      const routeOptions = routes.map((r, i) => `<option value="${r.id}" ${i === 0 ? 'selected' : ''}>${r.name}</option>`).join('');
-      document.querySelectorAll('.wiz-extra-route').forEach(sel => { sel.innerHTML = routeOptions; });
-    }
-
-    // Server-synchronized My Participants Loader (GET /api/v1/participants/my)
-    async function loadMyParticipants() {
-      try {
-        const data = await apiRequest('/api/v1/participants/my?limit=200');
-        participants = (data.participants || []).map(p => {
-          const isPaid = p.payment_status === 'paid';
-          return {
-            id: p.id,
-            form_id: p.form_id,
-            name: [p.surname, p.name].filter(Boolean).join(' '),
-            routeName: p.route_name,
-            dist: routeDistance(p.route_name),
-            price: routePrice(p.route_name),
-            isPaid: isPaid,
-            has_started: p.has_started,
-            has_finished: p.has_finished,
-            map_barcode: p.map_barcode,
-            status: isPaid ? (p.map_barcode ? `Карта выдана (${p.map_barcode})` : 'Оплачен • Билет готов') : 'Ожидает оплаты ⏳'
-          };
-        });
-        renderParticipants();
-        selectTicket(0);
-        return true;
-      } catch (e) {
-        console.log('Error loading participants:', e);
-        const grid = document.getElementById('participants-grid');
-        if (grid && participants.length === 0) {
-          grid.innerHTML = `
-            <div class="col-span-full bg-amber-50 border border-amber-300 rounded-2xl p-6 text-center space-y-2">
-              <div class="font-unbounded font-bold text-sm text-amber-900">Не удалось загрузить список участников</div>
-              <p class="text-xs text-amber-800 max-w-xl mx-auto">
-                ${e.status === 401 ? 'Сессия истекла — войдите заново через страницу логина.' : 'Проверьте, что бэкенд запущен (' + (MP_CONFIG.API_BASE_URL || 'тот же origin') + ').'}
-                <br>Ожидаемый эндпоинт: <code class="bg-white px-1.5 py-0.5 rounded border border-amber-200 font-mono">GET /api/v1/participants/my</code>.
-              </p>
-            </div>
-          `;
-        }
-        return false;
-      }
-    }
-
-    // Startup lifecycle
-    window.addEventListener('DOMContentLoaded', async () => {
-      // Защита страницы: только авторизованные user и admin
-      const me = await requireAuth();
-      if (!me) return;
-      currentUser = me;
-      showAuthUser(me);
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const isForceNew = urlParams.get('new') === '1' || urlParams.get('register') === '1';
-      const hasRouteParam = urlParams.has('route');
-
-      // Баннер «нет доступа» — редирект с защищённой страницы служб
-      const deniedParam = urlParams.get('denied');
-      if (deniedParam) {
-        const banner = document.getElementById('denied-banner');
-        const pageEl = document.getElementById('denied-page');
-        if (pageEl) pageEl.textContent = deniedParam;
-        if (banner) banner.classList.remove('hidden');
-      }
-
-      await loadRoutes();
-      initSelectedRoute();
-
-      await loadMyParticipants();
-
-      // If user came to register for a route or requested new registration, open wizard
-      if (isForceNew || hasRouteParam) {
-        openOnboardingModal();
-      }
-    });
-  </script>
-  <!-- Universal Ecosystem Navigator -->
+  <script src="user_cabinet.js"></script>
   <script src="ecosystem_bar.js"></script>
 </body>
 </html>

@@ -28,16 +28,16 @@ STATIC = {
     'index.html', 'mayprogulka_festival.html', 'route_selector.html', 'login.html',
     'user_cabinet.html', 'typist_station.html', 'registrar_terminal.html',
     'marker_terminal.html', 'control_panel.html', 'safety_dashboard.html',
-    'api_config.js', 'typist_ocr.js', 'mp_toast.js', 'ecosystem_bar.js',
+    'api_config.js', 'typist_ocr.js', 'user_cabinet.js', 'mp_toast.js', 'ecosystem_bar.js',
     'qrcode.min.js', 'html5-qrcode.min.js', 'jsbarcode.min.js',
     'ocr_system/typist-gateway.css',
 }
 API_METHODS = {
-    'GET': {'auth/me', 'routes', 'participants/my', 'typist/unlinked',
+    'GET': {'auth/me', 'routes', 'checkpoints', 'participants/my', 'typist/unlinked',
             'registrar/search', 'marker/checkpoints', 'organizer/stats',
             'organizer/participants', 'organizer/markers', 'admin/users', 'admin/users/roles'},
     'POST': {'auth/login', 'auth/register', 'participants/register', 'typist/paper-form',
-             'typist/match', 'registrar/issue-card', 'scans/batch', 'admin/routes',
+             'typist/match', 'registrar/issue-card', 'scans/batch', 'scans/self', 'admin/routes',
              'admin/checkpoints', 'admin/maps', 'admin/maps/batch'},
     'PUT': set(),
     'PATCH': set(),
@@ -46,7 +46,7 @@ API_METHODS = {
 ID = r'[1-9][0-9]{0,17}'
 CODE = r'[A-Za-z0-9][A-Za-z0-9_-]{0,99}'
 API_PATTERNS = {
-    'GET': (rf'registrar/forms/{CODE}', rf'organizer/markers/{ID}/assignments', rf'admin/maps/{CODE}'),
+    'GET': (rf'participants/{ID}(?:/passes)?', rf'registrar/forms/{CODE}', rf'organizer/markers/{ID}/assignments', rf'admin/maps/{CODE}'),
     'POST': (rf'participants/{ID}/pay',),
     'PUT': (rf'admin/(?:routes|checkpoints)/{ID}', rf'organizer/markers/{ID}/assignments'),
     'PATCH': (rf'admin/users/{ID}/(?:role|status)',),
