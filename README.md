@@ -9,16 +9,21 @@
 
 ## Быстрый запуск
 
-Для OCR-01 CORE нужен запущенный **изолированный** бэкенд проекта на `127.0.0.1:8000` с тестовым наборщиком и активным маршрутом. В PowerShell из корня checkout выполните две команды с установленным `uv`:
+Из отдельной копии backend проекта (`main` `798bf7b`) с подготовленной синтетической SQLite и тестовыми аккаунтами запустите FastAPI. Команды PowerShell для готового backend-окружения:
+
+```powershell
+$env:PYTHONPATH = (Join-Path (Get-Location) 'src')
+.venv/Scripts/python.exe -c 'from mayprogulka.database.database import engine; engine.echo=False; import uvicorn; uvicorn.run("mayprogulka.entrypoint:app", host="127.0.0.1", port=8000, access_log=False)'
+```
+
+Из корня HTML worktree в другом окне PowerShell:
 
 ```powershell
 uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python.exe ocr_system/requirements.txt
 .venv-ocr/Scripts/python.exe -m ocr_system.gateway
 ```
 
-Откройте `http://127.0.0.1:8080/login.html`. Шлюз обслуживает вход и станцию наборщика. UI, OCR и разрешённые вызовы API используют один origin. Остальные модули по-прежнему запускаются отдельно. В режиме шлюза `?api=` и `mp_api_base` не влияют на адрес бэкенда.
-
-Не публикуйте корень этой копии через универсальный файловый сервер. Шлюз отдаёт только разрешённые файлы интерфейса. Для отдельного статического развёртывания используйте только публичные ресурсы. За пределами шлюза доступен ручной ввод через существующее подключение к API.
+Если окружение OCR уже готово, подставьте путь к его Python 3.12 во второй команде. Откройте `http://127.0.0.1:8080/`. Главная, лендинг, маршруты, вход и рабочие экраны используют этот origin. Штаб безопасности остаётся демонстрационным макетом. `?api=` и `mp_api_base` игнорируются. Обычный статический сервер не обеспечивает API и не входит в этот сценарий запуска. Шлюз и backend рассчитаны на loopback и синтетические данные, не открывайте эти порты в сеть.
 
 ### Камера и HTTPS
 
@@ -36,7 +41,7 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 | `mayprogulka_festival.html` | Публичный | Всем | Лендинг фестиваля: таймер, дистанции, атмосфера |
 | `route_selector.html` | Публичный | Всем | Выбор маршрута, описание КП, профиль высот, GPX |
 | `login.html` | Авторизация | Всем | Вход и регистрация, переадресация по роли |
-| `user_cabinet.html` | Личный кабинет | `user`, `organizer`, `admin` | Регистрация участников, оплата, QR-билеты, диплом |
+| `user_cabinet.html` | Личный кабинет | `user`, `admin` | Регистрация участников, оплата, QR-билеты, диплом |
 | `registrar_terminal.html` | Служебный | `registrar`, `organizer`, `admin` | Стартовый терминал: поиск анкеты, оплата, выдача карты |
 | `typist_station.html` | Служебный | `typist`, `admin` | Ввод бумажных анкет, OCR, сопоставление анкеты и карты |
 | `marker_terminal.html` | Служебный | `marker`, `organizer`, `admin` | Сканирование карт на КП, офлайн-очередь |
@@ -161,7 +166,7 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 
 `ecosystem_bar.js` показывает навигатор:
 
-- `admin` и `organizer` — всегда;
+- `admin` и `organizer` — на рабочих страницах после проверки сессии;
 - остальные роли и гости — только при `?demo=1`;
 - флаг в `localStorage` не сохраняется.
 
@@ -185,7 +190,11 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 .venv-ocr/Scripts/python.exe -m unittest -v ocr_system.test_core
 ```
 
-Если меняются классы оформления этих двух страниц, локальную таблицу стилей можно пересобрать командой `npm.cmd exec --yes --package=tailwindcss@3.4.17 -- tailwindcss -c ocr_system/tailwind.config.cjs --content "login.html,typist_station.html,typist_ocr.js,mp_toast.js,ecosystem_bar.js" -o ocr_system/typist-gateway.css --minify`.
+Если меняются классы оформления, локальные стили всех страниц пересобираются из корня:
+
+```powershell
+npm.cmd exec --yes --package=tailwindcss@3.4.17 -- tailwindcss -c ocr_system/tailwind.config.cjs --content "*.html,typist_ocr.js,mp_toast.js,ecosystem_bar.js" -o ocr_system/typist-gateway.css --minify
+```
 
 ---
 
@@ -196,8 +205,8 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 ### Авторизация
 
 - JWT передаётся в заголовке `Authorization: Bearer <token>`.
-- Токен и данные пользователя хранятся в `localStorage` (`mp_auth_token`, `mp_auth_user`).
-- `requireAuth([...роли])` проверяет сессию через `GET /api/v1/auth/me` и перенаправляет на домашний экран роли или на `login.html`.
+- Токен хранится в `localStorage` под ключом `mp_auth_token`. Рабочая страница проверяет данные пользователя через `/auth/me` при открытии.
+- `requireAuth()` проверяет сессию и роль через `GET /api/v1/auth/me` и общую матрицу доступа в `api_config.js`.
 - Для продакшена нужен HTTPS: долгоживущий JWT в `localStorage` — компромисс для демонстрации.
 
 ### Особенности контрактов
@@ -228,7 +237,7 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 3. Согласование матрицы доступа: организатор и страница наборщика.
 4. Финальная приёмка по чеклисту `AI_AGENT_TASK.md`.
 5. Чистка тестовых данных, тестовых карт и демонстрационных записей перед показом.
-6. Продакшен-сборка Tailwind: сейчас на части страниц используется CDN-версия, которая не предназначена для производства. Нужен скомпилированный CSS и локальные шрифты, если требуется полная автономность.
+6. Шрифты загружаются с Google Fonts. Для полной автономности можно отдельно подготовить локальные шрифты.
 7. Косметика: тост `MPToast` появляется сверху по центру и на узких экранах может перекрывать шапку.
 
 ### Сознательно не трогали
@@ -242,7 +251,7 @@ uv venv --python 3.12 .venv-ocr && uv pip sync --python .venv-ocr/Scripts/python
 
 ## Проверка перед демонстрацией
 
-1. Поднять бэкенд на `http://localhost:8000`, статику на `http://localhost:8080`.
+1. Поднять изолированный бэкенд и loopback-шлюз по инструкции «Быстрый запуск».
 2. Открыть страницы с очисткой кэша: **Ctrl+F5**.
 3. Войти под нужной ролью и проверить переадресацию.
 4. Кабинет: зарегистрировать участника, оплатить, открыть QR-билет.

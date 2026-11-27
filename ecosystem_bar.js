@@ -4,22 +4,23 @@
  * Dev-инструмент: на этапе полировки скрывается за ?demo=1.
  */
 (function() {
+  if (document.documentElement.classList.contains('mp-auth-wait')) {
+    document.addEventListener('mp-auth-ready', initNavigator, { once: true });
+  } else {
+    initNavigator();
+  }
+})();
+
+function initNavigator() {
   // Dev-навигатор: всегда виден организатору и админу (это их пульт наблюдения).
   // Остальным ролям и гостям — только при ?demo=1 в адресной строке.
   let demo = false;
   try { demo = new URLSearchParams(window.location.search).get('demo') === '1'; } catch (e) { demo = false; }
-  let currentUser = null;
-  try {
-    const raw = localStorage.getItem('mp_auth_user');
-    currentUser = raw ? JSON.parse(raw) : null;
-  } catch (e) { currentUser = null; }
+  const currentUser = window.getAuthUser?.() || null;
   const staffSupervisor = currentUser && (currentUser.role === 'admin' || currentUser.role === 'organizer');
   if (!demo && !staffSupervisor) return;
 
   const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-
-  // Текущий пользователь (заполняется на странице логина / requireAuth)
-  // — уже прочитан выше для проверки роли.
 
   const ROLE_LABELS = {
     user: 'Участник',
@@ -41,23 +42,23 @@
     {
       group: 'II. ЛИЧНЫЙ КАБИНЕТ (USER)',
       items: [
-        { title: 'Кабинет и QR-билеты', file: 'user_cabinet.html', url: '/cabinet', icon: '👤', tag: 'Участник', roles: ['user', 'organizer', 'admin'] }
+        { title: 'Кабинет и QR-билеты', file: 'user_cabinet.html', url: '/cabinet', icon: '👤', tag: 'Участник' }
       ]
     },
     {
       group: 'III. СЛУЖЕБНЫЙ КОНТУР (STAFF)',
       items: [
-        { title: 'Стартовый терминал (2 сек)', file: 'registrar_terminal.html', url: '/registrar', icon: '⚡', tag: 'Старт', roles: ['registrar', 'organizer', 'admin'] },
-        { title: 'Офлайн-сканер КП (Лес)', file: 'marker_terminal.html', url: '/marker', icon: '📱', tag: 'Маркёр', roles: ['marker', 'organizer', 'admin'] },
-        { title: 'Штаб безопасности (МЧС)', file: 'safety_dashboard.html', url: '/safety', icon: '🚨', tag: 'Safety Engine', roles: ['marker', 'organizer', 'admin'] },
-        { title: 'Станция оцифровки анкет', file: 'typist_station.html', url: '/typist', icon: '📝', tag: 'Наборщик', roles: ['typist', 'organizer', 'admin'] },
-        { title: 'Витрина QR и штрихкодов карт', file: 'registrar_terminal.html?open=cards', url: '/registrar?open=cards', icon: '📋', tag: 'Образцы', roles: ['registrar', 'organizer', 'admin'] }
+        { title: 'Стартовый терминал (2 сек)', file: 'registrar_terminal.html', url: '/registrar', icon: '⚡', tag: 'Старт' },
+        { title: 'Офлайн-сканер КП (Лес)', file: 'marker_terminal.html', url: '/marker', icon: '📱', tag: 'Маркёр' },
+        { title: 'Штаб безопасности (МЧС)', file: 'safety_dashboard.html', url: '/safety', icon: '🚨', tag: 'Safety Engine' },
+        { title: 'Станция оцифровки анкет', file: 'typist_station.html', url: '/typist', icon: '📝', tag: 'Наборщик' },
+        { title: 'Витрина QR и штрихкодов карт', file: 'registrar_terminal.html?open=cards', url: '/registrar?open=cards', icon: '📋', tag: 'Образцы' }
       ]
     },
     {
       group: 'IV. ЦЕНТР УПРАВЛЕНИЯ (ORGANIZER/ADMIN)',
       items: [
-        { title: 'Статистика, участники, маркёры, роли', file: 'control_panel.html', url: '/control', icon: '🎯', tag: 'Орг/Админ', roles: ['organizer', 'admin'] }
+        { title: 'Статистика, участники, маркёры, роли', file: 'control_panel.html', url: '/control', icon: '🎯', tag: 'Орг/Админ' }
       ]
     }
   ];
@@ -67,7 +68,10 @@
   }
 
   function hasAccess(item) {
-    return !item.roles || (userRole() && item.roles.indexOf(userRole()) !== -1);
+    const page = item.file.split('?')[0];
+    if (page === 'safety_dashboard.html') return true;
+    if (!window.canAccessPage) return page === 'mayprogulka_festival.html' || page === 'route_selector.html';
+    return window.canAccessPage(page, userRole());
   }
 
   // Helper to determine URL based on environment (file:// vs http://)
@@ -299,26 +303,21 @@
       authContainer.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;margin-bottom:10px;border-radius:10px;background:#0D1B12;border:1px solid #244732;">
           <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-            <span style="width:26px;height:26px;border-radius:50%;background:#FF542E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0;">${(currentUser.username || '?').charAt(0).toUpperCase()}</span>
+            <span style="width:26px;height:26px;border-radius:50%;background:#FF542E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0;" data-eco-initial></span>
             <div style="min-width:0;">
-              <div style="font-size:12px;font-weight:700;color:#FFF8F3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${currentUser.username || ''}</div>
+              <div style="font-size:12px;font-weight:700;color:#FFF8F3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" data-eco-username></div>
               <div style="font-size:10px;color:#22c55e;font-family:monospace;">${roleLabel}</div>
             </div>
           </div>
           <button id="mp-eco-logout" title="Выйти из системы" style="background:rgba(255,84,46,0.15);border:1px solid rgba(255,84,46,0.5);color:#FF542E;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;flex-shrink:0;">⎋ Выйти</button>
         </div>
       `;
-      const logoutBtn = document.getElementById('mp-eco-logout');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          try {
-            localStorage.removeItem('mp_auth_token');
-            localStorage.removeItem('mp_auth_user');
-          } catch (err) { /* noop */ }
-          window.location.href = 'login.html';
-        });
-      }
+      authContainer.querySelector('[data-eco-initial]').textContent = currentUser.username.charAt(0).toUpperCase();
+      authContainer.querySelector('[data-eco-username]').textContent = currentUser.username;
+      document.getElementById('mp-eco-logout').addEventListener('click', event => {
+        event.stopPropagation();
+        window.logout();
+      });
     } else {
       authContainer.innerHTML = '';
     }
@@ -338,4 +337,4 @@
       panel.classList.remove('open');
     }
   });
-})();
+}

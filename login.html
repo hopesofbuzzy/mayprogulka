@@ -7,33 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/ocr_system/typist-gateway.css">
   <script src="api_config.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              orange: '#FF542E',
-              'orange-hover': '#E0411D',
-              pine: '#122419',
-              'pine-card': '#193323',
-              bg: '#FFE8DA',
-              surface: '#FFF8F3',
-              dark: '#1F140E'
-            }
-          },
-          fontFamily: {
-            display: ['Unbounded', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-            sans: ['Onest', 'sans-serif'],
-            sport: ['"Bebas Neue"', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
   <style>
     body {
       background-color: #FFE8DA;
@@ -184,8 +159,6 @@
     const nextUrl = params.get('next');
     const errParam = params.get('error');
 
-    const roleHome = (window.MP_CONFIG && MP_CONFIG.ROLE_HOME) || { user: 'user_cabinet.html' };
-
     function showError(msg) {
       const el = document.getElementById('form-error');
       el.textContent = msg;
@@ -228,13 +201,9 @@
     }
 
     async function verifyAndRedirect() {
-      // Проверяем токен и запоминаем пользователя (роль и т.д.).
-      // Вызывается только после успешного логина/регистрации — здесь next уместен:
-      // пользователь только что сам выбрал аккаунт.
-      const me = await apiRequest('/api/v1/auth/me', { auth: true });
-      setAuthUser(me);
-      const home = roleHome[me.role] || 'user_cabinet.html';
-      window.location.href = nextUrl || home;
+      const { user, token } = await verifyAuthSession();
+      if (token !== getAuthToken()) throw new Error('Сессия изменилась. Повторите вход.');
+      window.location.href = postLoginDestination(nextUrl, user.role);
     }
 
     function setBusy(btn, busy, busyText) {
@@ -267,7 +236,7 @@
 
       try {
         const tokenResp = await apiRequest('/api/v1/auth/login', {
-          method: 'POST',
+          method: 'POST', auth: false,
           body: {
             username: document.getElementById('login-username').value.trim(),
             password: document.getElementById('login-password').value
@@ -297,7 +266,7 @@
 
       try {
         const tokenResp = await apiRequest('/api/v1/auth/register', {
-          method: 'POST',
+          method: 'POST', auth: false,
           body: {
             username: document.getElementById('reg-username').value.trim(),
             email: document.getElementById('reg-email').value.trim(),
@@ -331,27 +300,23 @@
       if (statusEl) statusEl.textContent = '⬤ ' + apiLabel;
       if (hintEl) hintEl.textContent = apiLabel;
 
-      // Поведение при редиректе с защищённой страницы
-      document.getElementById('session-check').classList.add('hidden');
-      document.getElementById('auth-card').classList.remove('hidden');
-
-      // Уже вошёл? Отправляем на домашнюю страницу РОЛИ, игнорируя next:
-      // next мог указывать на раздел, недоступный этой роли — иначе цикл
-      // «страница -> логин -> страница» (мерцание).
+      let sessionError = false;
       if (getAuthToken()) {
         try {
-          const me = await apiRequest('/api/v1/auth/me', { auth: true });
-          setAuthUser(me);
-          const home = roleHome[me.role] || 'user_cabinet.html';
-          window.location.href = home;
+          await verifyAndRedirect();
           return;
-        } catch (e) {
-          // Токен невалиден — apiRequest уже очистил сессию.
+        } catch (error) {
+          sessionError = error.status !== 401;
         }
       }
 
-      // Вкладка по умолчанию (switchTab очищает баннеры — баннеры показываем после)
+      document.getElementById('session-check').classList.add('hidden');
+      document.getElementById('auth-card').classList.remove('hidden');
       switchTab('login');
+      if (sessionError) {
+        showError('Не удалось подтвердить сохранённую сессию. Повторите вход.');
+        return;
+      }
 
       if (errParam === 'forbidden') {
         showError('Недостаточно прав для этого раздела. Войдите под аккаунтом с подходящей ролью.');

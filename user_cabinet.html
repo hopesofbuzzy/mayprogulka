@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="mp-auth-wait">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Личный кабинет участника • Майская прогулка 2026</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="stylesheet" href="/ocr_system/typist-gateway.css">
   <script src="api_config.js"></script>
   <script src="mp_toast.js"></script>
-  <script>document.documentElement.classList.add('mp-auth-wait');</script>
   <script src="qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    html.mp-auth-wait body > :not(#mp-auth-status) { display: none !important; }
     :root {
       --brand-pine: #122419;
       --brand-pine-light: #1b3324;
@@ -49,12 +49,12 @@
       inset: 0;
       z-index: 100;
       background: #ffffff;
-      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 24px;
     }
+    .fullscreen-ticket:not(.hidden) { display: flex; }
   </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -1401,8 +1401,8 @@
 
     // Startup lifecycle
     window.addEventListener('DOMContentLoaded', async () => {
-      // Защита страницы: только авторизованные (user/organizer/admin)
-      const me = await requireAuth(['user', 'organizer', 'admin']);
+      // Защита страницы: только авторизованные user и admin
+      const me = await requireAuth();
       if (!me) return;
       currentUser = me;
       showAuthUser(me);

@@ -7,33 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700;800&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/ocr_system/typist-gateway.css">
   <script src="api_config.js"></script>
   <script src="mp_toast.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              orange: '#FF542E',
-              'orange-hover': '#E0411D',
-              pine: '#0D1A12',
-              'pine-card': '#14291D',
-              border: '#244732'
-            }
-          },
-          fontFamily: {
-            display: ['Unbounded', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-            sans: ['Onest', 'sans-serif'],
-            sport: ['"Bebas Neue"', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
   <style>
+    html.mp-auth-wait body > :not(#mp-auth-status) { display: none !important; }
     body {
       background-color: #0A140E;
       color: #F7F8F5;
@@ -337,7 +315,7 @@
 
     // --- Запуск ---
     window.addEventListener('DOMContentLoaded', async () => {
-      me = await requireAuth(['organizer', 'admin']);
+      me = await requireAuth();
       if (!me) return;
       document.getElementById('operator-name').textContent = me.username;
       document.getElementById('operator-role').textContent = me.role;
@@ -360,6 +338,7 @@
 
     // --- Вкладки ---
     function switchTab(tab) {
+      if (tab === 'system' && me?.role !== 'admin') return;
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
       document.getElementById('tab-' + tab).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => {

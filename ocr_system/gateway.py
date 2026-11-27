@@ -25,15 +25,32 @@ MAX_FILE = 10 * 1024 * 1024
 MAX_UPLOAD = MAX_FILE + 16 * 1024
 MAX_PIXELS = 24_000_000
 STATIC = {
-    'login.html', 'typist_station.html', 'api_config.js', 'typist_ocr.js',
-    'mp_toast.js', 'ecosystem_bar.js', 'qrcode.min.js', 'html5-qrcode.min.js',
+    'index.html', 'mayprogulka_festival.html', 'route_selector.html', 'login.html',
+    'user_cabinet.html', 'typist_station.html', 'registrar_terminal.html',
+    'marker_terminal.html', 'control_panel.html', 'safety_dashboard.html',
+    'api_config.js', 'typist_ocr.js', 'mp_toast.js', 'ecosystem_bar.js',
+    'qrcode.min.js', 'html5-qrcode.min.js', 'jsbarcode.min.js',
     'ocr_system/typist-gateway.css',
 }
-PROXY_ROUTES = {
-    ('POST', '/api/v1/auth/login'), ('POST', '/api/v1/auth/register'),
-    ('GET', '/api/v1/auth/me'), ('GET', '/api/v1/routes'),
-    ('POST', '/api/v1/typist/paper-form'), ('POST', '/api/v1/typist/match'),
-    ('GET', '/api/v1/typist/unlinked'),
+API_METHODS = {
+    'GET': {'auth/me', 'routes', 'participants/my', 'typist/unlinked',
+            'registrar/search', 'marker/checkpoints', 'organizer/stats',
+            'organizer/participants', 'organizer/markers', 'admin/users', 'admin/users/roles'},
+    'POST': {'auth/login', 'auth/register', 'participants/register', 'typist/paper-form',
+             'typist/match', 'registrar/issue-card', 'scans/batch', 'admin/routes',
+             'admin/checkpoints', 'admin/maps', 'admin/maps/batch'},
+    'PUT': set(),
+    'PATCH': set(),
+    'DELETE': set(),
+}
+ID = r'[1-9][0-9]{0,17}'
+CODE = r'[A-Za-z0-9][A-Za-z0-9_-]{0,99}'
+API_PATTERNS = {
+    'GET': (rf'registrar/forms/{CODE}', rf'organizer/markers/{ID}/assignments', rf'admin/maps/{CODE}'),
+    'POST': (rf'participants/{ID}/pay',),
+    'PUT': (rf'admin/(?:routes|checkpoints)/{ID}', rf'organizer/markers/{ID}/assignments'),
+    'PATCH': (rf'admin/users/{ID}/(?:role|status)',),
+    'DELETE': (rf'admin/(?:routes|checkpoints)/{ID}',),
 }
 CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; "
        "img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
@@ -45,7 +62,7 @@ INFERENCE = Lock()
 
 @asynccontextmanager
 async def lifespan(app):
-    async with httpx.AsyncClient(base_url=BACKEND, timeout=10, trust_env=False) as client:
+    async with httpx.AsyncClient(base_url=BACKEND, timeout=10, trust_env=False, follow_redirects=False) as client:
         app.state.backend = client
         yield
 
@@ -93,20 +110,29 @@ async def backend_request(request, method, path, **kwargs):
         raise HTTPException(503, 'Бэкенд недоступен.') from None
 
 
-@app.api_route('/api/v1/{path:path}', methods=['GET', 'POST'])
+@app.api_route('/api/v1/{path:path}', methods=list(API_METHODS))
 async def proxy_api(request: Request, path: str):
+    method = request.method
     target = '/api/v1/' + path
-    if (request.method, target) not in PROXY_ROUTES:
+    # The allowlist and the raw-path check both precede any upstream request.
+    if path not in API_METHODS[method] and not any(
+        re.fullmatch(pattern, path) for pattern in API_PATTERNS[method]
+    ):
         raise HTTPException(404)
+    if request.scope.get('raw_path') != target.encode('ascii'):
+        raise HTTPException(404)
+
     headers = {key: request.headers[key] for key in ('authorization', 'content-type') if key in request.headers}
     try:
-        content = b''.join([chunk async for chunk in limited_stream(request, 64 * 1024)]) if request.method == 'POST' else b''
+        content = b''.join([chunk async for chunk in limited_stream(request, 64 * 1024)]) if method in {
+            'POST', 'PUT', 'PATCH', 'DELETE'
+        } else b''
     except MultiPartException:
         raise HTTPException(413) from None
-    upstream = await backend_request(request, request.method, target,
-                                     params=request.query_params.multi_items(), headers=headers, content=content)
-    headers = {'Content-Type': upstream.headers['content-type']} if 'content-type' in upstream.headers else {}
-    return Response(upstream.content, status_code=upstream.status_code, headers=headers)
+    url = httpx.URL(BACKEND + target).copy_with(query=request.scope['query_string'] or None)
+    upstream = await backend_request(request, method, url, headers=headers, content=content)
+    response_headers = {'Content-Type': upstream.headers['content-type']} if 'content-type' in upstream.headers else {}
+    return Response(upstream.content, status_code=upstream.status_code, headers=response_headers)
 
 
 def run_inference(data):
@@ -187,22 +213,15 @@ async def recognize(request: Request):
 
 @app.get('/{path:path}')
 async def static(path: str):
-    path = path or 'login.html'
+    path = path or 'index.html'
     if path not in STATIC:
         raise HTTPException(404)
     asset = ROOT / path
     if path == 'api_config.js':
         js = 'window.MP_LOOPBACK_GATEWAY = true;\n' + asset.read_text(encoding='utf-8')
         return Response(js, media_type='text/javascript')
-    if path.endswith('.html'):
-        html = asset.read_text(encoding='utf-8')
-        html = html.replace('<script src="https://cdn.tailwindcss.com"></script>',
-                            '<link rel="stylesheet" href="/ocr_system/typist-gateway.css">')
-        html = re.sub(r'<script>\s*tailwind\.config = \{.*?</script>', '', html, count=1, flags=re.S)
-        return Response(html, media_type='text/html')
     return FileResponse(asset)
 
 
 if __name__ == '__main__':
     uvicorn.run(app, host=HOST, port=PORT, access_log=False, proxy_headers=False)
-

@@ -20,7 +20,7 @@ function toggleOcrPanel(force) {
 }
 
 function openOcrPicker(id) {
-  if (!currentUser || paperState !== 'draft') return;
+  if (!currentUser || !getAuthUser() || paperState !== 'draft') return;
   toggleOcrPanel(true);
   document.getElementById(id).click();
 }
@@ -58,7 +58,7 @@ function cancelOcr() {
 async function handleOcrFile(event) {
   const file = event.target.files[0];
   event.target.value = '';
-  if (!file || !currentUser || paperState !== 'draft') return;
+  if (!file || !currentUser || !getAuthUser() || paperState !== 'draft') return;
   if (window.MP_LOOPBACK_GATEWAY !== true || location.origin !== 'http://127.0.0.1:8080') {
     showOcrMessage('Распознавание доступно через локальный шлюз. Можно заполнить анкету вручную.');
     return;
@@ -79,7 +79,7 @@ async function handleOcrFile(event) {
       'Если это другой участник, начните новую анкету. Если это тот же бланк, введённые поля сохранятся.',
       'Новая анкета', 'Тот же бланк'
     );
-    if (paperState !== 'draft' || token !== getAuthToken()) return;
+    if (paperState !== 'draft' || !getAuthUser() || token !== getAuthToken()) return;
     if (action === 'new') resetPaperForm(false);
     else if (action === 'same') clearOcr(true);
     else return;
@@ -95,16 +95,22 @@ async function handleOcrFile(event) {
   document.getElementById('ocr-result').classList.remove('hidden');
   document.getElementById('ocr-progress').classList.remove('hidden');
   const timeout = setTimeout(() => controller.abort(), 45000);
-  const isCurrent = () => ocrRequest === controller && token === getAuthToken() && paperState === 'draft';
+  const isCurrent = () => ocrRequest === controller && getAuthUser() &&
+    token === getAuthToken() && paperState === 'draft';
   try {
     const body = new FormData();
     body.append('file', file);
+    if (!isCurrent()) return;
     const response = await fetch('/ocr/recognize', {
       method: 'POST', body, signal: controller.signal, redirect: 'error',
       headers: { Authorization: 'Bearer ' + token }
     });
     const data = await response.json().catch(() => null);
     if (!isCurrent()) return;
+    if (response.status === 401) {
+      clearAuth();
+      return;
+    }
     if (!response.ok || data?.status !== 'review_required' || !data.fields) {
       throw new Error(typeof data?.detail === 'string' ? data.detail : 'Сервис распознавания недоступен.');
     }
@@ -149,9 +155,7 @@ document.addEventListener('input', event => {
   if (ocrApplied.delete(event.target)) event.target.classList.remove('ocr-filled');
 });
 window.addEventListener('pagehide', () => resetPaperForm(false, true));
-window.addEventListener('storage', event => {
-  if (event.key === MP_CONFIG.AUTH_TOKEN_KEY) resetPaperForm(false, true);
-});
+document.addEventListener('mp-auth-invalidated', () => resetPaperForm(false, true));
 document.addEventListener('click', event => {
   if (event.target.closest('#mp-eco-logout')) resetPaperForm(false, true);
 }, true);

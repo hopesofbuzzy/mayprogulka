@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="mp-auth-wait">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,39 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/ocr_system/typist-gateway.css">
   <script src="api_config.js"></script>
   <script src="mp_toast.js"></script>
-  <script>document.documentElement.classList.add('mp-auth-wait');</script>
   <script src="html5-qrcode.min.js"></script>
   <script src="qrcode.min.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              orange: '#FF542E',
-              'orange-hover': '#E0411D',
-              pine: '#122419',
-              'pine-light': '#1C3627',
-              slate: '#262626',
-              bg: '#FFE8DA',
-              surface: '#FFF8F3',
-              dark: '#1F140E'
-            }
-          },
-          fontFamily: {
-            display: ['Unbounded', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-            sans: ['Onest', 'sans-serif'],
-            sport: ['"Bebas Neue"', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
   <style>
+    html.mp-auth-wait body > :not(#mp-auth-status) { display: none !important; }
     body {
       background-color: #122419;
       color: #FFF8F3;
@@ -1271,12 +1245,12 @@
     // Startup lifecycle: защита страницы + загрузка справочников
     window.addEventListener('DOMContentLoaded', async () => {
       // Доступ: registrar, organizer, admin (как x-roles на бэкенде)
-      const me = await requireAuth(['registrar', 'organizer', 'admin']);
+      const me = await requireAuth();
       if (!me) return;
       currentUser = me;
 
       const operatorEl = document.getElementById('operator-name');
-      if (operatorEl) operatorEl.textContent = `${me.username} (${ROLE_NAMES[me.role] || me.role})`;
+      if (operatorEl) operatorEl.textContent = `${me.username} (${me.role})`;
 
       document.getElementById('counter-free-maps').textContent = canBindMaps() ? '…' : '—';
       await loadRouteChips();
