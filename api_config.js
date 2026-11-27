@@ -166,13 +166,26 @@
   async function verifyAuthSession() {
     const token = getAuthToken();
     if (!token) throw Object.assign(new Error('Войдите в систему.'), { status: 401 });
-    const user = await apiRequest('/api/v1/auth/me', { signal: AbortSignal.timeout(12000) });
+    let user;
+    try {
+      user = await apiRequest('/api/v1/auth/me', { signal: AbortSignal.timeout(12000) });
+    } catch (error) {
+      if (error instanceof TypeError || error.name === 'TimeoutError' ||
+          (error.status >= 500 && error.status <= 599)) {
+        throw Object.assign(new Error(error.message, { cause: error }), {
+          code: 'AUTH_UNAVAILABLE', status: error.status
+        });
+      }
+      throw error;
+    }
     if (token !== getAuthToken()) throw new Error('Сессия изменилась. Повторите вход.');
     if (!user || user.is_active !== true || typeof user.role !== 'string' || !Object.hasOwn(ROLE_HOME, user.role) ||
         !Number.isSafeInteger(user.user_id) || user.user_id <= 0 ||
         typeof user.username !== 'string' || !user.username.trim() ||
         typeof user.email !== 'string' || !user.email.trim()) {
-      throw new Error('Сессия не подтверждена. Войдите снова или повторите проверку.');
+      throw Object.assign(new Error('Сессия не подтверждена. Войдите снова или повторите проверку.'), {
+        code: 'AUTH_UNCONFIRMED'
+      });
     }
     return { user, token };
   }
@@ -208,6 +221,7 @@
   }
 
   async function requireAuth() {
+    if (sessionInvalidated) return null;
     const current = currentDestination();
     const loginUrl = loginUrlFor(current);
     if (!getAuthToken()) {
@@ -223,6 +237,7 @@
       else showAuthGateError(loginUrl);
       return null;
     }
+    if (sessionInvalidated) return null;
     if (session.token !== getAuthToken()) {
       showAuthGateError(loginUrl);
       return null;
@@ -242,6 +257,6 @@
   global.MP_CONFIG = { API_BASE_URL: '', API_VERSION: 'v1', AUTH_TOKEN_KEY, ROLE_HOME };
   Object.assign(global, {
     mpApiUrl, getAuthToken, setAuthToken, getAuthUser, clearAuth, logout,
-    apiRequest, requireAuth, verifyAuthSession, postLoginDestination, canAccessPage
+    apiRequest, requireAuth, verifyAuthSession, invalidatePageSession, postLoginDestination, canAccessPage
   });
 })(window);

@@ -2,7 +2,7 @@
 <html lang="ru" class="mp-auth-wait">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Терминал Маркёра КП • Майская прогулка 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +26,27 @@
       transition: opacity 0.25s ease-out;
       pointer-events: none;
     }
+    .mp-status { color: #ffcb76; border-color: #654c2c; }
+    .mp-cp-list, .mp-counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: .5rem; }
+    .mp-cp, .mp-counts > div { padding: .5rem; background: #14291d; border: 1px solid #426851; border-radius: .65rem; overflow-wrap: anywhere; }
+    .mp-cp[aria-pressed="true"] { border-color: #72d293; background: #1c3828; }
+    .mp-counts span { display: block; font-size: .75rem; }
+    .mp-counts strong { display: block; font-size: 1.2rem; }
+    @media (min-width: 640px) { .mp-counts { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+    .mp-action { padding: .45rem .65rem; margin-top: .25rem; background: #244732; border-radius: .4rem; font-size: .8rem; }
+    .mp-action:focus-visible, .mp-cp:focus-visible, #manual-barcode-input:focus-visible { outline: 2px solid #ffcb76; outline-offset: 2px; }
+    .mp-journal-header, .mp-journal-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; justify-content: space-between; }
+    #marker-storage, #marker-legacy { color: #ffcb76; font-size: .8rem; }
+    #marker-message:empty, #marker-storage:empty, #marker-legacy:empty, #marker-assignment:empty, #marker-sync:empty, #marker-journal-limit:empty { display: none; }
+    #marker-message, #marker-assignment, #marker-sync, #marker-journal-limit, .mp-recovery { font-size: .85rem; overflow-wrap: anywhere; }
+    .mp-journal-filter { display: block; margin: .5rem 0; font-size: .8rem; }
+    .mp-journal-filter select { background: #14291d; color: #f7f8f5; border: 1px solid #426851; padding: .2rem .4rem; border-radius: .4rem; }
+    #scans-log { max-height: 16rem; overflow-y: auto; overflow-wrap: anywhere; }
+    #scans-log li { padding: .45rem 0; border-bottom: 1px solid #244732; }
+    [data-tone="amber"] { color: #ffcb76; }
+    [data-tone="red"] { color: #ffaeaa; }
+    [data-tone="emerald"] { color: #91e5ac; }
+    #camera-reader-box[hidden] { display: none; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
@@ -33,16 +54,16 @@
   <!-- FULLSCREEN SCAN FEEDBACK FLASH OVERLAY -->
   <div id="feedback-flash" class="flash-overlay fixed inset-0 z-50 opacity-0 flex flex-col items-center justify-center p-6 text-center">
     <div id="flash-icon" class="w-24 h-24 rounded-full flex items-center justify-center text-white text-5xl mb-3 shadow-2xl bg-emerald-600">✓</div>
-    <div id="flash-title" class="font-display font-black text-3xl sm:text-4xl text-white tracking-wide mb-1">ОТМЕЧЕН</div>
-    <div id="flash-barcode" class="font-mono text-xl sm:text-2xl font-bold text-white/95 mb-2">MP2026-…</div>
+    <div id="flash-title" class="font-display font-black text-3xl sm:text-4xl text-white tracking-wide mb-1"></div>
+    <div id="flash-barcode" class="font-mono text-xl sm:text-2xl font-bold text-white/95 mb-2"></div>
     <div id="flash-subtext" class="text-sm font-mono text-white/80 bg-black/50 px-4 py-1.5 rounded-full"></div>
   </div>
 
   <!-- TOP HEADER: sync status, CP name, clock -->
   <header class="bg-[#0D1A12] border-b border-[#244732] px-4 py-2.5 flex items-center justify-between sticky top-0 z-40 gap-2">
-    <div id="sync-status-indicator" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
-      <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-      <span id="sync-status-text">СИНХРОНИЗИРОВАНО</span>
+    <div id="sync-status-indicator" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold mp-status border shrink-0">
+      <span id="sync-dot" class="w-2 h-2 rounded-full "></span>
+      <span id="sync-status-text">ПРОВЕРКА</span>
     </div>
 
     <div class="text-center min-w-0">
@@ -61,8 +82,12 @@
 
     <!-- CHECKPOINT SELECTOR (GET /api/v1/marker/checkpoints) -->
     <div id="cp-selector" class="bg-[#14291D] border-2 border-[#244732] rounded-xl p-3">
-      <div class="text-xs font-mono text-white/50 text-center py-2">Загрузка контрольных пунктов…</div>
+      <div id="cp-list" class="mp-cp-list"></div>
+      <p id="marker-assignment" role="status">Проверка назначений КП…</p>
+      <button id="marker-refresh" class="mp-action" type="button" onclick="loadCheckpoints()">Проверить КП</button>
     </div>
+    <p id="marker-legacy" role="status"></p>
+    <p id="marker-storage" role="alert"></p>
 
     <!-- КАМЕРА — приоритетный способ (крупная цель для массового потока) -->
     <button
@@ -84,50 +109,46 @@
       <form onsubmit="event.preventDefault(); submitManualBarcode();" class="flex items-center gap-2">
         <input
           type="text"
-          id="manual-barcode-input"
+          id="manual-barcode-input" aria-label="Код карты" autocapitalize="none" spellcheck="false"
           inputmode="text"
           autocomplete="off"
-          placeholder="MP2026-XXXXXXXX…"
-          class="flex-1 min-w-0 bg-[#0A140E] border border-[#244732] focus:border-amber-400 rounded-lg px-3 py-2.5 text-sm font-mono text-white placeholder-white/25 focus:outline-none uppercase tracking-wider">
+          placeholder="Код карты"
+          class="flex-1 min-w-0 bg-[#0A140E] border border-[#244732] focus:border-amber-400 rounded-lg px-3 py-2.5 text-sm font-mono text-white placeholder-white/25 focus:outline-none tracking-wider">
         <button type="submit" class="bg-[#244732] hover:bg-[#346647] text-white px-4 py-2.5 rounded-lg text-xs font-mono font-bold transition shrink-0">ОК</button>
       </form>
     </div>
 
-    <!-- SESSION STATS -->
-    <div class="grid grid-cols-4 gap-2 text-center font-mono">
-      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
-        <div class="text-[9px] text-white/50 uppercase leading-tight">Отмечено</div>
-        <div id="stat-ok" class="font-sport text-2xl sm:text-3xl text-emerald-400 font-bold">0</div>
-      </div>
-      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
-        <div class="text-[9px] text-white/50 uppercase leading-tight">Дубли</div>
-        <div id="stat-dup" class="font-sport text-2xl sm:text-3xl text-sky-300 font-bold">0</div>
-      </div>
-      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
-        <div class="text-[9px] text-white/50 uppercase leading-tight">В очереди</div>
-        <div id="stat-queue" class="font-sport text-2xl sm:text-3xl text-amber-400 font-bold">0</div>
-      </div>
-      <div class="bg-[#14291D] border border-[#244732] p-2 rounded-xl">
-        <div class="text-[9px] text-white/50 uppercase leading-tight">Ошибки</div>
-        <div id="stat-err" class="font-sport text-2xl sm:text-3xl text-red-400 font-bold">0</div>
-      </div>
+    <p id="marker-message" role="status" data-tone="amber"></p>
+    <div class="mp-counts text-center font-mono">
+      <div><span>В очереди</span><strong id="stat-pending" data-tone="amber">0</strong></div>
+      <div><span>Отправляется</span><strong id="stat-sending" data-tone="amber">0</strong></div>
+      <div><span>Подтверждено</span><strong id="stat-confirmed" data-tone="emerald">0</strong></div>
+      <div><span>Нужна сверка</span><strong id="stat-rejected" data-tone="red">0</strong></div>
+      <div><span>Исход неизвестен</span><strong id="stat-unknown" data-tone="amber">0</strong></div>
     </div>
-
-    <!-- RECENT SCANS LOG FEED -->
-    <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3 flex-1 flex flex-col">
-      <div class="flex items-center justify-between pb-2 border-b border-[#244732] mb-2">
-        <span class="text-xs font-mono font-bold text-white/70 uppercase tracking-wider">Журнал отметок</span>
-        <span class="flex items-center gap-2">
-          <button onclick="clearQueue(this)" class="text-[10px] font-mono text-red-300 hover:underline">🗑 Очистить</button>
-          <button onclick="flushQueue(true)" class="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            Отправить сейчас
-          </button>
-        </span>
+    <div class="bg-[#14291D] border border-[#244732] rounded-xl p-3 flex-1">
+      <div class="mp-journal-header">
+        <strong>Журнал отметок</strong>
+        <div class="mp-journal-actions">
+          <button class="mp-action" type="button" onclick="exportJournal()">Экспорт журнала</button>
+          <button class="mp-action" type="button" onclick="flushQueue(true)">Отправить сейчас</button>
+        </div>
       </div>
-      <div id="scans-log" class="space-y-1.5 overflow-y-auto max-h-56 text-xs font-mono">
-        <div class="text-white/30 text-center py-3">Пока пусто — отсканируйте первую карту</div>
-      </div>
+      <p id="marker-sync" role="status"></p>
+      <label class="mp-journal-filter">Показать
+        <select id="marker-journal-filter" onchange="renderJournal()">
+          <option value="">Все состояния</option>
+          <option value="pending">В очереди</option>
+          <option value="sending">Отправляется</option>
+          <option value="confirmed">Подтверждено</option>
+          <option value="rejected">Нужна сверка</option>
+          <option value="unknown">Исход неизвестен</option>
+        </select>
+      </label>
+      <p id="marker-journal-limit"></p>
+      <p class="mp-recovery">При отказе или неизвестном исходе выгрузите журнал и передайте организатору.
+        Сверяйте исход по коду, исходному КП и времени. До сверки не сканируйте эти коды повторно.</p>
+      <ul id="scans-log" class="text-xs font-mono"><li>Пока пусто</li></ul>
     </div>
 
     <!-- SOS + TORCH -->
@@ -168,7 +189,7 @@
         Наведите камеру на QR-код стикера карты
       </div>
       <label class="w-full bg-[#2A4D37] hover:bg-[#39694B] text-emerald-200 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2 cursor-pointer mt-2 border border-emerald-500/30">
-        <input type="file" id="marker-file-scan" accept="image/*" capture="environment" class="hidden" onchange="handleMarkerFileScan(event)">
+        <input type="file" id="marker-file-scan" accept="image/*" capture="environment" class="hidden" onclick="startFileChoice(event)" onchange="handleMarkerFileScan(event)" oncancel="closeCameraScanner()">
         📸 Снимок камерой (если видеопоток заблокирован)
       </label>
       <button onclick="closeCameraScanner()" class="mt-2 w-full bg-[#1C3828] hover:bg-[#284F39] text-white py-2.5 rounded-xl text-xs font-mono font-bold">
@@ -177,13 +198,16 @@
     </div>
   </div>
 
+  <div id="marker-file-reader" hidden></div>
+
   <!-- AUDIO & SYNTHESIZER -->
   <script>
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx;
 
     function playTone(freq, duration, type = 'sine') {
       try {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') void audioCtx.resume().catch(() => {});
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = type;
@@ -197,16 +221,6 @@
       } catch (e) { /* noop */ }
     }
 
-    function soundSuccess() {
-      playTone(659.25, 0.08); // E5
-      setTimeout(() => playTone(880, 0.12), 80); // A5
-    }
-
-    function soundDuplicate() {
-      playTone(440, 0.1, 'triangle');
-      setTimeout(() => playTone(440, 0.1, 'triangle'), 120);
-    }
-
     function soundError() {
       playTone(180, 0.3, 'sawtooth');
     }
@@ -214,332 +228,770 @@
 
   <!-- TERMINAL CORE SCRIPT -->
   <script>
-    // --- Состояние ---
-    const QUEUE_KEY = 'mp_marker_queue';
-    const CP_KEY = 'mp_marker_cp';
-    const BATCH_SIZE = 50;          // максимум сканов в одном POST
-    const DEDUPE_MS = 60000;        // повтор того же баркода в очереди за минуту игнорируем
-    const MAX_SEND_ATTEMPTS = 2;    // после двух определённых отказов сервера отметка выбывает
 
+    const $ = id => document.getElementById(id);
+    const DB_NAME = 'mp-marker-ledger';
+    const CAPACITY = 5000;
+    const MAX_CODE_BYTES = 256;
+    const STATES = {
+      pending: ['В очереди', 'amber'],
+      sending: ['Отправляется', 'amber'],
+      confirmed: ['Подтверждено сервером', 'emerald'],
+      rejected: ['Требует сверки', 'red'],
+      unknown: ['Исход неизвестен', 'amber']
+    };
+    const idOk = n => Number.isSafeInteger(n) && n > 0;
+    const nonnegative = n => Number.isSafeInteger(n) && n >= 0;
+    const isObject = x => x !== null && typeof x === 'object' && !Array.isArray(x);
+    const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(value))
+      && new Date(value).toISOString() === value;
+    const validCode = value => typeof value === 'string' && value.length > 0 && value === value.trim()
+      && !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(value) && !/^P\d{4}-/i.test(value)
+      && new TextEncoder().encode(value).length <= MAX_CODE_BYTES;
+    const validId = value => typeof value === 'string' && /^[a-f0-9-]{36}$/.test(value);
+    let owner = null;
+    let db = null;
+    let storageFailed = false;
     let checkpoints = [];
-    let activeCpId = null;
-    let queue = [];                 // { barcode, timestamp (ISO), checkpoint_id }
-    let sessionOk = 0, sessionDup = 0, sessionErr = 0;
-    let flushing = false;
-    let flushTimer = null;
-    let syncError = false;
-    let logEntries = [];            // { time, kind: 'scan'|'sync'|'error', barcode, info }
-    let torchOn = false;
+    let activeCp = null;
+    let preferredCp = null;
+    let generation = 0;
+    let assignmentOffline = false;
+    let authUnavailable = false;
+    let journalVersion = 0;
+    let journalChannel = null;
+    const intakeTransactions = new Set();
 
-    // --- Запуск ---
-    window.addEventListener('DOMContentLoaded', async () => {
-      // Эндпоинты /marker/* и /scans/* на бэкенде: роли marker, organizer, admin
-      const me = await requireAuth();
-      if (!me) return;
-
-      const roleEl = document.getElementById('operator-role');
-      if (roleEl) roleEl.textContent = me.username + ' • ' + me.role;
-
-      tickClock();
-      setInterval(tickClock, 1000);
-
-      loadQueue();
-      renderLog();
-      updateStats();
-      updateSyncBadge();
-
-      await loadCheckpoints();
-
-      flushQueue();
-      setInterval(() => flushQueue(), 20000);
-      window.addEventListener('online', () => flushQueue());
-      window.addEventListener('offline', updateSyncBadge);
-      document.addEventListener('visibilitychange', () => { if (!document.hidden) flushQueue(); });
-    });
-
-    function tickClock() {
-      const d = new Date();
-      document.getElementById('clock-display').textContent = d.toTimeString().substring(0, 5);
+    function currentOwner(actor = owner) {
+      return actor !== null && owner === actor && getAuthUser()?.user_id === actor;
     }
 
-    // --- Контрольные пункты (GET /api/v1/marker/checkpoints) ---
-    async function loadCheckpoints() {
-      const box = document.getElementById('cp-selector');
+    function note(text, tone = 'amber') {
+      $('marker-message').textContent = text;
+      $('marker-message').dataset.tone = tone;
+    }
+
+    function storageWarning() {
+      if (storageFailed) return;
+      storageFailed = true;
+      closeCameraScanner();
+      note('');
+      syncNote('');
+      if (!currentOwner()) return;
+      $('marker-storage').textContent = 'Хранилище недоступно или повреждено. Приём и отправка остановлены. '
+        + 'Сохраните бумажные отметки, экспортируйте доступные записи и обратитесь к организатору. Не очищайте данные сайта.';
+      updateSyncBadge();
+    }
+
+    function openLedger() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = () => {
+          const database = request.result;
+          for (const name of ['scans', 'attempts']) {
+            database.createObjectStore(name, { keyPath: 'id' }).createIndex('owner', 'owner');
+          }
+          database.createObjectStore('preferences', { keyPath: 'owner' });
+        };
+        request.onerror = request.onblocked = () => reject(new Error('Ledger unavailable'));
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    // IDB requests are chained in their callbacks so writes stay in the same active transaction.
+    // Resolve only from oncomplete, even if all put/add requests have already succeeded.
+    function ledger(stores, mode, work, intake = false) {
+      return new Promise((resolve, reject) => {
+        const tx = mode === 'readwrite'
+          ? db.transaction(stores, mode, { durability: 'strict' })
+          : db.transaction(stores, mode);
+        let result;
+        let failure;
+        const finish = value => { result = value; };
+        const fail = error => {
+          failure = error;
+          tx.abort();
+        };
+        const read = (request, next) => {
+          request.onsuccess = () => {
+            try { next(request.result); } catch (error) { fail(error); }
+          };
+        };
+        if (intake) intakeTransactions.add(tx);
+        tx.oncomplete = () => {
+          intakeTransactions.delete(tx);
+          resolve(result);
+        };
+        tx.onabort = () => {
+          intakeTransactions.delete(tx);
+          reject(failure || tx.error || new Error('Ledger transaction aborted'));
+        };
+        try { work(tx, read, finish); } catch (error) { fail(error); }
+      });
+    }
+
+    function validScan(record, actor) {
+      return isObject(record) && record.owner === actor && validId(record.id)
+        && idOk(record.checkpoint_id) && idOk(record.route_id) && validCode(record.barcode)
+        && iso(record.timestamp) && Object.hasOwn(STATES, record.state)
+        && typeof record.reason === 'string'
+        && (record.attempt === null || validId(record.attempt))
+        && (!['sending', 'confirmed', 'unknown'].includes(record.state) || record.attempt !== null)
+        && (record.state !== 'pending' || record.attempt === null);
+    }
+
+    function checkedScans(records, actor) {
+      if (!records.every(record => validScan(record, actor))) throw new Error('Invalid scan ledger');
+      return records;
+    }
+
+    function owned(store, actor) {
+      return store.index('owner').getAll(actor);
+    }
+
+    function legacyWarning() {
       try {
-        const data = await apiRequest('/api/v1/marker/checkpoints');
-        checkpoints = data.checkpoints || [];
-      } catch (e) {
-        box.innerHTML = '<div class="text-center py-2"><div class="text-xs font-mono text-red-300 mb-2">⛔ Не удалось загрузить КП: ' + esc(e.message) + '</div><button onclick="loadCheckpoints()" class="text-[11px] font-mono bg-[#244732] hover:bg-[#346647] text-white px-3 py-1.5 rounded-lg">↻ Повторить</button></div>';
-        return;
+        const raw = localStorage.getItem('mp_marker_queue');
+        if (raw === null && localStorage.getItem('mp_marker_cp') === null) return;
+        let count = '';
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) count = ' (записей: ' + parsed.length + ')';
+        } catch { /* leave original raw value intact */ }
+        $('marker-legacy').textContent = 'Есть старые данные без подтверждённого владельца' + count
+          + '. Они изолированы. Организатор должен сверить их отдельно на этом устройстве.';
+      } catch {
+        $('marker-legacy').textContent = 'Не удалось проверить наличие старых данных на устройстве.';
       }
+    }
 
-      if (checkpoints.length === 0) {
-        box.innerHTML = '<div class="text-center py-2 text-xs font-mono text-amber-300">⚠ Нет назначенных контрольных пунктов.<br>Обратитесь к организатору.</div>';
-        return;
+    function parseAssignments(data, actor) {
+      if (!isObject(data) || data.marker_id !== actor || !Array.isArray(data.checkpoints)) {
+        throw new Error('Invalid assignment owner or list');
       }
+      const ids = new Set();
+      for (const cp of data.checkpoints) {
+        if (!isObject(cp) || !idOk(cp.checkpoint_id) || !idOk(cp.route_id)
+            || !nonnegative(cp.position) || ids.has(cp.checkpoint_id)
+            || !['name', 'route_name', 'address', 'coordinates'].every(key => typeof cp[key] === 'string')
+            || !cp.name.trim() || !cp.route_name.trim()) {
+          throw new Error('Invalid checkpoint');
+        }
+        ids.add(cp.checkpoint_id);
+      }
+      return data.checkpoints;
+    }
 
-      let saved = null;
-      try { saved = parseInt(localStorage.getItem(CP_KEY), 10); } catch (e) { /* noop */ }
-      activeCpId = checkpoints.some(c => c.checkpoint_id === saved) ? saved : checkpoints[0].checkpoint_id;
+    function sameCp(a, b) {
+      return a && b && a.checkpoint_id === b.checkpoint_id && a.route_id === b.route_id;
+    }
+
+    function applyAssignment(list) {
+      preferredCp ??= activeCp;
+      const prior = activeCp || preferredCp;
+      const next = (prior ? list.find(cp => sameCp(cp, prior)) : list[0]) || null;
+      if (!preferredCp && next) {
+        preferredCp = next;
+        void saveCp(next, true);
+      }
+      if (!sameCp(activeCp, next)) closeCameraScanner();
+      checkpoints = list;
+      activeCp = next;
       renderCpSelector();
+    }
+
+    let assignmentsRequest = null;
+    function loadCheckpoints() {
+      if (!currentOwner()) return Promise.resolve(false);
+      if (assignmentsRequest) return assignmentsRequest;
+      const actor = owner;
+      assignmentsRequest = refreshCheckpoints(actor).finally(() => { assignmentsRequest = null; });
+      return assignmentsRequest;
+    }
+
+    async function refreshCheckpoints(actor) {
+      let data;
+      try {
+        data = await apiRequest('/api/v1/marker/checkpoints', { signal: AbortSignal.timeout(10000) });
+      } catch (error) {
+        if (!currentOwner(actor)) return false;
+        // A gateway can report an unreachable backend as HTTP 503/504.
+        assignmentOffline = !error.status || error.status === 408 || error.status >= 500;
+        if (!assignmentOffline) applyAssignment([]);
+        $('marker-assignment').textContent = assignmentOffline && activeCp
+          ? 'Связи с сервером нет. Приём в очередь для ранее проверенного КП.'
+          : 'Не удалось проверить назначение КП. Повторите проверку.';
+        updateSyncBadge();
+        return false;
+      }
+      if (!currentOwner(actor)) return false;
+      let list;
+      try { list = parseAssignments(data, actor); } catch {
+        assignmentOffline = false;
+        applyAssignment([]);
+        $('marker-assignment').textContent = 'Сервер вернул некорректный список КП. Приём остановлен.';
+        updateSyncBadge();
+        return false;
+      }
+      assignmentOffline = false;
+      applyAssignment(list);
+      $('marker-assignment').textContent = !list.length ? 'Нет назначенных КП. Обратитесь к организатору.'
+        : activeCp ? '' : 'Прежний КП недоступен. Проверьте своё назначение и выберите КП явно.';
+      updateSyncBadge();
+      return true;
     }
 
     function renderCpSelector() {
-      const box = document.getElementById('cp-selector');
-      if (checkpoints.length === 1) {
-        const cp = checkpoints[0];
-        box.innerHTML = '<div class="text-center"><div class="font-sport text-xl tracking-wider text-white">КП • ' + esc(cp.name) + '</div><div class="text-[10px] font-mono text-emerald-400 mt-0.5">' + esc(cp.route_name) + (cp.address ? ' • ' + esc(cp.address) : '') + '</div></div>';
-        applyActiveCp();
-        return;
-      }
-      box.innerHTML = '<p class="text-[10px] font-mono text-white/40 uppercase tracking-wider mb-2 text-center">Выберите контрольный пункт</p>'
-        + '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'
-        + checkpoints.map(cp => `
-          <button type="button" onclick="selectCp(${cp.checkpoint_id})" data-cp="${cp.checkpoint_id}"
-            class="cp-btn text-left px-3 py-2.5 rounded-xl border-2 transition bg-[#0A140E] border-[#244732] hover:border-emerald-500">
-            <span class="block font-sport text-lg tracking-wider text-white leading-none">КП №${cp.position} • ${esc(cp.name)}</span>
-            <span class="block text-[10px] font-mono text-emerald-400 mt-1">${esc(cp.route_name)}</span>
-          </button>`).join('')
-        + '</div>';
-      applyActiveCp();
+      const focused = document.activeElement?.dataset.cp;
+      $('cp-list').innerHTML = checkpoints.map(cp => '<button type="button" class="mp-cp"'
+        + ' data-cp="' + cp.checkpoint_id + '" aria-pressed="' + Boolean(sameCp(cp, activeCp)) + '">'
+        + 'КП №' + cp.position + ' • ' + esc(cp.name) + '<br><small>' + esc(cp.route_name) + '</small></button>').join('');
+      if (focused) $('cp-list').querySelector('[data-cp="' + Number(focused) + '"]')?.focus();
+      $('header-cp-name').textContent = activeCp ? 'КП №' + activeCp.position + ' • ' + activeCp.name : 'КП НЕ ВЫБРАН';
+      $('header-cp-route').textContent = activeCp ? activeCp.route_name : '';
     }
 
     function selectCp(id) {
-      activeCpId = id;
-      try { localStorage.setItem(CP_KEY, String(id)); } catch (e) { /* noop */ }
+      if (!currentOwner() || storageFailed || !db) return;
+      const next = checkpoints.find(cp => cp.checkpoint_id === id);
+      if (!next || sameCp(next, activeCp)) return;
+      closeCameraScanner();
+      activeCp = next;
+      preferredCp = next;
       renderCpSelector();
-      playTone(600, 0.06);
+      return saveCp(next);
     }
 
-    function applyActiveCp() {
-      const cp = checkpoints.find(c => c.checkpoint_id === activeCpId);
-      if (!cp) return;
-      document.getElementById('header-cp-name').textContent = 'КП №' + cp.position + ' • ' + cp.name;
-      document.getElementById('header-cp-route').textContent = cp.route_name + (cp.address ? ' • ' + cp.address : '');
-      document.querySelectorAll('.cp-btn').forEach(btn => {
-        const mine = parseInt(btn.dataset.cp, 10) === activeCpId;
-        btn.classList.toggle('border-emerald-400', mine);
-        btn.classList.toggle('bg-emerald-900/40', mine);
-        btn.classList.toggle('border-[#244732]', !mine);
-      });
-    }
-
-    // --- Офлайн-очередь ---
-    function loadQueue() {
+    async function saveCp(cp, initial = false) {
+      if (!db || storageFailed || !currentOwner()) return;
+      const actor = owner;
+      const preference = { owner: actor, checkpoint_id: cp.checkpoint_id, route_id: cp.route_id };
       try {
-        const raw = localStorage.getItem(QUEUE_KEY);
-        queue = raw ? (JSON.parse(raw) || []) : [];
-      } catch (e) { queue = []; }
-    }
-
-    function persistQueue() {
-      try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch (e) { /* noop */ }
-    }
-
-    // Приём скана (из камеры или ручного ввода)
-    function addScan(rawBarcode) {
-      // Код сканируется как есть: в БД баркоды хранятся в смешанном регистре
-      // (MP2026-<hex строчными>), точный поиск на бэкенде регистрозависим.
-      const barcode = (rawBarcode || '').trim();
-      if (!barcode) return;
-
-      if (!activeCpId) {
-        soundError();
-        showFlash('red', '⛔', 'КП НЕ ВЫБРАН', barcode, 'Сначала выберите контрольный пункт');
-        return;
-      }
-
-      // На КП отмечаются только карты (MP2026-…). Номер анкеты (P2026-…)
-      // здесь ошибочен — не ставим в очередь, сразу объясняем оператору.
-      if (/^P2026/i.test(barcode)) {
-        soundDuplicate();
-        showFlash('amber', '⏳', 'ЭТО НОМЕР АНКЕТЫ', barcode, 'На КП отмечается карта (MP2026-…)');
-        addLog('error', barcode, 'отсканирован номер анкеты вместо карты');
-        renderLog(); updateStats();
-        return;
-      }
-
-      const now = new Date();
-      const dupe = queue.some(q => q.barcode === barcode && (now - Date.parse(q.timestamp)) < DEDUPE_MS);
-      if (dupe) {
-        soundDuplicate();
-        showFlash('amber', '⏳', 'УЖЕ В ОЧЕРЕДИ', barcode, 'повторный скан игнорируется');
-        addLog('error', barcode, 'дубль скана — уже в очереди');
-        renderLog(); updateStats();
-        return;
-      }
-
-      queue.push({ barcode: barcode, timestamp: now.toISOString(), checkpoint_id: activeCpId });
-      persistQueue();
-      addLog('scan', barcode, 'в очереди: ' + queue.length);
-      soundSuccess();
-      showFlash('emerald', '✓', 'ОТМЕЧЕН', barcode, navigator.onLine ? 'в очереди: ' + queue.length : 'офлайн — отправим позже');
-      updateStats(); updateSyncBadge(); renderLog();
-      scheduleFlush();
-    }
-
-    function submitManualBarcode() {
-      const input = document.getElementById('manual-barcode-input');
-      addScan(input.value);
-      input.value = '';
-      input.focus();
-    }
-
-    // Аварийный сброс очереди (например, КП удалён на сервере).
-    // Подтверждение — вторым нажатием (MPToast.arm), без блокирующего confirm().
-    function clearQueue(btn) {
-      if (queue.length === 0) return;
-      MPToast.arm(btn, 'Точно удалить ' + queue.length + '?', function() {
-        queue = [];
-        persistQueue();
-        updateStats();
-        updateSyncBadge();
-        playTone(300, 0.1, 'triangle');
-      });
-    }
-
-    // Отложенная отправка (после скана — даём накопиться пачке)
-    function scheduleFlush() {
-      if (flushTimer) return;
-      flushTimer = setTimeout(() => { flushTimer = null; flushQueue(); }, 1500);
-    }
-
-    // Отправка очереди на сервер (POST /api/v1/scans/batch)
-    async function flushQueue(force) {
-      if (flushing) return;
-      if (queue.length === 0) { updateSyncBadge(); return; }
-      if (!navigator.onLine) { updateSyncBadge(); return; }
-
-      flushing = true;
-      syncError = false;
-      updateSyncBadge();
-
-      // Группируем по КП (метка КП хранится в каждом скане) и отправляем первую группу
-      const byCp = {};
-      queue.forEach(q => { (byCp[q.checkpoint_id] = byCp[q.checkpoint_id] || []).push(q); });
-      const cpId = Object.keys(byCp)[0];
-      const batch = byCp[cpId].slice(0, BATCH_SIZE);
-      const sentKeys = new Set(batch.map(q => q.barcode + '|' + q.timestamp));
-
-      try {
-        const resp = await apiRequest('/api/v1/scans/batch', {
-          method: 'POST',
-          body: { checkpoint_id: parseInt(cpId, 10), scans: batch.map(q => ({ barcode: q.barcode, timestamp: q.timestamp })) }
-        });
-
-        const processed = resp.processed || 0;
-        const already = resp.already_passed || 0;
-        const errors = resp.errors || [];
-
-        // Отправленная пачка выбывает из очереди целиком: принятые и «уже прошедшие» —
-        // в счётчики, отклонённые сервером — в журнал (сервер ответил по каждому
-        // баркоду, повторять отклонённое бессмысленно).
-        queue = queue.filter(q => {
-          if (String(q.checkpoint_id) !== String(cpId)) return true;
-          return !sentKeys.has(q.barcode + '|' + q.timestamp);
-        });
-        batch.forEach(q => {
-          const err = errors.find(e2 => (e2.barcode || '').toUpperCase() === (q.barcode || '').toUpperCase());
-          if (err) {
-            sessionErr++;
-            addLog('error', q.barcode, err.error || 'отклонено сервером');
+        await ledger(['preferences'], 'readwrite', (tx, read) => {
+          const preferences = tx.objectStore('preferences');
+          if (initial) {
+            read(preferences.get(actor), saved => {
+              if (!saved && currentOwner(actor)) preferences.add(preference);
+            });
+          } else {
+            preferences.put(preference);
           }
-        });
-
-        sessionOk += processed;
-        sessionDup += already;
-        addLog('sync', null, '✓ ' + processed + ' • дубли ' + already + (errors.length ? ' • ошибок ' + errors.length : ''));
-
-        persistQueue();
-        soundSuccess();
-        if (queue.length > 0) scheduleFlush();
-      } catch (e) {
-        // Определённый отказ сервера (403/404/409/422): считаем попытку.
-        // После MAX_SEND_ATTEMPTS отметки выбывают из очереди в журнал.
-        const definitive = [403, 404, 409, 422].indexOf(e.status) !== -1;
-        if (definitive) {
-          batch.forEach(q => { q.attempts = (q.attempts || 0) + 1; });
-          const rest = [];
-          queue.forEach(q => {
-            const sent = String(q.checkpoint_id) === String(cpId) && sentKeys.has(q.barcode + '|' + q.timestamp);
-            if (sent && (q.attempts || 0) >= MAX_SEND_ATTEMPTS) {
-              sessionErr++;
-              addLog('error', q.barcode, 'не отправлено после ' + q.attempts + ' попыток: ' + e.message);
-            } else {
-              rest.push(q);
-            }
-          });
-          queue = rest;
-          persistQueue();
-        }
-        // Сеть недоступна / 5xx / 401 — очередь сохраняем: это офлайн-режим,
-        // отметки уйдут, когда связь появится.
-        syncError = true;
-        playTone(300, 0.15, 'triangle');
-        addLog('error', null, 'синхронизация: ' + e.message);
-      } finally {
-        flushing = false;
-        updateSyncBadge();
-        updateStats();
-        renderLog();
+        }, true);
+      } catch {
+        if (currentOwner(actor)) storageWarning();
       }
     }
 
-    // --- Журнал и статистика ---
-    function addLog(kind, barcode, info) {
-      logEntries.unshift({ time: new Date(), kind: kind, barcode: barcode, info: info || '' });
-      if (logEntries.length > 60) logEntries.length = 60;
+    function captureContext() {
+      if (!currentOwner() || !activeCp || storageFailed || !db) return null;
+      return { actor: owner, cp: activeCp, generation };
     }
 
-    function renderLog() {
-      const box = document.getElementById('scans-log');
-      if (logEntries.length === 0) {
-        box.innerHTML = '<div class="text-white/30 text-center py-3">Пока пусто — отсканируйте первую карту</div>';
+    function contextCurrent(context) {
+      return context && currentOwner(context.actor) && generation === context.generation
+        && sameCp(activeCp, context.cp) && !storageFailed;
+    }
+
+    async function addScan(raw, context, timestamp = new Date().toISOString()) {
+      if (!contextCurrent(context)) return false;
+      const barcode = typeof raw === 'string' ? raw.trim() : '';
+      if (!iso(timestamp)) return false;
+      if (!validCode(barcode)) {
+        note(/^P\d{4}-/i.test(barcode) ? 'Это номер анкеты. Введите код карты.'
+          : 'Код карты пуст, слишком длинный или содержит недопустимые символы.', 'red');
+        return false;
+      }
+      const actor = context.actor;
+      let result;
+      try {
+        result = await ledger(['scans'], 'readwrite', (tx, read, finish) => {
+          const scans = tx.objectStore('scans');
+          read(owned(scans, actor), all => {
+            if (!contextCurrent(context)) return finish('stale');
+            const rows = checkedScans(all, actor);
+            const duplicate = rows.find(row => row.checkpoint_id === context.cp.checkpoint_id
+              && row.barcode === barcode);
+            if (duplicate) return finish(duplicate.state);
+            if (rows.length >= CAPACITY) return finish('full');
+            scans.add({ id: crypto.randomUUID(), owner: actor, checkpoint_id: context.cp.checkpoint_id,
+              route_id: context.cp.route_id, barcode, timestamp, state: 'pending', reason: '', attempt: null });
+            finish('saved');
+          });
+        }, true);
+      } catch {
+        if (currentOwner(actor)) storageWarning();
+        return false;
+      }
+      if (!currentOwner(actor)) return false;
+      if (result === 'stale') return false;
+      if (result === 'full') {
+        note('Журнал заполнен. Отметка не принята. Экспортируйте журнал и обратитесь к организатору.', 'red');
+        return false;
+      }
+      if (result === 'saved') {
+        note('Сохранено в очередь');
+        publishJournalChange();
+        return true;
+      }
+      const message = {
+        confirmed: 'Этот код уже подтверждён в местном журнале.',
+        rejected: 'По этому коду нужна сверка с организатором.',
+        unknown: 'Не отправляйте этот код повторно. Исход предыдущей попытки неизвестен.'
+      };
+      note(message[result] || 'Этот код уже записан для выбранного КП.');
+      return result === 'pending' || result === 'sending' || result === 'confirmed';
+    }
+
+    let manualBusy = false;
+    async function submitManualBarcode() {
+      if (manualBusy || !currentOwner()) return;
+      const input = $('manual-barcode-input');
+      const context = captureContext();
+      if (!context) {
+        note('Отметка не принята. Проверьте хранилище и назначение КП.', 'red');
         return;
       }
-      box.innerHTML = logEntries.slice(0, 30).map(item => {
-        const t = item.time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        if (item.kind === 'scan') {
-          return '<div class="flex items-center justify-between gap-2 p-2 rounded bg-[#0A140E] border border-[#244732]/60"><span class="text-white/30 text-[10px]">' + t + '</span><span class="text-white font-bold break-all flex-1 text-center">' + esc(item.barcode) + '</span><span class="text-amber-400 text-[10px] shrink-0">⏳ ' + esc(item.info) + '</span></div>';
-        }
-        if (item.kind === 'sync') {
-          return '<div class="p-2 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-center">' + t + ' • 📤 ' + esc(item.info) + '</div>';
-        }
-        return '<div class="p-2 rounded bg-red-950/40 border border-red-500/40 text-red-300">' + (item.barcode ? '<span class="font-bold break-all">' + esc(item.barcode) + '</span> — ' : t + ' • ') + esc(item.info) + '</div>';
-      }).join('');
+      manualBusy = true;
+      const value = input.value;
+      try {
+        if (await addScan(value, context) && input.value === value) input.value = '';
+      } finally { manualBusy = false; }
     }
 
-    function updateStats() {
-      document.getElementById('stat-ok').textContent = sessionOk;
-      document.getElementById('stat-dup').textContent = sessionDup;
-      document.getElementById('stat-queue').textContent = queue.length;
-      document.getElementById('stat-err').textContent = sessionErr;
+    async function readJournal(actor) {
+      return ledger(['scans', 'attempts'], 'readonly', (tx, read, finish) => {
+        readOwnerLedger(tx, read, actor, rows => finish(rows));
+      });
+    }
+
+    async function renderJournal() {
+      if (!db || !currentOwner()) return;
+      const actor = owner;
+      const version = ++journalVersion;
+      try {
+        const rows = await readJournal(actor);
+        if (!currentOwner(actor) || version !== journalVersion) return;
+        const counts = Object.fromEntries(Object.keys(STATES).map(state => [state, 0]));
+        rows.forEach(record => counts[record.state]++);
+        for (const state of Object.keys(STATES)) $('stat-' + state).textContent = counts[state];
+        const state = $('marker-journal-filter').value;
+        const filtered = state ? rows.filter(row => row.state === state) : rows;
+        const visible = filtered.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 100);
+        $('scans-log').innerHTML = visible.map(row => '<li><span data-tone="' + STATES[row.state][1] + '">'
+          + STATES[row.state][0] + '</span> · КП ' + row.checkpoint_id + ' · '
+          + esc(new Date(row.timestamp).toLocaleString('ru-RU')) + '<br><b>' + esc(row.barcode) + '</b>'
+          + (row.reason ? '<br>' + esc(row.reason) : '') + '</li>').join('') || '<li>Пока пусто</li>';
+        $('marker-journal-limit').textContent = filtered.length > 100 ? 'Показаны последние 100 записей в этом списке. Полный журнал — в экспорте.' : '';
+        updateSyncBadge();
+      } catch {
+        if (currentOwner(actor)) storageWarning();
+      }
+    }
+
+    function publishJournalChange() {
+      journalChannel?.postMessage(owner);
+      void renderJournal();
     }
 
     function updateSyncBadge() {
-      const badge = document.getElementById('sync-status-indicator');
-      const dot = document.getElementById('sync-dot');
-      const text = document.getElementById('sync-status-text');
-      const online = navigator.onLine;
+      $('sync-status-text').textContent = storageFailed ? 'СБОЙ' :
+        (!navigator.onLine || assignmentOffline || authUnavailable) ? 'ОФЛАЙН' : 'ТЕРМИНАЛ';
+    }
 
-      badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold border shrink-0';
-      if (!online) {
-        badge.classList.add('bg-amber-500/20', 'text-amber-300', 'border-amber-500/40');
-        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-        text.textContent = 'ОФЛАЙН (' + queue.length + ' в очереди)';
-      } else if (syncError) {
-        badge.classList.add('bg-red-500/20', 'text-red-300', 'border-red-500/40');
-        dot.className = 'w-2 h-2 rounded-full bg-red-400 animate-ping';
-        text.textContent = 'ОШИБКА СВЯЗИ (' + queue.length + ')';
-      } else if (queue.length > 0) {
-        badge.classList.add('bg-sky-500/20', 'text-sky-300', 'border-sky-500/40');
-        dot.className = 'w-2 h-2 rounded-full bg-sky-400 animate-ping';
-        text.textContent = 'ОТПРАВКА (' + queue.length + ')';
-      } else {
-        badge.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        text.textContent = 'СИНХРОНИЗИРОВАНО';
+    document.addEventListener('mp-auth-invalidated', () => {
+      closeCameraScanner();
+      for (const tx of intakeTransactions) {
+        try { tx.abort(); } catch { /* transaction already finished */ }
       }
+      owner = null;
+      activeCp = null;
+      checkpoints = [];
+      journalChannel?.close();
+      journalChannel = null;
+      $('scans-log').replaceChildren();
+      for (const state of Object.keys(STATES)) $('stat-' + state).textContent = '0';
+      syncNote('');
+      $('manual-barcode-input').value = '';
+      note('');
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const me = await requireAuth();
+      if (!me || !idOk(me.user_id)) return;
+      owner = me.user_id;
+      if (!currentOwner()) return;
+      $('operator-role').textContent = me.role;
+      const tick = () => { $('clock-display').textContent = new Date().toTimeString().slice(0, 5); };
+      tick();
+      setInterval(tick, 1000);
+      legacyWarning();
+      try {
+        const connection = await openLedger();
+        if (!currentOwner(me.user_id)) { connection.close(); return; }
+        db = connection;
+        db.onversionchange = () => { db.close(); storageWarning(); };
+        preferredCp = await ledger(['preferences'], 'readonly', (tx, read, finish) => {
+          read(tx.objectStore('preferences').get(owner), pref => {
+            if (pref && (pref.owner !== owner || !idOk(pref.checkpoint_id) || !idOk(pref.route_id))) {
+              throw new Error('Invalid checkpoint preference');
+            }
+            finish(pref);
+          });
+        });
+        if (!currentOwner(me.user_id)) return;
+        if (typeof BroadcastChannel === 'function') {
+          journalChannel = new BroadcastChannel(DB_NAME);
+          journalChannel.onmessage = event => { if (currentOwner(event.data)) void renderJournal(); };
+        }
+        await renderJournal();
+      } catch { storageWarning(); }
+      await loadCheckpoints();
+      window.addEventListener('offline', updateSyncBadge);
+      startSync();
+    });
+
+
+    const MAX_BATCH = 50;
+    const MAX_BODY = 60 * 1024;
+    const ATTEMPT_LIMIT = CAPACITY * 2;
+    const REQUEST_TIMEOUT = 12000;
+    const SYNC_INTERVAL = 20000;
+    const attemptStates = ['sending', 'coherent', 'rejected', 'unknown', 'not_sent'];
+    let syncBusy = false;
+    let retryAfter = 0;
+    let retryDelay = SYNC_INTERVAL;
+
+    function validAttempt(attempt, actor) {
+      return isObject(attempt) && attempt.owner === actor && validId(attempt.id)
+        && idOk(attempt.checkpoint_id) && idOk(attempt.route_id) && iso(attempt.started_at)
+        && Array.isArray(attempt.scan_ids) && attempt.scan_ids.length > 0
+        && attempt.scan_ids.length <= MAX_BATCH && attempt.scan_ids.every(validId)
+        && new Set(attempt.scan_ids).size === attempt.scan_ids.length
+        && attemptStates.includes(attempt.outcome) && typeof attempt.reason === 'string'
+        && (attempt.outcome === 'sending' ? attempt.finished_at === null : iso(attempt.finished_at))
+        && (attempt.outcome === 'coherent'
+          ? nonnegative(attempt.processed) && nonnegative(attempt.already_passed)
+            && attempt.processed + attempt.already_passed <= attempt.scan_ids.length
+          : attempt.processed === null && attempt.already_passed === null);
+    }
+
+    function bodyFor(cp, rows) {
+      return { checkpoint_id: cp.checkpoint_id, scans: rows.map(({ barcode, timestamp }) => ({ barcode, timestamp })) };
+    }
+
+    function validateReply(reply, rows) {
+      if (!isObject(reply) || !nonnegative(reply.processed) || !nonnegative(reply.already_passed)
+          || !Array.isArray(reply.errors) || reply.processed + reply.already_passed + reply.errors.length !== rows.length) {
+        return null;
+      }
+      const barcodes = new Set(rows.map(row => row.barcode));
+      const errors = new Map();
+      for (const item of reply.errors) {
+        if (!isObject(item) || typeof item.barcode !== 'string' || !barcodes.has(item.barcode)
+            || errors.has(item.barcode) || typeof item.error !== 'string' || !item.error.trim()) return null;
+        // The backend's generic exception can contain internal diagnostic data.
+        const reason = /^Неизвестная ошибка:/i.test(item.error.trim())
+          ? 'Сервер сообщил о внутренней ошибке обработки кода.'
+          : item.error.trim().replace(/[\p{Cc}\p{Cf}]/gu, ' ').slice(0, 500);
+        errors.set(item.barcode, reason);
+      }
+      return { outcome: 'coherent', processed: reply.processed, already_passed: reply.already_passed, errors };
+    }
+
+    function readOwnerLedger(tx, read, actor, next) {
+      read(owned(tx.objectStore('scans'), actor), raw => {
+        const rows = checkedScans(raw, actor);
+        read(owned(tx.objectStore('attempts'), actor), history => {
+          if (!history.every(attempt => validAttempt(attempt, actor))) throw new Error('Invalid attempt history');
+          const scansById = new Map(rows.map(row => [row.id, row]));
+          const attemptsById = new Map(history.map(attempt => [attempt.id, attempt]));
+          for (const row of rows) {
+            if (!row.attempt) continue;
+            const attempt = attemptsById.get(row.attempt);
+            if (!attempt?.scan_ids.includes(row.id) || attempt.outcome === 'not_sent') {
+              throw new Error('Missing scan attempt');
+            }
+          }
+          for (const attempt of history) {
+            const matching = attempt.scan_ids.map(id => scansById.get(id));
+            if (!matching.every(row => row && sameCp(row, attempt))) throw new Error('Invalid attempt scope');
+            if (attempt.outcome === 'not_sent') continue;
+            if (!matching.every(row => row.attempt === attempt.id)) throw new Error('Invalid attempt relation');
+            if (attempt.outcome === 'coherent') {
+              const confirmed = matching.filter(row => row.state === 'confirmed').length;
+              if (confirmed !== attempt.processed + attempt.already_passed
+                  || !matching.every(row => ['confirmed', 'rejected'].includes(row.state))) {
+                throw new Error('Invalid attempt totals');
+              }
+            } else if (!matching.every(row => row.state === attempt.outcome)) {
+              throw new Error('Invalid attempt state');
+            }
+          }
+          next(rows, history);
+        });
+      });
+    }
+
+    function recoverSending(actor) {
+      return ledger(['scans', 'attempts'], 'readwrite', (tx, read, finish) => {
+        readOwnerLedger(tx, read, actor, (rows, history) => {
+          const inFlight = rows.filter(row => row.state === 'sending');
+          if (!inFlight.length) return finish(false);
+          const reason = 'Отправка прервалась. Сверьте исход с организатором.';
+          const finished_at = new Date().toISOString();
+          const scans = tx.objectStore('scans');
+          const attempts = tx.objectStore('attempts');
+          for (const row of inFlight) scans.put({ ...row, state: 'unknown', reason });
+          for (const attempt of history) {
+            if (attempt.outcome === 'sending') attempts.put({ ...attempt, outcome: 'unknown', reason, finished_at });
+          }
+          finish(true);
+        });
+      });
+    }
+
+    function claimBatch(actor) {
+      return ledger(['scans', 'attempts'], 'readwrite', (tx, read, finish) => {
+        const scans = tx.objectStore('scans');
+        const attempts = tx.objectStore('attempts');
+        read(attempts.index('owner').count(actor), count => {
+          read(owned(scans, actor), raw => {
+            if (!currentOwner(actor) || storageFailed) return finish(null);
+            const pending = checkedScans(raw, actor).filter(row => row.state === 'pending');
+            if (!pending.length) return finish(null);
+            if (count >= ATTEMPT_LIMIT) throw new Error('Attempt history at capacity');
+            const permitted = pending.filter(row => {
+              if (checkpoints.some(cp => sameCp(cp, row))) return true;
+              scans.put({ ...row, state: 'rejected', reason: 'КП или маршрут больше не назначен. Сверьте отметку с организатором.' });
+              return false;
+            });
+            if (!permitted.length) return finish({ blockedOnly: true });
+            permitted.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+            const cp = permitted[0];
+            const rows = [];
+            const barcodes = new Set();
+            for (const record of permitted) {
+              if (!sameCp(record, cp)) continue;
+              if (barcodes.has(record.barcode)) throw new Error('Duplicate pending scan');
+              if (new TextEncoder().encode(JSON.stringify(bodyFor(cp, [...rows, record]))).length > MAX_BODY) break;
+              rows.push(record);
+              barcodes.add(record.barcode);
+              if (rows.length === MAX_BATCH) break;
+            }
+            if (!rows.length) throw new Error('Empty batch');
+            const attempt = {
+              id: crypto.randomUUID(), owner: actor, checkpoint_id: cp.checkpoint_id, route_id: cp.route_id,
+              scan_ids: rows.map(row => row.id), started_at: new Date().toISOString(), finished_at: null,
+              outcome: 'sending', reason: '', processed: null, already_passed: null
+            };
+            attempts.add(attempt);
+            for (const row of rows) scans.put({ ...row, state: 'sending', attempt: attempt.id });
+            finish({ attempt, rows, body: bodyFor(cp, rows) });
+          });
+        });
+      });
+    }
+
+    function settleBatch(batch, result) {
+      const { attempt, rows } = batch;
+      return ledger(['scans', 'attempts'], 'readwrite', (tx, read) => {
+        const scans = tx.objectStore('scans');
+        const attempts = tx.objectStore('attempts');
+        read(attempts.get(attempt.id), stored => {
+          if (!validAttempt(stored, attempt.owner) || stored.outcome !== 'sending' || !sameCp(stored, attempt)
+              || stored.started_at !== attempt.started_at || stored.scan_ids.join() !== attempt.scan_ids.join()) {
+            throw new Error('Attempt changed during send');
+          }
+          attempts.put({
+            ...stored, outcome: result.outcome, finished_at: new Date().toISOString(),
+            reason: result.reason || '', processed: result.processed ?? null, already_passed: result.already_passed ?? null
+          });
+          for (const row of rows) {
+            read(scans.get(row.id), record => {
+              if (!validScan(record, attempt.owner) || record.state !== 'sending'
+                  || record.attempt !== attempt.id || !sameCp(record, row)
+                  || record.barcode !== row.barcode || record.timestamp !== row.timestamp) {
+                throw new Error('Scan changed during send');
+              }
+              let state = result.outcome;
+              let reason = result.reason || '';
+              if (state === 'coherent') {
+                reason = result.errors.get(record.barcode) || '';
+                state = result.errors.has(record.barcode) ? 'rejected' : 'confirmed';
+              }
+              if (state === 'not_sent') {
+                scans.put({ ...record, state: 'pending', reason: '', attempt: null });
+              } else {
+                scans.put({ ...record, state, reason });
+              }
+            });
+          }
+        });
+      });
+    }
+
+    function syncNote(message, tone = 'amber') {
+      $('marker-sync').textContent = message;
+      $('marker-sync').dataset.tone = tone;
+    }
+
+    async function sendBatch(actor, batch) {
+      if (!currentOwner(actor) || storageFailed || !navigator.onLine || assignmentOffline || authUnavailable
+          || !checkpoints.some(cp => sameCp(cp, batch.attempt))) {
+        return { outcome: 'not_sent', reason: 'Отправка отменена до запроса.' };
+      }
+      let reply;
+      try {
+        reply = await apiRequest('/api/v1/scans/batch', {
+          method: 'POST', body: batch.body, signal: AbortSignal.timeout(REQUEST_TIMEOUT)
+        });
+      } catch (error) {
+        // The shared auth gate can invalidate the document while processing a definite 401.
+        if (error.status === 401 || (currentOwner(actor) && error.status >= 400 && error.status < 500 && error.status !== 408)) {
+          return { outcome: 'rejected', reason: 'Сервер отклонил пакет (HTTP ' + error.status + '). Нужна сверка.' };
+        }
+        return { outcome: 'unknown', reason: 'Связь прервалась или сервер не подтвердил результат. Нужна сверка.' };
+      }
+      if (!currentOwner(actor)) return { outcome: 'unknown', reason: 'Сессия сменилась во время отправки. Нужна сверка.' };
+      return validateReply(reply, batch.rows) || {
+        outcome: 'unknown', reason: 'Ответ сервера не позволяет сверить пакет. Нужна сверка.'
+      };
+    }
+
+    function backoff() {
+      retryAfter = Date.now() + retryDelay;
+      retryDelay = Math.min(retryDelay * 2, 120000);
+    }
+
+    async function flushQueue(manual = false) {
+      if (!currentOwner() || !db || storageFailed || syncBusy || (!manual && Date.now() < retryAfter)) return;
+      if (!navigator.locks?.request) {
+        syncNote('Браузер не поддерживает безопасную отправку из нескольких вкладок. Экспортируйте журнал.');
+        return;
+      }
+      const actor = owner;
+      syncBusy = true;
+      try {
+        await navigator.locks.request(DB_NAME + ':sync:' + actor, { ifAvailable: true }, async lock => {
+          if (!lock || !currentOwner(actor) || storageFailed) return;
+          if (await recoverSending(actor) && currentOwner(actor)) {
+            syncNote('Найдены прерванные отправки. Проверьте записи с неизвестным исходом.');
+            publishJournalChange();
+          }
+          if (!currentOwner(actor) || storageFailed) return;
+          if (!navigator.onLine) {
+            if (manual) syncNote('Нет сети. Отметки остаются в журнале.');
+            return;
+          }
+          if (!(await readJournal(actor)).some(row => row.state === 'pending')) return;
+          let auth;
+          try { auth = await verifyAuthSession(); } catch (error) {
+            if (!currentOwner(actor)) return;
+            if (error.code !== 'AUTH_UNAVAILABLE') {
+              invalidatePageSession();
+              return;
+            }
+            backoff();
+            authUnavailable = true;
+            updateSyncBadge();
+            syncNote('Связь с сервером недоступна. Отправка отложена.');
+            return;
+          }
+          if (!currentOwner(actor)) return;
+          if (auth.user.user_id !== actor || auth.user.role !== getAuthUser()?.role) {
+            invalidatePageSession();
+            return;
+          }
+          authUnavailable = false;
+          updateSyncBadge();
+          if (!(await loadCheckpoints()) || !currentOwner(actor) || storageFailed) { backoff(); return; }
+          retryAfter = 0;
+          retryDelay = SYNC_INTERVAL;
+          let processed = 0;
+          let already = 0;
+          let rejected = 0;
+          for (let i = 0; i < 6 && currentOwner(actor) && !storageFailed; i++) {
+            const batch = await claimBatch(actor);
+            if (!batch) break;
+            if (currentOwner(actor)) publishJournalChange();
+            if (batch.blockedOnly) {
+              syncNote('У сохранённых отметок больше нет назначения КП. Нужна сверка.', 'red');
+              break;
+            }
+            const result = await sendBatch(actor, batch);
+            await settleBatch(batch, result);
+            if (!currentOwner(actor)) return;
+            publishJournalChange();
+            if (result.outcome !== 'coherent') {
+              if (result.outcome === 'rejected' && /HTTP (403|404)\b/.test(result.reason)) applyAssignment([]);
+              syncNote(result.reason, result.outcome === 'rejected' ? 'red' : 'amber');
+              backoff();
+              break;
+            }
+            processed += result.processed;
+            already += result.already_passed;
+            rejected += result.errors.size;
+            syncNote((processed + already ? 'Подтверждено сервером. ' : '')
+              + 'Новых: ' + processed + ' · Уже были: ' + already + ' · Нужна сверка: ' + rejected,
+              processed + already ? 'emerald' : 'red');
+          }
+        });
+      } catch {
+        if (currentOwner(actor)) {
+          storageWarning();
+          syncNote('Не удалось надёжно обновить журнал. Если запрос уже ушёл, сверьте его исход с организатором.', 'red');
+        }
+      } finally {
+        syncBusy = false;
+      }
+    }
+
+    async function exportJournal() {
+      if (!db || !currentOwner()) return;
+      const actor = owner;
+      try {
+        // Partial export leaves malformed rows intact, and discloses no data from them.
+        const data = await ledger(['scans', 'attempts'], 'readonly', (tx, read, finish) => {
+          read(owned(tx.objectStore('scans'), actor), rows => {
+            read(owned(tx.objectStore('attempts'), actor), attempts => {
+              const scans = rows.filter(row => validScan(row, actor)).map(({
+                id, owner, checkpoint_id, route_id, barcode, timestamp, state, reason, attempt
+              }) => ({ id, owner, checkpoint_id, route_id, barcode, timestamp, state, reason, attempt }));
+              const history = attempts.filter(attempt => validAttempt(attempt, actor)).map(({
+                id, owner, checkpoint_id, route_id, scan_ids, started_at, finished_at, outcome, reason, processed, already_passed
+              }) => ({ id, owner, checkpoint_id, route_id, scan_ids, started_at, finished_at, outcome, reason, processed, already_passed }));
+              finish({ version: 1, owner: actor, exported_at: new Date().toISOString(), scans, attempts: history,
+                omitted_invalid: rows.length - scans.length + attempts.length - history.length });
+            });
+          });
+        });
+        if (!currentOwner(actor)) return;
+        const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'marker-journal-' + data.exported_at.slice(0, 10) + '.json';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        note(data.omitted_invalid ? 'Экспорт частичный. Повреждённые записи сохранены в браузере. Обратитесь к организатору.'
+          : 'Журнал выгружен. Состояния отметок не изменились.');
+      } catch {
+        if (currentOwner(actor)) {
+          storageWarning();
+          note('Экспорт не удался. Не очищайте данные сайта. Обратитесь к организатору.', 'red');
+        }
+      }
+    }
+
+    function startSync() {
+      const run = () => void flushQueue();
+      window.addEventListener('online', () => {
+        retryAfter = 0;
+        if (currentOwner() && !storageFailed) void loadCheckpoints().then(run);
+      });
+      window.addEventListener('focus', () => { void renderJournal(); });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) run(); });
+      setInterval(run, SYNC_INTERVAL);
+      run();
     }
 
     // --- Полноэкранная вспышка результата ---
@@ -574,6 +1026,7 @@
 
     // --- HTML5 LIVE CAMERA SCANNER (как в регистраторе и у наборщика) ---
     let html5QrScanner = null;
+    let torchOn = false;
     let currentScanFormat = 'qr'; // 'qr' | 'barcode' — переключается в окне камеры
 
     function updateScanFormatUI() {
@@ -593,22 +1046,16 @@
       currentScanFormat = format;
       updateScanFormatUI();
       updateCameraTexts();
-      const modal = document.getElementById('camera-modal');
-      if (modal && !modal.classList.contains('hidden')) {
-        restartScanner();
-      }
+      if (!$('camera-modal').classList.contains('hidden')) openCameraScanner(true);
     }
 
     function buildScanConfig() {
-      const config = currentScanFormat === 'barcode'
-        ? { fps: 15, qrbox: { width: 340, height: 140 } }   // линейный код — широкая рамка
-        : { fps: 15, qrbox: { width: 260, height: 260 } };  // QR — квадрат
-      try {
-        config.formatsToSupport = [currentScanFormat === 'barcode'
-          ? Html5QrcodeSupportedFormats.CODE_128
-          : Html5QrcodeSupportedFormats.QR_CODE];
-      } catch (e) { /* старая версия библиотеки — читаем все форматы */ }
-      return config;
+      return currentScanFormat === 'barcode'
+        ? { fps: 15, qrbox: (width, height) => ({ width: Math.floor(width * .85), height: Math.min(140, height) }) }
+        : { fps: 15, qrbox: (width, height) => {
+          const side = Math.min(260, Math.floor(Math.min(width, height) * .85));
+          return { width: side, height: side };
+        } };
     }
 
     function updateCameraTexts() {
@@ -626,71 +1073,132 @@
       }
     }
 
-    async function startScanning() {
-      if (!html5QrScanner) {
-        html5QrScanner = new Html5Qrcode("marker-qr-reader");
-      }
-      await html5QrScanner.start(
-        { facingMode: "environment" },
-        buildScanConfig(),
-        (decodedText) => {
-          soundSuccess();
-          closeCameraScanner();
-          addScan(decodedText);
-        },
-        () => { /* кадры без кода — норма */ }
-      );
-      updateTorchAvailability();
+
+    let cameraWork = Promise.resolve();
+    let fileContext = null;
+    let fileDecoding = false;
+
+    function stopCamera() {
+      const scanner = html5QrScanner;
+      html5QrScanner = null;
+      torchOn = false;
+      if (!scanner) return Promise.resolve();
+      return (async () => {
+        try { await scanner.stop(); } catch { /* start may have failed */ }
+        try { scanner.clear(); } catch { /* reader already cleared */ }
+        updateTorchAvailability();
+      })();
     }
 
-    async function restartScanner() {
-      if (html5QrScanner) {
-        try { await html5QrScanner.stop(); } catch (e) { /* уже остановлен */ }
-        try { html5QrScanner.clear(); } catch (e) { /* noop */ }
-      }
-      try {
-        await startScanning();
-      } catch (err) {
-        console.log('Camera restart error:', err);
-      }
+    function queueCamera(work) {
+      cameraWork = cameraWork.then(work).catch(() => {
+        if (currentOwner()) note('Не удалось управлять камерой. Используйте снимок или ручной ввод.', 'red');
+      });
+      return cameraWork;
     }
 
-    async function openCameraScanner() {
-      const hasWebcam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-      if (!hasWebcam) {
-        // Safari iOS по HTTP ограничивает WebRTC — сразу делаем снимок нативной камерой
-        const fileInput = document.getElementById('marker-file-scan');
-        if (fileInput) fileInput.click();
+    function closeCameraScanner() {
+      generation++;
+      fileContext = null;
+      $('camera-modal').classList.add('hidden');
+      return queueCamera(stopCamera);
+    }
+
+    function openCameraScanner(restart = false) {
+      if (!restart && !$('camera-modal').classList.contains('hidden')) return;
+      generation++;
+      fileContext = null;
+      const context = captureContext();
+      if (!context) {
+        if (currentOwner()) note('Чтобы принять код, проверьте назначение КП и хранилище.', 'red');
         return;
       }
-
       updateCameraTexts();
       updateScanFormatUI();
-      document.getElementById('camera-modal').classList.remove('hidden');
+      $('camera-modal').classList.remove('hidden');
+      const format = currentScanFormat;
+      const config = buildScanConfig();
+      $('camera-reader-box').hidden = !navigator.mediaDevices?.getUserMedia;
+      if ($('camera-reader-box').hidden) {
+        $('camera-hint').textContent = 'Видеопоток недоступен. Используйте снимок или ручной ввод.';
+        return;
+      }
+      queueCamera(async () => {
+        await stopCamera();
+        if (!contextCurrent(context)) return;
+        let decoded = false;
+        try {
+          const scanner = new Html5Qrcode('marker-qr-reader', {
+            formatsToSupport: [format === 'barcode'
+              ? Html5QrcodeSupportedFormats.CODE_128 : Html5QrcodeSupportedFormats.QR_CODE]
+          });
+          html5QrScanner = scanner;
+          await scanner.start({ facingMode: 'environment' }, config, async text => {
+            if (decoded || !contextCurrent(context)) return;
+            decoded = true;
+            const accepted = await addScan(text, context);
+            if (!contextCurrent(context)) return;
+            if (accepted || storageFailed) closeCameraScanner();
+            else decoded = false;
+          }, () => {});
+          if (contextCurrent(context)) updateTorchAvailability();
+          else await stopCamera();
+        } catch {
+          await stopCamera();
+          if (contextCurrent(context)) {
+            $('camera-hint').textContent = 'Камера недоступна. Используйте снимок или ручной ввод.';
+          }
+        }
+      });
+    }
 
+    function startFileChoice(event) {
+      if (fileDecoding || !captureContext()) {
+        event.preventDefault();
+        return;
+      }
+      generation++;
+      const context = captureContext();
+      fileContext = { ...context, format: currentScanFormat };
+      queueCamera(stopCamera);
+    }
+
+    async function handleMarkerFileScan(event) {
+      const input = event.target;
+      const file = input.files[0];
+      const capturedAt = new Date().toISOString();
+      const context = fileContext;
+      fileContext = null;
+      input.value = '';
+      if (!file || fileDecoding || !contextCurrent(context)) return;
+      fileDecoding = true;
+      let scanner;
       try {
-        await startScanning();
-      } catch (err) {
-        console.log('Camera error, fallback to snapshot:', err);
-        closeCameraScanner();
-        const fileInput = document.getElementById('marker-file-scan');
-        if (fileInput) fileInput.click();
+        const image = await downscaleImage(file, 1000);
+        if (!contextCurrent(context)) return;
+        scanner = new Html5Qrcode('marker-file-reader', {
+          formatsToSupport: [context.format === 'barcode'
+            ? Html5QrcodeSupportedFormats.CODE_128 : Html5QrcodeSupportedFormats.QR_CODE]
+        });
+        const decoded = await scanner.scanFile(image, false);
+        if (!contextCurrent(context)) return;
+        if (await addScan(decoded, context, capturedAt) && contextCurrent(context)) closeCameraScanner();
+      } catch {
+        if (contextCurrent(context)) {
+          $('camera-hint').textContent = 'Код на снимке не распознан. Попробуйте снова или введите его вручную.';
+        }
+      } finally {
+        if (scanner) {
+          try { scanner.clear(); } catch { /* image decoder has no active stream */ }
+        }
+        fileDecoding = false;
       }
     }
 
-    async function closeCameraScanner() {
-      const modal = document.getElementById('camera-modal');
-      if (modal) modal.classList.add('hidden');
-      if (html5QrScanner) {
-        try { await html5QrScanner.stop(); } catch (e) { /* noop */ }
-        try { html5QrScanner.clear(); } catch (e) { /* noop */ }
-      }
-      torchOn = false;
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeCameraScanner();
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !$('camera-modal').classList.contains('hidden')) closeCameraScanner();
     });
+    window.addEventListener('pagehide', closeCameraScanner);
 
     async function downscaleImage(file, maxDimension = 1000) {
       return new Promise((resolve) => {
@@ -730,23 +1238,6 @@
       });
     }
 
-    async function handleMarkerFileScan(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      try {
-        if (!html5QrScanner) {
-          html5QrScanner = new Html5Qrcode("marker-qr-reader");
-        }
-        const processedFile = await downscaleImage(file, 1000);
-        const decodedText = await html5QrScanner.scanFile(processedFile, false);
-        addScan(decodedText);
-      } catch (err) {
-        MPToast.show('Не удалось распознать код на снимке: ' + (err.message || err) + '\n\nСовет: держите камеру ближе к коду и снимайте при ровном свете.', 'error');
-      } finally {
-        event.target.value = '';
-      }
-    }
-
     // --- Фонарик (если камера поддерживает) ---
     function updateTorchAvailability() {
       const btn = document.getElementById('torch-btn');
@@ -775,6 +1266,13 @@
         MPToast.show('Не удалось переключить фонарик: ' + (e.message || e), 'error');
       }
     }
+  </script>
+
+  <script>
+    $('cp-list').addEventListener('click', event => {
+      const button = event.target.closest('[data-cp]');
+      if (button) void selectCp(Number(button.dataset.cp));
+    });
   </script>
 
   <!-- Universal Ecosystem Navigator -->
