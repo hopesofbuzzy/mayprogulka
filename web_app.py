@@ -116,7 +116,7 @@ def index():
             <!-- Раздельные кнопки Загрузить и Распознать -->
             <div class="action-bar">
                 <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileChosen(this)">
-                <button class="btn btn-upload" onclick="document.getElementById('file-input').click()">
+                <button class="btn btn-upload" onclick="const fi = document.getElementById('file-input'); fi.value = ''; fi.click();">
                     📁 1. Выбрать фото анкеты
                 </button>
                 <button class="btn btn-recognize" id="btn-run-ocr" onclick="runRecognition()" disabled>
@@ -382,16 +382,15 @@ def index():
             document.getElementById('inp-city').value = d.city || '';
             
             // Вывод количества участий с сохранением двузначного формата
-            const prevStr = String(d.prev_participations || '00');
-            document.getElementById('inp-prev').value = prevStr + ' раз';
-            document.getElementById('inp-card').value = d.card_number || '018420';
+            const rawPrev = d.prev_participations; const prevNum = (rawPrev !== undefined && rawPrev !== null && String(rawPrev).trim() !== '') ? parseInt(String(rawPrev), 10) : NaN;
+            document.getElementById('inp-prev').value = Number.isNaN(prevNum) ? '' : (prevNum + ' раз');
+            document.getElementById('inp-card').value = d.card_number || '';
 
             document.getElementById('metric-conf').innerText = res.overall_confidence + '%';
             document.getElementById('conf-val').innerText = res.overall_confidence + '%';
-            document.getElementById('metric-dist').innerText = d.distance.split(' ')[0] + ' км';
+            document.getElementById('metric-dist').innerText = d.distance ? String(d.distance).split(' ')[0] + ' км' : '—';
             document.getElementById('metric-age').innerText = (d.calculated_age || '—') + ' лет';
 
-            const sc = document.getElementById('status-card');
             if (res.status === 'APPROVED') {
                 sc.className = 'status-box status-approved';
                 document.getElementById('status-text').innerText = '✅ АНКЕТА ОЦИФРОВАНА НЕЙРОСЕТЬЮ';

@@ -17,7 +17,7 @@ def create_filled_sample(
     prev="04",
     dist_index=1, # 33 км
     card="042189",
-    add_noise=True
+    add_noise=True, email="SMIRNOV@MAIL.RU"
 ):
     gen = FormGenerator()
     img = gen.create_blank()
@@ -61,7 +61,7 @@ def create_filled_sample(
     fill_boxes(phone, 395, start_x=220)
 
     # Email
-    fill_boxes("SMIRNOV@MAIL.RU", 450, start_x=220)
+    fill_boxes(email, 450, start_x=220)
 
     # Город
     fill_boxes(city, 505, start_x=220)
